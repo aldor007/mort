@@ -16,10 +16,15 @@ func main() {
 
     // Route => handler
     e.GET("/*", func(ctx echo.Context) error {
-        obj := object.NewFileObject(ctx.Request().URL.Path)
+        obj, err := object.NewFileObject(ctx.Request().URL.Path)
+        if err != nil {
+            return  ctx.NoContent(400)
+        }
+
         response := imgserver.Process(obj)
         if response.Error != nil {
-            return  ctx.NoContent(500)
+            e.Logger.Error(response.Error)
+            return  ctx.NoContent(response.StatusCode)
         }
 
         //return ctx.JSON(200, obj)

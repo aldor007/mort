@@ -4,6 +4,8 @@ import (
 	"strings"
 	"regexp"
 	"fmt"
+	"errors"
+
 	"imgserver/config"
 	"imgserver/transforms"
 )
@@ -49,7 +51,7 @@ type FileObject  struct {
 
 }
 
-func NewFileObject(path string) *FileObject  {
+func NewFileObject(path string) (*FileObject, error)  {
 	obj := FileObject{}
 	obj.Uri = path
 	if URI_LOCAL_RE.MatchString(path) {
@@ -57,20 +59,30 @@ func NewFileObject(path string) *FileObject  {
 	} else {
 		obj.UriType = URI_TYPE_S3
 	}
-	fmt.Printf("UriType = %d path = %s \n", obj.UriType, path)
 
-	obj.decode()
-	return &obj
+	err := obj.decode()
+	fmt.Printf("UriType = %d key = %s bucket = %s parent = %s err = %s\n", obj.UriType, obj.Key, obj.Bucket, obj.Parent, err)
+	return &obj, err
 }
 
-func (self *FileObject) decode() *FileObject  {
+func (self *FileObject) decode() error  {
 	if self.UriType == URI_TYPE_LOCAL {
 		return self.decodeLiipPath()
 	}
-	return self
+
+	elements := strings.Split(self.Uri, "/")
+	if len(elements) < 3 {
+		return errors.New("Invalid path")
+	}
+
+	fmt.Println(len(elements))
+	self.Bucket = elements[1]
+	self.Key = "/" + strings.Join(elements[2:], "/")
+
+	return nil
 }
 
-func (self *FileObject) decodeLiipPath() *FileObject {
+func (self *FileObject) decodeLiipPath() error {
 	self.Uri = strings.Replace(self.Uri, "//", "/", 3)
 	key := strings.Replace(self.Uri, "/media/cache", "", 1)
 	key = strings.Replace(key, "/resolve", "", 1)
@@ -87,11 +99,11 @@ func (self *FileObject) decodeLiipPath() *FileObject {
 		self.Key = self.Uri
 	}
 	fmt.Printf("uri: %s parent: %s key: %s len: %d \n", self.Uri, self.Parent, self.Key, len(elements))
-	return self
+	return nil
 }
 
 func (self *FileObject) GetParent() *FileObject {
-	parent := NewFileObject(self.Parent)
+	parent, _ := NewFileObject(self.Parent)
 	return parent
 }
 

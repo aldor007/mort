@@ -21,7 +21,7 @@ const internalError = "{\"error\":\"internal error\"}"
 func Get(obj *object.FileObject) (*response.Response) {
 	key := obj.Key
 	fmt.Printf("GET %s sc", key)
-	if isUrl_RE.MatchString(key) {
+	if isUrl_RE.MatchString(key) || obj.UriType != object.URI_TYPE_LOCAL {
 		return response.New(400, nil, fmt.Errorf("Not implemented"))
 	}
 
@@ -37,7 +37,6 @@ func Get(obj *object.FileObject) (*response.Response) {
 }
 
 func getFromDisk(filePath string) ([]byte, error) {
-	fmt.Println("AAAAAA "+ config.GetInstance().LocalFilesPath +"AAAA")
 	return ioutil.ReadFile(config.GetInstance().LocalFilesPath + filePath)
 }
 
