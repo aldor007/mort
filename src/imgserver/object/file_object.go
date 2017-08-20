@@ -102,6 +102,8 @@ func (self *FileObject) decodeLiipPath() error {
 	return nil
 }
 
+func (self)
+
 func (self *FileObject) GetParent() *FileObject {
 	parent, _ := NewFileObject(self.Parent)
 	return parent
@@ -110,3 +112,4 @@ func (self *FileObject) GetParent() *FileObject {
 func (self *FileObject) HasParent() bool{
 	return self.Parent != ""
 }
+
