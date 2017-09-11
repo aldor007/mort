@@ -2,9 +2,11 @@ package imgserver
 
 
 import (
+
 	"imgserver/storage"
 	"imgserver/object"
 	"imgserver/response"
+	"gopkg.in/h2non/bimg.v1"
 )
 
 func Process(obj *object.FileObject) (*response.Response) {
@@ -19,6 +21,16 @@ func Process(obj *object.FileObject) (*response.Response) {
 
 	res := storage.Get(obj)
 
+
+
 	return res
 
+}
+
+func processResponse(obj *object.FileObject, res *response.Response) (*response.Response) {
+	processImage(obj, res)
+}
+
+func processImage(obj   *object.FileObject, res *response.Response) {
+	bimg.
 }
