@@ -16,7 +16,7 @@ func Process(obj *object.FileObject) (*response.Response) {
 		parent = storage.Get(obj.GetParent())
 	}
 
-	if len(obj.Transforms) == 0  &&  obj.Params == nil {
+	if obj.Transforms.NotEmpty == false  {
 		return storage.Get(obj)
 	}
 

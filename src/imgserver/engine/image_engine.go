@@ -1,16 +1,16 @@
 package engine
 
 import (
-	"errors"
 
 	"imgserver/object"
 	"imgserver/response"
-	Logger "github.com/labstack/gommon/log"
+	//Logger "github.com/labstack/gommon/log"
+	"gopkg.in/h2non/bimg.v1"
 )
 
 type ImageEngine struct {
-	parent *response.Response
 	Input []byte
+	parent *response.Response
 }
 
 func NewImageEngine (res *response.Response) *ImageEngine {
@@ -18,11 +18,14 @@ func NewImageEngine (res *response.Response) *ImageEngine {
 }
 
 func (self *ImageEngine) Process(obj *object.FileObject) (*response.Response, error) {
-	
-	for i, trans := range obj.Transforms {
-		Logger.Infof("Permoring i = %d trans = %s", i, trans.Name)
-	}
 
-	return response.NewError(400, errors.New("Not ready")), errors.New("Not ready")
+	image := bimg.NewImage(self.Input)
+	buf, err := image.Process(obj.Transforms.BimgOptions())
+	if err != nil  {
+		return response.NewError(500, err), err
+	}
+	res := response.New(200, buf)
+	res.SetContentType("image/" + bimg.DetermineImageTypeName(buf))
+	return res, nil
 }
 

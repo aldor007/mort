@@ -18,25 +18,25 @@ const (
 var URI_LIIP_RE = regexp.MustCompile(`\/media\/cache\/.*`)
 var URI_LOCAL_RE = regexp.MustCompile(`\/media\/.*`)
 
-func liipToTransform(liip config.LiipFiltersYAML ) ([]transforms.Base, transforms.Param) {
+func liipToTransform(liip config.LiipFiltersYAML ) (transforms.Transforms) {
 	filters := liip.Filters
-	var trans []transforms.Base
+	var trans transforms.Transforms
 
 	if len(filters.Thumbnail.Size) > 0 {
-		trans = append(trans, transforms.Base{Name: "resize", Params: map[string]interface{}{"size": filters.Thumbnail.Size, "mode": filters.Thumbnail.Mode}})
+		trans.ResizeT(filters.Thumbnail.Size, filters.Thumbnail.Mode == "outbound")
 	}
 
 	if len(filters.SmartCrop.Size) > 0 {
-		trans = append(trans, transforms.Base{Name: "crop", Params: map[string]interface{}{"size": filters.SmartCrop.Size, "mode": filters.SmartCrop.Mode}})
+		trans.CropT(filters.SmartCrop.Size, filters.SmartCrop.Mode == "outbound")
 	}
 
 	if len(filters.Crop.Size) > 0 {
-		trans = append(trans, transforms.Base{Name: "crop", Params: map[string]interface{}{"size": filters.Crop.Size, "mode": filters.Crop.Mode}})
+		trans.CropT(filters.Crop.Size, filters.Crop.Mode == "outbound")
 	}
 
-	param := transforms.Quailty{Value:liip.Quality}
+	trans.Quality = liip.Quality
 
-	return trans, param
+	return trans
 }
 
 
@@ -46,8 +46,7 @@ type FileObject  struct {
 	Key      		string  			`json:"key"`
 	UriType  		int     			`json:"uriType"`
 	Parent   		string  			`json:"parent"`
-	Transforms 		[]transforms.Base   `json:"transforms"`
-	Params 			transforms.Param    `json:"params"`
+	Transforms 		transforms.Transforms `json:"transforms"`
 
 }
 
@@ -92,7 +91,7 @@ func (self *FileObject) decodeLiipPath() error {
 		self.Key = strings.Replace(self.Uri, "//", "/", 3)
 		self.Parent =  "/" + strings.Join(elements[4:], "/")
 		liipConfig := config.GetInstance().LiipConfig
-		self.Transforms, self.Params = liipToTransform(liipConfig[presetName])
+		self.Transforms = liipToTransform(liipConfig[presetName])
 	} else {
 		self.Key = self.Uri
 	}
