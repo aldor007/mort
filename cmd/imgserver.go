@@ -1,4 +1,4 @@
-package cmd
+package main
 
 import (
 
@@ -6,6 +6,8 @@ import (
     "imgserver/config"
     "github.com/labstack/echo"
     "imgserver"
+
+    "imgserver/response"
 )
 
 func main() {
@@ -21,14 +23,10 @@ func main() {
             return  ctx.NoContent(400)
         }
 
-        response := imgserver.Process(obj)
-        if response.Error != nil {
-            e.Logger.Error(response.Error)
-            return  ctx.NoContent(response.StatusCode)
-        }
-
+        res := imgserver.Process(obj)
+        e.Logger.Info("res headers %s", res.Headers)
         //return ctx.JSON(200, obj)
-        return ctx.Blob(response.StatusCode, response.Headers["content-type"], response.Body)
+        return ctx.Blob(res.StatusCode, res.Headers[response.ContentType], res.Body)
     })
 
     // Start server

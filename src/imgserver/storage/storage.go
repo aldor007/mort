@@ -7,7 +7,8 @@ import (
 	"io/ioutil"
 	"mime"
 	"path"
-
+	"errors"
+	Logger "github.com/labstack/gommon/log"
 	"imgserver/object"
 	"imgserver/response"
 	"imgserver/config"
@@ -15,22 +16,20 @@ import (
 
 var isUrl_RE = regexp.MustCompile("http://")
 const notFound = "{\"error\":\"not found\"}"
-const internalError = "{\"error\":\"internal error\"}"
 
 
 func Get(obj *object.FileObject) (*response.Response) {
 	key := obj.Key
-	fmt.Printf("GET %s sc", key)
 	if isUrl_RE.MatchString(key) || obj.UriType != object.URI_TYPE_LOCAL {
-		return response.New(400, nil, fmt.Errorf("Not implemented"))
+		return response.NewError(400, errors.New("Not implemented"))
 	}
 
 	data, err := getFromDisk(key)
 	if os.IsNotExist(err) {
 		fmt.Println(err)
-		return response.New( 404, []byte(notFound), nil)
+		return response.New( 404, []byte(notFound))
 	} else if err != nil {
-		return response.New(503, []byte(internalError), err)
+		return response.NewError(503, err)
 	}
 
 	return prepareResponse(obj, data)
@@ -41,7 +40,8 @@ func getFromDisk(filePath string) ([]byte, error) {
 }
 
 func prepareResponse(obj *object.FileObject, data []byte) (*response.Response) {
-	res := response.New(200, data, nil)
+	res := response.New(200, data)
 	res.SetContentType(mime.TypeByExtension(path.Ext(obj.Key)))
+	Logger.Infof("Resonse for %s %s", obj.Key, res.Headers)
 	return res
 }

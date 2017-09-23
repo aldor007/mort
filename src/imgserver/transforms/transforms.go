@@ -1,24 +1,8 @@
 package transforms
 
-type Base interface{
-
+type Base struct {
+	Name string
+	Params map[string]interface{}
 
 }
 
-type ICrop struct {
-	Size []int  `json:"size"`
-	Mode string `json:"mode"`
-}
-
-type Thumbnail struct {
-	ICrop
-}
-
-type Crop struct {
-	ICrop
-	Start []int `json:"start"`
-}
-
-type SmartCrop struct {
-	ICrop
-}

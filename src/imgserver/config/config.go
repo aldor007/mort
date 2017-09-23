@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"sync"
 	"io/ioutil"
 	"gopkg.in/yaml.v2"
@@ -40,7 +39,6 @@ func (self *Config) Init(filePath string) {
 		panic(errYaml)
 	}
 
-	fmt.Printf("AAAAAa %s aa", internal.LiipConfigPath)
 
 	data, err = ioutil.ReadFile(internal.LiipConfigPath)
 	if err != nil {
@@ -54,5 +52,4 @@ func (self *Config) Init(filePath string) {
 
 	self.LiipConfig = internal.LiipConfig.LiipImagine.FilterSets
 	self.LocalFilesPath = internal.LocalFilesPath
-	fmt.Println(self.LiipConfig)
 }

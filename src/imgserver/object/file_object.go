@@ -3,11 +3,11 @@ package object
 import (
 	"strings"
 	"regexp"
-	"fmt"
 	"errors"
 
 	"imgserver/config"
 	"imgserver/transforms"
+	Logger "github.com/labstack/gommon/log"
 )
 
 const (
@@ -23,15 +23,15 @@ func liipToTransform(liip config.LiipFiltersYAML ) ([]transforms.Base, transform
 	var trans []transforms.Base
 
 	if len(filters.Thumbnail.Size) > 0 {
-		trans = append(trans, transforms.Thumbnail{transforms.ICrop{Size: filters.Thumbnail.Size, Mode: filters.Thumbnail.Mode}})
+		trans = append(trans, transforms.Base{Name: "resize", Params: map[string]interface{}{"size": filters.Thumbnail.Size, "mode": filters.Thumbnail.Mode}})
 	}
 
 	if len(filters.SmartCrop.Size) > 0 {
-		trans = append(trans, transforms.SmartCrop{transforms.ICrop{Size: filters.SmartCrop.Size, Mode: filters.SmartCrop.Mode}})
+		trans = append(trans, transforms.Base{Name: "crop", Params: map[string]interface{}{"size": filters.SmartCrop.Size, "mode": filters.SmartCrop.Mode}})
 	}
 
 	if len(filters.Crop.Size) > 0 {
-		trans = append(trans, transforms.Crop{ICrop: transforms.ICrop{Size: filters.Crop.Size, Mode: filters.Crop.Mode}, Start: filters.Crop.Start})
+		trans = append(trans, transforms.Base{Name: "crop", Params: map[string]interface{}{"size": filters.Crop.Size, "mode": filters.Crop.Mode}})
 	}
 
 	param := transforms.Quailty{Value:liip.Quality}
@@ -61,7 +61,7 @@ func NewFileObject(path string) (*FileObject, error)  {
 	}
 
 	err := obj.decode()
-	fmt.Printf("UriType = %d key = %s bucket = %s parent = %s err = %s\n", obj.UriType, obj.Key, obj.Bucket, obj.Parent, err)
+	Logger.Infof("UriType = %d key = %s bucket = %s parent = %s err = %s\n", obj.UriType, obj.Key, obj.Bucket, obj.Parent, err)
 	return &obj, err
 }
 
@@ -75,7 +75,6 @@ func (self *FileObject) decode() error  {
 		return errors.New("Invalid path")
 	}
 
-	fmt.Println(len(elements))
 	self.Bucket = elements[1]
 	self.Key = "/" + strings.Join(elements[2:], "/")
 
@@ -86,7 +85,6 @@ func (self *FileObject) decodeLiipPath() error {
 	self.Uri = strings.Replace(self.Uri, "//", "/", 3)
 	key := strings.Replace(self.Uri, "/media/cache", "", 1)
 	key = strings.Replace(key, "/resolve", "", 1)
-	fmt.Printf("key = %s \n", key)
 	elements := strings.Split(key, "/")
 	if URI_LIIP_RE.MatchString(self.Uri) {
 		presetName := elements[1]
@@ -98,11 +96,10 @@ func (self *FileObject) decodeLiipPath() error {
 	} else {
 		self.Key = self.Uri
 	}
-	fmt.Printf("uri: %s parent: %s key: %s len: %d \n", self.Uri, self.Parent, self.Key, len(elements))
+
+	Logger.Debugf("uri: %s parent: %s key: %s len: %d \n", self.Uri, self.Parent, self.Key, len(elements))
 	return nil
 }
-
-func (self)
 
 func (self *FileObject) GetParent() *FileObject {
 	parent, _ := NewFileObject(self.Parent)
