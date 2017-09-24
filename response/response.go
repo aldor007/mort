@@ -1,6 +1,9 @@
 package response
 
-import  "encoding/json"
+import (
+	"net/http"
+	"encoding/json"
+)
 
 const (
 	ContentType = "content-type"
@@ -35,4 +38,14 @@ func NewError(statusCode int, err error) *Response {
 func (r *Response) SetContentType(contentType string) *Response {
 	r.Headers[ContentType] = contentType
 	return r
+}
+
+func (r *Response) Set(headerName string, headerValue string) {
+	r.Headers[headerName] = headerValue
+}
+
+func (r *Response) WriteHeaders(writer http.ResponseWriter) {
+	for headerName, headerValue := range r.Headers {
+		writer.Header().Set(headerName, headerValue)
+	}
 }

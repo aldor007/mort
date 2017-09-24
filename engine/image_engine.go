@@ -2,8 +2,8 @@ package engine
 
 import (
 
-	"imgserver/object"
-	"imgserver/response"
+	"mort/object"
+	"mort/response"
 	//Logger "github.com/labstack/gommon/log"
 	"gopkg.in/h2non/bimg.v1"
 )
@@ -24,8 +24,11 @@ func (self *ImageEngine) Process(obj *object.FileObject) (*response.Response, er
 	if err != nil  {
 		return response.NewError(500, err), err
 	}
+
 	res := response.New(200, buf)
 	res.SetContentType("image/" + bimg.DetermineImageTypeName(buf))
+	res.Set("cache-control", "max-age=6000, public")
+
 	return res, nil
 }
 

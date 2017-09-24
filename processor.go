@@ -1,13 +1,13 @@
-package imgserver
+package mort
 
 
 import (
 
-	"imgserver/storage"
-	"imgserver/object"
-	"imgserver/response"
+	"mort/storage"
+	"mort/object"
+	"mort/response"
 	"gopkg.in/h2non/filetype.v1"
-	"imgserver/engine"
+	"mort/engine"
 )
 
 func Process(obj *object.FileObject) (*response.Response) {

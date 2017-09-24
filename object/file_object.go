@@ -5,8 +5,8 @@ import (
 	"regexp"
 	"errors"
 
-	"imgserver/config"
-	"imgserver/transforms"
+	"mort/config"
+	"mort/transforms"
 	Logger "github.com/labstack/gommon/log"
 )
 

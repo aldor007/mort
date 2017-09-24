@@ -8,10 +8,15 @@ import (
 	"mime"
 	"path"
 	"errors"
+
 	Logger "github.com/labstack/gommon/log"
-	"imgserver/object"
-	"imgserver/response"
-	"imgserver/config"
+	//"github.com/graymeta/stow"
+	//_ "github.com/graymeta/stow/s3"
+	//_ "github.com/graymeta/stow/local"
+
+	"mort/object"
+	"mort/response"
+	"mort/config"
 )
 
 var isUrl_RE = regexp.MustCompile("http://")

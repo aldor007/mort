@@ -1,18 +1,20 @@
 package main
 
 import (
+    "net/http"
+    "time"
 
-    "imgserver/object"
-    "imgserver/config"
+    "mort/object"
+    "mort/config"
     "github.com/labstack/echo"
-    "imgserver"
+    "mort"
 
-    "imgserver/response"
+    "mort/response"
 )
 
 func main() {
     imgConfig := config.GetInstance()
-    imgConfig.Init("config/config.yml")
+    imgConfig.Init("configuration/config.yml")
     // Echo instance
     e := echo.New()
 
@@ -22,13 +24,21 @@ func main() {
         if err != nil {
             return  ctx.NoContent(400)
         }
+// dodac placeholder
+        res := mort.Process(obj)
+        res.WriteHeaders(ctx.Response())
 
-        res := imgserver.Process(obj)
         e.Logger.Info("res headers %s", res.Headers)
         //return ctx.JSON(200, obj)
         return ctx.Blob(res.StatusCode, res.Headers[response.ContentType], res.Body)
     })
 
-    // Start server
-    e.Logger.Fatal(e.Start(":8080"))
+    s := &http.Server{
+        Addr:         ":8080",
+        ReadTimeout:  1 * time.Minute,
+        WriteTimeout: 1 * time.Minute,
+    }
+
+    e.Logger.Fatal(e.StartServer(s))
+
 }
