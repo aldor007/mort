@@ -1,22 +1,20 @@
 package mort
 
-
 import (
-
-	"mort/storage"
-	"mort/object"
-	"mort/response"
 	"gopkg.in/h2non/filetype.v1"
 	"mort/engine"
+	"mort/object"
+	"mort/response"
+	"mort/storage"
 )
 
-func Process(obj *object.FileObject) (*response.Response) {
+func Process(obj *object.FileObject) *response.Response {
 	var parent *response.Response
 	if obj.HasParent() {
 		parent = storage.Get(obj.GetParent())
 	}
 
-	if obj.Transforms.NotEmpty == false  {
+	if obj.Transforms.NotEmpty == false {
 		return storage.Get(obj)
 	}
 
@@ -31,7 +29,7 @@ func Process(obj *object.FileObject) (*response.Response) {
 	return storage.Get(obj)
 }
 
-func processImage(parent *response.Response, obj *object.FileObject) (*response.Response) {
+func processImage(parent *response.Response, obj *object.FileObject) *response.Response {
 	engine := engine.NewImageEngine(parent)
 	result, err := engine.Process(obj)
 	if err != nil {

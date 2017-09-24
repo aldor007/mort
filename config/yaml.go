@@ -1,6 +1,6 @@
 package config
 
-type LiipFiltersYAML struct {
+type PresetsYaml struct {
 	Quality int `yaml:"quality"`
 	Filters struct {
 		Thumbnail struct {
@@ -12,26 +12,35 @@ type LiipFiltersYAML struct {
 		} `yaml:"interlace"`
 		Crop struct {
 			Size  []int  `yaml:"size"`
-			Start []int `yaml:"start"`
-			Mode string `yaml:"mode"`
+			Start []int  `yaml:"start"`
+			Mode  string `yaml:"mode"`
 		} `yaml:"crop"`
 		SmartCrop struct {
 			Size []int  `yaml:"size"`
 			Mode string `yaml:"mode"`
 		} `yaml:"entropy_crop"`
 		AutoRotate interface{} `yaml:"auto_rtate"`
-		Strip      interface{}       `yaml:"strip"`
+		Strip      interface{} `yaml:"strip"`
 	} `yaml:"filters"`
 }
 
-type LiipConfigYAML struct {
-	LiipImagine struct {
-		Resolvers struct {
-			Default struct {
-				WebPath interface{} `yaml:"web_path"`
-			} `yaml:"default"`
-		} `yaml:"resolvers"`
-		FilterSets map[string] LiipFiltersYAML `yaml:"filter_sets"`
-	} `yaml:"liip_imagine"`
+type TransformYaml struct {
+	Path    string                 `yaml:"path"`
+	Kind    string                 `yaml:"kind"`
+	Presets map[string]PresetsYaml `yaml:"presets"`
 }
 
+type Storage struct {
+	RootPath   string `yaml:"rootPath"`
+	Kind       string `yaml:"kind"`
+}
+
+type StorageTypes struct {
+	Transform Storage `yaml:"transform"`
+	Basic     Storage `yaml:"basic"`
+}
+
+type Bucket struct {
+	Transform TransformYaml `yaml:"transform"`
+	Storages  StorageTypes `yaml:"storages"`
+}

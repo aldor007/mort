@@ -1,8 +1,6 @@
 package transforms
 
-type Param interface{
-
-
+type Param interface {
 }
 
 type Quailty struct {

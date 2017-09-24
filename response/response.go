@@ -1,23 +1,23 @@
 package response
 
 import (
-	"net/http"
 	"encoding/json"
+	"net/http"
 )
 
 const (
 	ContentType = "content-type"
 )
 
-type Response struct{
+type Response struct {
 	StatusCode int
-	Body []byte
-	Headers map[string] string
+	Body       []byte
+	Headers    map[string]string
 }
 
-func New(statusCode int, body []byte) *Response{
+func New(statusCode int, body []byte) *Response {
 	res := Response{StatusCode: statusCode, Body: body}
-	res.Headers = make(map[string] string)
+	res.Headers = make(map[string]string)
 	if body == nil {
 		res.SetContentType("application/octet-stream")
 	} else {
@@ -30,7 +30,7 @@ func NewError(statusCode int, err error) *Response {
 	body := map[string]string{"message": err.Error()}
 	jsonBody, _ := json.Marshal(body)
 	res := Response{StatusCode: statusCode, Body: jsonBody}
-	res.Headers = make(map[string] string)
+	res.Headers = make(map[string]string)
 	res.SetContentType("application/json")
 	return &res
 }

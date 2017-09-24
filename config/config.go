@@ -1,20 +1,14 @@
 package config
 
 import (
-	"sync"
-	"io/ioutil"
+	"fmt"
 	"gopkg.in/yaml.v2"
+	"io/ioutil"
+	"sync"
 )
 
 type Config struct {
-	LiipConfig map[string] LiipFiltersYAML
-	LocalFilesPath string `yaml:"localFileePath"`
-}
-
-type internalConfig  struct {
-	LiipConfigPath string `yaml:"liipConfigPath"`
-	LiipConfig LiipConfigYAML
-	LocalFilesPath string `yaml:"localFilesPath"`
+	Buckets map[string] Bucket `yaml:"buckets"`
 }
 
 var instance *Config
@@ -33,23 +27,10 @@ func (self *Config) Init(filePath string) {
 		panic(err)
 	}
 
-	internal := internalConfig{}
-	errYaml := yaml.Unmarshal([]byte(data), &internal)
+	errYaml := yaml.Unmarshal([]byte(data), self)
+
 	if errYaml != nil {
 		panic(errYaml)
 	}
 
-
-	data, err = ioutil.ReadFile(internal.LiipConfigPath)
-	if err != nil {
-		panic(err)
-	}
-
-	errYaml = yaml.Unmarshal([]byte(data), &internal.LiipConfig)
-	if errYaml != nil {
-		panic(errYaml)
-	}
-
-	self.LiipConfig = internal.LiipConfig.LiipImagine.FilterSets
-	self.LocalFilesPath = internal.LocalFilesPath
 }

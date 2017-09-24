@@ -1,25 +1,27 @@
 package storage
 
 import (
+	"errors"
 	"fmt"
-	"os"
-	"regexp"
 	"io/ioutil"
 	"mime"
+	"os"
 	"path"
-	"errors"
+	"regexp"
+	"path/filepath"
 
-	Logger "github.com/labstack/gommon/log"
+
 	"github.com/graymeta/stow"
-	_ "github.com/graymeta/stow/s3"
 	_ "github.com/graymeta/stow/local"
+	_ "github.com/graymeta/stow/s3"
+	Logger "github.com/labstack/gommon/log"
 
 	"mort/object"
 	"mort/response"
-	"mort/config"
 )
 
 var isUrl_RE = regexp.MustCompile("http://")
+
 const notFound = "{\"error\":\"not found\"}"
 
 // Dial dials stow storage.
@@ -28,17 +30,16 @@ func Dial(kind string, config stow.Config) (stow.Location, error) {
 	return stow.Dial(kind, config)
 }
 
-
-func Get(obj *object.FileObject) (*response.Response) {
+func Get(obj *object.FileObject) *response.Response {
 	key := obj.Key
 	if isUrl_RE.MatchString(key) || obj.UriType != object.URI_TYPE_LOCAL {
 		return response.NewError(400, errors.New("Not implemented"))
 	}
 
-	data, err := getFromDisk(key)
+	data, err := getFromDisk(obj, key)
 	if os.IsNotExist(err) {
 		fmt.Println(err)
-		return response.New( 404, []byte(notFound))
+		return response.New(404, []byte(notFound))
 	} else if err != nil {
 		return response.NewError(503, err)
 	}
@@ -46,11 +47,11 @@ func Get(obj *object.FileObject) (*response.Response) {
 	return prepareResponse(obj, data)
 }
 
-func getFromDisk(filePath string) ([]byte, error) {
-	return ioutil.ReadFile(config.GetInstance().LocalFilesPath + filePath)
+func getFromDisk(obj *object.FileObject, filePath string) ([]byte, error) {
+	return ioutil.ReadFile(filepath.Join(obj.Storage.RootPath, obj.Bucket,filePath))
 }
 
-func prepareResponse(obj *object.FileObject, data []byte) (*response.Response) {
+func prepareResponse(obj *object.FileObject, data []byte) *response.Response {
 	res := response.New(200, data)
 	res.SetContentType(mime.TypeByExtension(path.Ext(obj.Key)))
 	Logger.Infof("Resonse for %s %s", obj.Key, res.Headers)

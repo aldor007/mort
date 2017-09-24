@@ -1,7 +1,6 @@
 package engine
 
 import (
-
 	"mort/object"
 	"mort/response"
 	//Logger "github.com/labstack/gommon/log"
@@ -9,11 +8,11 @@ import (
 )
 
 type ImageEngine struct {
-	Input []byte
+	Input  []byte
 	parent *response.Response
 }
 
-func NewImageEngine (res *response.Response) *ImageEngine {
+func NewImageEngine(res *response.Response) *ImageEngine {
 	return &ImageEngine{Input: res.Body, parent: res}
 }
 
@@ -21,7 +20,7 @@ func (self *ImageEngine) Process(obj *object.FileObject) (*response.Response, er
 
 	image := bimg.NewImage(self.Input)
 	buf, err := image.Process(obj.Transforms.BimgOptions())
-	if err != nil  {
+	if err != nil {
 		return response.NewError(500, err), err
 	}
 
@@ -31,4 +30,3 @@ func (self *ImageEngine) Process(obj *object.FileObject) (*response.Response, er
 
 	return res, nil
 }
-
