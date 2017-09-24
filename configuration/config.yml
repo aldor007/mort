@@ -1,2 +1,7 @@
 liipConfigPath: "configuration/liip.yml"
 localFilesPath: "/Users/aldor/workspace/mkaciubacom/web"
+buckets:
+  media:
+    pathPrefix: "/Users/aldor/workspace/mkaciubacom/web"
+    storage:
+      kind: "local"

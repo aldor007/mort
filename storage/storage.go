@@ -10,9 +10,9 @@ import (
 	"errors"
 
 	Logger "github.com/labstack/gommon/log"
-	//"github.com/graymeta/stow"
-	//_ "github.com/graymeta/stow/s3"
-	//_ "github.com/graymeta/stow/local"
+	"github.com/graymeta/stow"
+	_ "github.com/graymeta/stow/s3"
+	_ "github.com/graymeta/stow/local"
 
 	"mort/object"
 	"mort/response"
@@ -21,6 +21,12 @@ import (
 
 var isUrl_RE = regexp.MustCompile("http://")
 const notFound = "{\"error\":\"not found\"}"
+
+// Dial dials stow storage.
+// See stow.Dial for more information.
+func Dial(kind string, config stow.Config) (stow.Location, error) {
+	return stow.Dial(kind, config)
+}
 
 
 func Get(obj *object.FileObject) (*response.Response) {
