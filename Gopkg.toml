@@ -1,0 +1,158 @@
+
+# Gopkg.toml example
+#
+# Refer to https://github.com/golang/dep/blob/master/docs/Gopkg.toml.md
+# for detailed Gopkg.toml documentation.
+#
+# required = ["github.com/user/thing/cmd/thing"]
+# ignored = ["github.com/user/project/pkgX", "bitbucket.org/user/project/pkgA/pkgY"]
+#
+# [[constraint]]
+#   name = "github.com/user/project"
+#   version = "1.0.0"
+#
+# [[constraint]]
+#   name = "github.com/user/project2"
+#   branch = "dev"
+#   source = "github.com/myfork/project2"
+#
+# [[override]]
+#  name = "github.com/x/y"
+#  version = "2.4.0"
+
+
+[[constraint]]
+  name = "cloud.google.com/go"
+  version = "0.13.0"
+
+[[constraint]]
+  name = "github.com/Azure/azure-sdk-for-go"
+  version = "10.3.1-beta"
+
+[[constraint]]
+  name = "github.com/aws/aws-sdk-go"
+  version = "1.10.51"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/cheekybits/is"
+
+[[constraint]]
+  name = "github.com/davecgh/go-spew"
+  version = "1.1.0"
+
+[[constraint]]
+  name = "github.com/dgrijalva/jwt-go"
+  version = "3.0.0"
+
+[[constraint]]
+  name = "github.com/google/go-cmp"
+  version = "0.1.0"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/graymeta/stow"
+
+[[constraint]]
+  name = "github.com/labstack/echo"
+  version = "3.2.3"
+
+[[constraint]]
+  name = "github.com/labstack/gommon"
+  version = "0.2.2"
+
+[[constraint]]
+  name = "github.com/mattn/go-colorable"
+  version = "0.0.9"
+
+[[constraint]]
+  name = "github.com/mattn/go-isatty"
+  version = "0.0.2"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/ncw/swift"
+
+[[constraint]]
+  name = "github.com/pkg/errors"
+  version = "0.8.0"
+
+[[constraint]]
+  name = "github.com/pmezard/go-difflib"
+  version = "1.0.0"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/stretchr/objx"
+
+[[constraint]]
+  name = "github.com/stretchr/testify"
+  version = "1.1.4"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/valyala/bytebufferpool"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/valyala/fasttemplate"
+
+[[constraint]]
+  branch = "master"
+  name = "go4.org"
+
+[[constraint]]
+  branch = "master"
+  name = "golang.org/x/crypto"
+
+[[constraint]]
+  branch = "master"
+  name = "golang.org/x/net"
+
+[[constraint]]
+  branch = "master"
+  name = "golang.org/x/oauth2"
+
+[[constraint]]
+  branch = "master"
+  name = "golang.org/x/sync"
+
+[[constraint]]
+  branch = "master"
+  name = "golang.org/x/sys"
+
+[[constraint]]
+  branch = "master"
+  name = "golang.org/x/text"
+
+[[constraint]]
+  branch = "master"
+  name = "google.golang.org/api"
+
+[[constraint]]
+  name = "google.golang.org/appengine"
+  version = "1.0.0"
+
+[[constraint]]
+  branch = "master"
+  name = "google.golang.org/genproto"
+
+[[constraint]]
+  name = "google.golang.org/grpc"
+  version = "1.6.0"
+
+[[constraint]]
+  branch = "v1"
+  name = "gopkg.in/check.v1"
+
+[[constraint]]
+  name = "gopkg.in/h2non/bimg.v1"
+  version = "1.0.14"
+
+[[constraint]]
+  name = "gopkg.in/h2non/filetype.v1"
+  version = "1.0.3"
+
+[[constraint]]
+  branch = "v2"
+  name = "gopkg.in/yaml.v2"
