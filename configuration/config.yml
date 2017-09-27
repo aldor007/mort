@@ -1,5 +1,5 @@
 buckets:
-    media:
+    media2:
         transform:
             path: "\\/+(?:cache|resolve)\\/([a-z0-9_]+)\\/+[a-z]+\\/[a-zA-Z0-9]+\\/+(.*)"
             kind: "presets"

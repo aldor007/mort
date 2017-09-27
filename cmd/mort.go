@@ -27,10 +27,11 @@ func main() {
 		// dodac placeholder
 		res := mort.Process(obj)
 		res.WriteHeaders(ctx.Response())
+		defer res.Close()
 
 		e.Logger.Info("res headers %s", res.Headers)
 		//return ctx.JSON(200, obj)
-		return ctx.Blob(res.StatusCode, res.Headers[response.ContentType], res.Body)
+		return ctx.Stream(res.StatusCode, res.Headers[response.ContentType], res.Stream)
 	})
 
 	s := &http.Server{
