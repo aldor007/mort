@@ -14,11 +14,11 @@ const (
 
 type Response struct {
 	StatusCode int
-	Stream     io.Reader
+	Stream     io.ReadCloser
 	Headers    map[string]string
 }
 
-func New(statusCode int, body io.Reader) *Response {
+func New(statusCode int, body io.ReadCloser) *Response {
 	res := Response{StatusCode: statusCode, Stream: body}
 	res.Headers = make(map[string]string)
 	if body == nil {
@@ -29,7 +29,7 @@ func New(statusCode int, body io.Reader) *Response {
 	return &res
 }
 func NewBuf(statusCode int, body []byte) *Response {
-	res := Response{StatusCode: statusCode, Stream: bytes.NewReader(body)}
+	res := Response{StatusCode: statusCode, Stream: ioutil.NopCloser(bytes.NewReader(body))}
 	res.Headers = make(map[string]string)
 	if body == nil {
 		res.SetContentType("application/octet-stream")
@@ -42,7 +42,7 @@ func NewBuf(statusCode int, body []byte) *Response {
 func NewError(statusCode int, err error) *Response {
 	body := map[string]string{"message": err.Error()}
 	jsonBody, _ := json.Marshal(body)
-	res := Response{StatusCode: statusCode, Stream: bytes.NewReader(jsonBody)}
+	res := Response{StatusCode: statusCode, Stream: ioutil.NopCloser(bytes.NewReader(jsonBody))}
 	res.Headers = make(map[string]string)
 	res.SetContentType("application/json")
 	return &res
@@ -68,5 +68,5 @@ func (r *Response) ReadBody() ([]byte, error)  {
 }
 
 func (r *Response) Close()  {
-	return
+	r.Close()
 }

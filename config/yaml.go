@@ -1,5 +1,7 @@
 package config
 
+import "regexp"
+
 type PresetsYaml struct {
 	Quality int `yaml:"quality"`
 	Filters struct {
@@ -25,9 +27,10 @@ type PresetsYaml struct {
 }
 
 type TransformYaml struct {
-	Path    string                 `yaml:"path"`
-	Kind    string                 `yaml:"kind"`
-	Presets map[string]PresetsYaml `yaml:"presets"`
+	Path    	  string                 `yaml:"path"`
+	PathRegexp   *regexp.Regexp
+	Kind          string                 `yaml:"kind"`
+	Presets       map[string]PresetsYaml `yaml:"presets"`
 }
 
 type Storage struct {
@@ -43,4 +46,9 @@ type StorageTypes struct {
 type Bucket struct {
 	Transform TransformYaml `yaml:"transform"`
 	Storages  StorageTypes `yaml:"storages"`
+}
+
+type HeaderYaml struct {
+	StatusCodes []int `yaml:"statusCodes""`
+	Values map[string]string `yaml:"values"`
 }
