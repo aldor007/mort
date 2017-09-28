@@ -31,11 +31,17 @@ type TransformYaml struct {
 	PathRegexp   *regexp.Regexp
 	Kind          string                 `yaml:"kind"`
 	Presets       map[string]PresetsYaml `yaml:"presets"`
+	Order        struct {
+		PresetName int `yaml:"presetName"`
+		Parent     int `yaml:"parent"`
+	} `yaml:"order"`
 }
 
 type Storage struct {
 	RootPath   string `yaml:"rootPath"`
 	Kind       string `yaml:"kind"`
+	Url        string `yaml:"url",omitempty`
+	Headers    map[string]string `yaml:"headers",omitempty`
 }
 
 type StorageTypes struct {

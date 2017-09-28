@@ -72,14 +72,14 @@ func (self *FileObject) decode() error {
 }
 
 func (self *FileObject) decodeKey(bucket config.Bucket) error {
-	//pathRe := bucket.Transform.PathRegexp
-	matches := bucket.Transform.PathRegexp.FindStringSubmatch(self.Key)
+	trans := bucket.Transform
+	matches := trans.PathRegexp.FindStringSubmatch(self.Key)
 	if len(matches) == 0 {
 		return nil
 	}
 
-	presetName := string(matches[1])
-	parent := "/" + string(matches[2])
+	presetName := string(matches[trans.Order.PresetName + 1])
+	parent := "/" + string(matches[trans.Order.Parent + 1])
 
 	self.Transforms = presetToTransform(bucket.Transform.Presets[presetName])
 	self.Parent = parent

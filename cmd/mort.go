@@ -27,6 +27,7 @@ func main() {
 		// dodac placeholder
 		res := mort.Process(obj)
 		res.WriteHeaders(ctx.Response())
+		defer res.Close()
 
 		return ctx.Stream(res.StatusCode, res.Headers[response.ContentType], res.Stream)
 	})

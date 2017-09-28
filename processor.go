@@ -8,7 +8,6 @@ import (
 	"mort/object"
 	"mort/response"
 	"mort/storage"
-	"fmt"
 )
 
 func Process(obj *object.FileObject) *response.Response {

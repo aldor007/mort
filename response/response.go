@@ -68,5 +68,5 @@ func (r *Response) ReadBody() ([]byte, error)  {
 }
 
 func (r *Response) Close()  {
-	r.Close()
+	r.Stream.Close()
 }

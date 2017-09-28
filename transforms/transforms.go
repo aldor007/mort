@@ -29,7 +29,9 @@ type Transforms struct {
 
 func (self *Transforms) ResizeT(size []int, enlarge bool) *Transforms {
 	self.Width = size[0]
-	self.Height = size[1]
+	if len(size) == 2 {
+		self.Height = size[1]
+	}
 	self.Enlarge = enlarge
 	self.NotEmpty = true
 	return self
