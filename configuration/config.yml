@@ -1,8 +1,22 @@
+headers:
+  - statusCodes: [200]
+    values:
+      "cache-control": "max-age=84000, public"
+  - statusCodes: [404, 400]
+    values:
+      "cache-control": "max-age=60, public"
+  - statusCodes: [500, 503]
+    values:
+      "cache-control": "max-age=10, public"
+
 buckets:
-    media:
+    liip:
         transform:
             path: "\\/+(?:cache|resolve)\\/([a-z0-9_]+)\\/+[a-z]+\\/[a-zA-Z0-9]+\\/+(.*)"
             kind: "presets"
+            order:
+              presetName: 0
+              parent: 1
             presets:
                 blog_small:
                     quality: 75
@@ -58,6 +72,75 @@ buckets:
             basic:
                 kind: "local"
                 rootPath: "/Users/aldor/workspace/mkaciubacom/web"
+            transform:
+                kind: "local"
+                rootPath: "/Users/aldor/workspace/mkaciubacom/web"
+    media:
+        transform:
+            path: "\\/\\w+\\/\\w+\\/\\w+\\/[a-z]+_([a-z0-9-]+)_([a-z0-9_]+).*"
+            kind: "presets"
+            order:
+              parent: 0
+              presetName: 1
+            presets:
+                default_small:
+                    quality: 95
+                    filters:
+                        thumbnail: {size: [150]}
+                default_medium:
+                    quality: 95
+                    filters:
+                        thumbnail: {size: [450]}
+                default_big:
+                    quality: 95
+                    filters:
+                        thumbnail: {size: [700]}
+                blog_small:
+                    quality: 75
+                    filters:
+                        thumbnail: {size: [150]}
+                blog_big:
+                    quality: 80
+                    filters:
+                        thumbnail: {size: [700]}
+                blog_big1000:
+                    quality: 100
+                    filters:
+                        thumbnail: {size: [1000]}
+                blog_big1300:
+                    quality: 100
+                    filters:
+                        thumbnail: {size: [1300]}
+                gallery_small:
+                    quality: 75
+                    filters:
+                        thumbnail: {size: [150]}
+                gallery_big:
+                    quality: 80
+                    filters:
+                        thumbnail: {size: [700]}
+                gallery_big1000:
+                    quality: 100
+                    filters:
+                        thumbnail: {size: [1000]}
+                gallery_big1300:
+                    quality: 100
+                    filters:
+                        thumbnail: {size: [1300]}
+                gallery_big300:
+                    quality: 100
+                    filters:
+                        thumbnail: {size: [300]}
+                gallery_big200:
+                    quality: 100
+                    filters:
+                        thumbnail: {size: [200]}
+        storages:
+            basic:
+                kind: "http"
+                url: "https://mkaciuba.pl/<container>/download/<item>"
+                headers:
+                  "x-auth": "1234"
             transform:
                 kind: "local"
                 rootPath: "/Users/aldor/workspace/mkaciubacom/web"

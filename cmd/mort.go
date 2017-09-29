@@ -20,17 +20,16 @@ func main() {
 
 	// Route => handler
 	e.GET("/*", func(ctx echo.Context) error {
-		obj, err := object.NewFileObject(ctx.Request().URL.Path)
+		obj, err := object.NewFileObject(ctx.Request().URL.Path, imgConfig)
 		if err != nil {
 			return ctx.NoContent(400)
 		}
 		// dodac placeholder
 		res := mort.Process(obj)
 		res.WriteHeaders(ctx.Response())
+		defer res.Close()
 
-		e.Logger.Info("res headers %s", res.Headers)
-		//return ctx.JSON(200, obj)
-		return ctx.Blob(res.StatusCode, res.Headers[response.ContentType], res.Body)
+		return ctx.Stream(res.StatusCode, res.Headers[response.ContentType], res.Stream)
 	})
 
 	s := &http.Server{
