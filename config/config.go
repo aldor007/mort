@@ -22,7 +22,7 @@ func GetInstance() *Config {
 	return instance
 }
 
-func (self *Config) Init(filePath string) {
+func (self *Config) Load(filePath string) {
 	data, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		panic(err)
