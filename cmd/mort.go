@@ -20,7 +20,7 @@ func main() {
 
 	// Route => handler
 	e.GET("/*", func(ctx echo.Context) error {
-		obj, err := object.NewFileObject(ctx.Request().URL.Path)
+		obj, err := object.NewFileObject(ctx.Request().URL.Path, imgConfig)
 		if err != nil {
 			return ctx.NoContent(400)
 		}

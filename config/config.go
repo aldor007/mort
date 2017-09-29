@@ -31,8 +31,10 @@ func (self *Config) Init(filePath string) {
 	errYaml := yaml.Unmarshal([]byte(data), self)
 
 	for name, bucket := range self.Buckets {
-		bucket.Transform.PathRegexp = regexp.MustCompile(bucket.Transform.Path)
-		self.Buckets[name] = bucket
+		if bucket.Transform != nil && bucket.Transform.Path != "" {
+			bucket.Transform.PathRegexp = regexp.MustCompile(bucket.Transform.Path)
+			self.Buckets[name] = bucket
+		}
 	}
 
 	if errYaml != nil {

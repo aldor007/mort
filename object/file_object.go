@@ -34,21 +34,21 @@ type FileObject struct {
 	Uri        string                `json:"uri"`
 	Bucket     string                `json:"bucket"`
 	Key        string                `json:"key"`
-	Parent     string                `json:"parent"`
 	Transforms transforms.Transforms `json:"transforms"`
 	Storage    config.Storage        `json:"storage"`
+	Parent    *FileObject
 }
 
-func NewFileObject(path string) (*FileObject, error) {
+func NewFileObject(path string, mortConfig *config.Config) (*FileObject, error) {
 	obj := FileObject{}
 	obj.Uri = path
 
-	err := obj.decode()
+	err := obj.decode(mortConfig)
 	Logger.Infof("key = %s bucket = %s parent = %s\n", obj.Key, obj.Bucket, obj.Parent)
 	return &obj, err
 }
 
-func (self *FileObject) decode() error {
+func (self *FileObject) decode(mortConfig *config.Config) error {
 	elements := strings.Split(self.Uri, "/")
 	if len(elements) < 3 {
 		return errors.New("Invalid path")
@@ -56,8 +56,8 @@ func (self *FileObject) decode() error {
 
 	self.Bucket = elements[1]
 	self.Key = "/" + strings.Join(elements[2:], "/")
-	if bucket, ok := config.GetInstance().Buckets[self.Bucket]; ok {
-		self.decodeKey(bucket)
+	if bucket, ok := mortConfig.Buckets[self.Bucket]; ok {
+		self.decodeKey(bucket, mortConfig)
 		if self.HasTransform() {
 			self.Storage = bucket.Storages.Transform
 		} else {
@@ -71,10 +71,14 @@ func (self *FileObject) decode() error {
 	return nil
 }
 
-func (self *FileObject) decodeKey(bucket config.Bucket) error {
+func (self *FileObject) decodeKey(bucket config.Bucket, mortConfig *config.Config) error {
+	if bucket.Transform == nil {
+		return nil
+	}
+
 	trans := bucket.Transform
 	matches := trans.PathRegexp.FindStringSubmatch(self.Key)
-	if len(matches) == 0 {
+	if len(matches)  < 3 {
 		return nil
 	}
 
@@ -82,18 +86,18 @@ func (self *FileObject) decodeKey(bucket config.Bucket) error {
 	parent := "/" + string(matches[trans.Order.Parent + 1])
 
 	self.Transforms = presetToTransform(bucket.Transform.Presets[presetName])
-	self.Parent = parent
+	parentObj, _ := NewFileObject(parent, mortConfig)
+	self.Parent = parentObj
 	return nil
 }
 
 
 func (self *FileObject) GetParent() *FileObject {
-	parent, _ := NewFileObject(self.Parent)
-	return parent
+	return self.Parent
 }
 
 func (self *FileObject) HasParent() bool {
-	return self.Parent != ""
+	return self.Parent != nil
 }
 
 func (self *FileObject) HasTransform() bool {

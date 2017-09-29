@@ -1,0 +1,6 @@
+buckets:
+    bucket:
+        storages:
+            basic:
+                kind: "local"
+                rootPath: "/Users/aldor/workspace/mkaciubacom/web"

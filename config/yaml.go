@@ -50,7 +50,7 @@ type StorageTypes struct {
 }
 
 type Bucket struct {
-	Transform TransformYaml `yaml:"transform"`
+	Transform *TransformYaml `yaml:"transform",omitempty`
 	Storages  StorageTypes `yaml:"storages"`
 }
 

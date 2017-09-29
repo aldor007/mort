@@ -1,0 +1,21 @@
+buckets:
+    bucket:
+        transform:
+            path: "\\/+(?:[a-z)+\\/([a-z0-9_]+)\\/(.*)"
+            kind: "presets"
+            order:
+              presetName: 0
+              parent: 1
+            presets:
+                blog_small:
+                    quality: 75
+                    filters:
+                        thumbnail: { size: [100, 70], mode: outbound }
+                        interlace:
+                            mode: line
+        storages:
+            basic:
+                kind: "local"
+                rootPath: "/Users/aldor/workspace/mkaciubacom/web"
+            transform:
+                kind: "local"
