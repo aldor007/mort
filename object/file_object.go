@@ -36,7 +36,7 @@ type FileObject struct {
 	Key        string                `json:"key"`
 	Transforms transforms.Transforms `json:"transforms"`
 	Storage    config.Storage        `json:"storage"`
-	Parent    *FileObject
+	Parent     *FileObject
 }
 
 func NewFileObject(path string, mortConfig *config.Config) (*FileObject, error) {
@@ -78,22 +78,17 @@ func (self *FileObject) decodeKey(bucket config.Bucket, mortConfig *config.Confi
 
 	trans := bucket.Transform
 	matches := trans.PathRegexp.FindStringSubmatch(self.Key)
-	if len(matches)  < 3 {
+	if len(matches) < 3 {
 		return nil
 	}
 
-	presetName := string(matches[trans.Order.PresetName + 1])
-	parent := "/" + string(matches[trans.Order.Parent + 1])
+	presetName := string(matches[trans.Order.PresetName+1])
+	parent := "/" + string(matches[trans.Order.Parent+1])
 
 	self.Transforms = presetToTransform(bucket.Transform.Presets[presetName])
 	parentObj, _ := NewFileObject(parent, mortConfig)
 	self.Parent = parentObj
 	return nil
-}
-
-
-func (self *FileObject) GetParent() *FileObject {
-	return self.Parent
 }
 
 func (self *FileObject) HasParent() bool {

@@ -3,13 +3,13 @@ package config
 import (
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
-	"sync"
 	"regexp"
+	"sync"
 )
 
 type Config struct {
-	Buckets map[string] Bucket `yaml:"buckets"`
-	Headers []HeaderYaml       `yaml:"headers"`
+	Buckets map[string]Bucket `yaml:"buckets"`
+	Headers []HeaderYaml      `yaml:"headers"`
 }
 
 var instance *Config

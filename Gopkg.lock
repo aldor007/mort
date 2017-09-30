@@ -38,6 +38,18 @@
   revision = "68e9c0620927fb5427fda3708222d0edee89eae9"
 
 [[projects]]
+  name = "github.com/coreos/etcd"
+  packages = ["client","pkg/pathutil","pkg/srv","pkg/types","version"]
+  revision = "e211fb6de3cb306aee245422e599ac521f6e21f7"
+  version = "v3.2.8"
+
+[[projects]]
+  name = "github.com/coreos/go-semver"
+  packages = ["semver"]
+  revision = "8ab6407b697782a06568d4b7f1db25550ec2e4c6"
+  version = "v0.2.0"
+
+[[projects]]
   name = "github.com/davecgh/go-spew"
   packages = ["spew","spew/testdata"]
   revision = "346938d642f2ec3594ed81d874461961cd0faa76"
@@ -62,6 +74,12 @@
   revision = "87d4990451a858cc210399285be976e63bc3c364"
 
 [[projects]]
+  name = "github.com/fsnotify/fsnotify"
+  packages = ["."]
+  revision = "629574ca2a5df945712d3079857300b5e4da0236"
+  version = "v1.4.2"
+
+[[projects]]
   name = "github.com/go-ini/ini"
   packages = ["."]
   revision = "20b96f641a5ea98f2f8619ff4f3e061cff4833bd"
@@ -75,8 +93,14 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/gokyle/fswatch"
+  packages = ["."]
+  revision = "1dbdf8320a690537582afe0f45c947f501adeaad"
+
+[[projects]]
+  branch = "master"
   name = "github.com/golang/geo"
-  packages = ["r3","s1"]
+  packages = ["r1","r2","r3","s1"]
   revision = "6fb829cea43026b93220f914ca1043fdbbb35414"
 
 [[projects]]
@@ -87,7 +111,7 @@
 
 [[projects]]
   name = "github.com/golang/mock"
-  packages = ["gomock"]
+  packages = ["gomock","gomock/mock_matcher","mockgen/model","sample","sample/imp1","sample/imp2","sample/imp3","sample/imp4","sample/mock_user"]
   revision = "13f360950a79f5864a972c786a10a50e44b69541"
   version = "v1.0.0"
 
@@ -106,7 +130,7 @@
 [[projects]]
   branch = "master"
   name = "github.com/google/pprof"
-  packages = ["profile"]
+  packages = ["driver","internal/binutils","internal/driver","internal/elfexec","internal/graph","internal/measurement","internal/plugin","internal/proftest","internal/report","internal/symbolizer","internal/symbolz","profile","third_party/svg"]
   revision = "43bdac25ec8dcf95b98bba82e7a162ff406a20b3"
 
 [[projects]]
@@ -118,13 +142,13 @@
 [[projects]]
   branch = "master"
   name = "github.com/gopherjs/gopherjs"
-  packages = ["js"]
+  packages = ["build","compiler","compiler/analysis","compiler/astutil","compiler/filter","compiler/natives","compiler/prelude","compiler/typesutil","internal/sysutil","js","tests/otherpkg"]
   revision = "b40cd48c38f9a18eb3db20d163bad78de12cf0b7"
 
 [[projects]]
   branch = "master"
   name = "github.com/graymeta/stow"
-  packages = [".","local","test"]
+  packages = [".","local","s3","test"]
   revision = "1c51f76db54d79c9db24cb131011632eb586196c"
 
 [[projects]]
@@ -140,6 +164,18 @@
   revision = "bf9dde6d0d2c004a008c27aaee91170c786f6db8"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/ianlancetaylor/demangle"
+  packages = ["."]
+  revision = "4883227f66371e02c4948937d3e2be1664d9be38"
+
+[[projects]]
+  name = "github.com/inconshreveable/mousetrap"
+  packages = ["."]
+  revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
+  version = "v1.0"
+
+[[projects]]
   name = "github.com/jmespath/go-jmespath"
   packages = ["."]
   revision = "3433f3ea46d9f8019119e7dd41274e112a2359a9"
@@ -150,6 +186,12 @@
   packages = ["."]
   revision = "77f18212c9c7edc9bd6a33d383a7b545ce62f064"
   version = "v4.2.1"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/kisielk/gotool"
+  packages = [".","internal/load"]
+  revision = "d6ce6262d87e3a4e153e86023ff56ae771554a41"
 
 [[projects]]
   name = "github.com/labstack/echo"
@@ -183,6 +225,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/mgutz/goa"
+  packages = [".","filter"]
+  revision = "d673c4ff3be94468852a044acd92b006a6b49c35"
+
+[[projects]]
+  branch = "master"
   name = "github.com/mgutz/minimist"
   packages = ["."]
   revision = "39eb8cf573ca29344bd7d7e6ba4d7febdebd37a9"
@@ -210,6 +258,18 @@
   name = "github.com/ncw/swift"
   packages = [".","rs","swifttest"]
   revision = "9d3f812e23d270d1c66a9a01e20af1005061cdc4"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/neelance/astrewrite"
+  packages = ["."]
+  revision = "99348263ae862cc230986ce88deaddbf7edcc034"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/neelance/sourcemap"
+  packages = ["."]
+  revision = "8c68805598ab8d5637b1a72b5f7d381ea0f39c31"
 
 [[projects]]
   name = "github.com/nozzle/throttler"
@@ -248,6 +308,18 @@
   revision = "aed1bfe463fa3c9cc268d60dcc1491db613bff7e"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/shurcooL/go"
+  packages = ["importgraphutil"]
+  revision = "c661e953e604ba4a84a3c4e458462a481bd6ce72"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/shurcooL/httpfs"
+  packages = ["filter"]
+  revision = "bc35257962c2dea93e81c976b72c7c6eac45fd8a"
+
+[[projects]]
   name = "github.com/smartystreets/assertions"
   packages = [".","internal/go-render/render","internal/oglematchers"]
   revision = "9c0ea8acbc1d8ad689f9e6fe0c1fa5838e0cabc2"
@@ -255,9 +327,27 @@
 
 [[projects]]
   name = "github.com/smartystreets/goconvey"
-  packages = ["convey","convey/gotest","convey/reporting"]
+  packages = ["convey","convey/gotest","convey/reporting","web/server/api","web/server/contract","web/server/executor","web/server/messaging","web/server/parser","web/server/system","web/server/watch"]
   revision = "9e8dc3f972df6c8fcc0375ef492c24d0bb204857"
   version = "1.6.3"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/smartystreets/gunit"
+  packages = ["."]
+  revision = "facf494c156c1304fb1b3f2d1006c03c7cd9af41"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/spf13/cobra"
+  packages = ["."]
+  revision = "e5f66de850af3302fbe378c8acded2b0fa55472c"
+
+[[projects]]
+  name = "github.com/spf13/pflag"
+  packages = ["."]
+  revision = "e57e3eeb33f795204c1ca35f56c44f83227c6e66"
+  version = "v1.0.0"
 
 [[projects]]
   branch = "master"
@@ -276,6 +366,12 @@
   packages = ["."]
   revision = "ff4a55a20a86994118644bbddc6a216da193cc13"
   version = "v2.0.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/ugorji/go"
+  packages = ["codec"]
+  revision = "54210f4e076c57f351166f0ed60e67d3fca57a36"
 
 [[projects]]
   branch = "master"
@@ -303,6 +399,12 @@
 
 [[projects]]
   branch = "master"
+  name = "golang.org/x/build"
+  packages = ["autocertcache"]
+  revision = "f6341f92eb79b2db0650a60b11e0c3f877f275c7"
+
+[[projects]]
+  branch = "master"
   name = "golang.org/x/crypto"
   packages = ["acme","acme/autocert","blowfish","cast5","chacha20poly1305/internal/chacha20","cryptobyte","cryptobyte/asn1","curve25519","ed25519","ed25519/internal/edwards25519","hkdf","md4","nacl/auth","nacl/box","nacl/secretbox","openpgp","openpgp/armor","openpgp/elgamal","openpgp/errors","openpgp/packet","openpgp/s2k","pbkdf2","pkcs12","pkcs12/internal/rc2","poly1305","ripemd160","salsa20/salsa","ssh","ssh/agent","ssh/terminal","ssh/testdata"]
   revision = "7d9177d70076375b9a59c8fde23d52d9c4a7ecd5"
@@ -310,7 +412,7 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/debug"
-  packages = [".","arch","dwarf","elf","local","macho","server","server/protocol"]
+  packages = [".","arch","dwarf","elf","local","macho","remote","server","server/protocol"]
   revision = "f11d3bcfb62fc8e5d737acc91534fad5e188b8d4"
 
 [[projects]]
@@ -352,7 +454,7 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/tools"
-  packages = ["go/ast/astutil","go/buildutil","go/loader"]
+  packages = ["benchmark/parse","blog","blog/atom","cmd/guru","cmd/guru/serial","container/intsets","cover","go/ast/astutil","go/buildutil","go/callgraph","go/callgraph/cha","go/callgraph/rta","go/callgraph/static","go/gccgoexportdata","go/gcexportdata","go/gcimporter15","go/internal/gccgoimporter","go/loader","go/pointer","go/ssa","go/ssa/interp","go/ssa/ssautil","go/types/typeutil","godoc","godoc/analysis","godoc/dl","godoc/proxy","godoc/redirect","godoc/short","godoc/static","godoc/util","godoc/vfs","godoc/vfs/gatefs","godoc/vfs/httpfs","godoc/vfs/mapfs","godoc/vfs/zipfs","imports","playground","playground/socket","present","refactor/eg","refactor/importgraph","refactor/rename","refactor/satisfy"]
   revision = "e531a2a1c15f94033f6fa87666caeb19a688175f"
 
 [[projects]]
@@ -386,6 +488,12 @@
   revision = "20d25e2804050c1cd24a7eea1e7a6447dd0e74ec"
 
 [[projects]]
+  name = "gopkg.in/godo.v1"
+  packages = [".","util","watcher"]
+  revision = "60979dc29b693e86b330512ce0a00f77856d5dd3"
+  version = "v1.4.5"
+
+[[projects]]
   name = "gopkg.in/godo.v2"
   packages = [".","glob","util","watcher","watcher/fswatch"]
   revision = "b5fd2f0bef1ebe832e628cfad18ab1cc707f65a1"
@@ -399,9 +507,15 @@
 
 [[projects]]
   name = "gopkg.in/h2non/filetype.v1"
-  packages = [".","matchers","types"]
+  packages = ["matchers","types"]
   revision = "22e255079ab40241c671d457081831d972f0436b"
   version = "v1.0.3"
+
+[[projects]]
+  name = "gopkg.in/stretchr/testify.v1"
+  packages = ["assert"]
+  revision = "69483b4bd14f5845b5a1e55bca19e954e827f1d0"
+  version = "v1.1.4"
 
 [[projects]]
   branch = "v2"
@@ -412,6 +526,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "00bb3c791e56c0d53c52a239d07fd5d07868bacffaf5e9ac190626092f11ed3c"
+  inputs-digest = "e4e00130c1864d12199f0d566c15468cbc9b8b2b65cc4383dc5d20d92df14d02"
   solver-name = "gps-cdcl"
   solver-version = 1

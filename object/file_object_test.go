@@ -24,13 +24,9 @@ func TestNewFileObjectNoTransform(t *testing.T) {
 
 	assert.NotNil(t, obj)
 
-	if obj.HasParent()  {
-		t.Errorf("Obj shouldn't have parent")
-	}
+	assert.False(t, obj.HasParent(), "obj shouldn't have parent")
 
-	if obj.Storage.Kind != "local" {
-		t.Errorf("obj should have storage with kind of local")
-	}
+	assert.Equal(t, "local", obj.Storage.Kind, "obj should have storage with kind of local")
 
 }
 
@@ -39,42 +35,25 @@ func TestNewFileObjectTransform(t *testing.T) {
 	mortConfig.Load("testdata/bucket-transform.yml")
 	obj, err := NewFileObject("/bucket/blog_small/bucket/parent.jpg", mortConfig)
 
-	if err != nil  {
-		 t.Errorf("Unexpected to have error when parsing path")
-	}
+	assert.Nil(t, err, "Unexpected to have error when parsing path")
 
-	if obj == nil {
-		t.Errorf("Obj shouldn't be nil")
-	}
+	assert.NotNil(t, obj, "obj should be nil")
 
-	if !obj.HasParent()  {
-		t.Errorf("Obj should have parent")
-		t.FailNow()
-	}
+	assert.True(t, obj.HasParent(), "obj should have parent")
 
 	parent := obj.Parent
-	if parent.Key != "/parent.jpg" {
-		t.Errorf("Invalid parent key %s", parent.Key)
 
-	}
+	assert.Equal(t, "/parent.jpg", parent.Key, "invalid parent key")
 
-	if parent.HasParent() {
-		t.Errorf("Parent shouldn't have parent")
-	}
+	assert.False(t, parent.HasParent(), "parent should't have parent")
 
-	if !obj.HasTransform() {
-		t.Errorf("Object should have transformss")
-	}
+	assert.True(t, obj.HasTransform(), "obj should have transform")
 
 	transCfg := obj.Transforms.BimgOptions()
 
-	if transCfg.Width != 100 {
-		t.Errorf("Transform should have 100 px on witdh but has %s", transCfg.Width)
-	}
+	assert.Equal(t, 100, transCfg.Width, "invalid width for transform")
 
-	if transCfg.Height != 100 {
-		t.Errorf("Transform should have 100 px on witdh but has %s", transCfg.Width)
-	}
+	assert.Equal(t, 100, transCfg.Height, "invalid height for transform")
 
 }
 
@@ -83,52 +62,41 @@ func TestNewFileObjectTransformOnlyWitdh(t *testing.T) {
 	mortConfig.Load("testdata/bucket-transform.yml")
 	obj, err := NewFileObject("/bucket/width/bucket/parent.jpg", mortConfig)
 
-	if err != nil  {
-		t.Errorf("Unexpected to have error when parsing path")
-	}
+	assert.Nil(t, err, "Unexpected to have error when parsing path")
 
-	if obj == nil {
-		t.Errorf("Obj shouldn't be nil")
-	}
+	assert.NotNil(t, obj, "obj should be nil")
+
+	assert.True(t, obj.HasParent(), "obj should have parent")
+
+	parent := obj.Parent
+
+	assert.Equal(t, "/parent.jpg", parent.Key, "invalid parent key")
+
+	assert.False(t, parent.HasParent(), "parent should't have parent")
+
+	assert.True(t, obj.HasTransform(), "obj should have transform")
 
 	transCfg := obj.Transforms.BimgOptions()
 
-	if transCfg.Width != 100 {
-		t.Errorf("Transform should have 100 px on witdh but has %s", transCfg.Width)
-	}
+	assert.Equal(t, 100, transCfg.Width, "invalid width for transform")
 
-	if transCfg.Height != 0 {
-		t.Errorf("Transform should have 100 px on witdh but has %s", transCfg.Width)
-	}
-
+	assert.Equal(t, 0, transCfg.Height, "invalid height for transform")
 }
 
 func TestNewFileObjecWithNestedParent(t *testing.T) {
 	mortConfig := config.GetInstance()
 	mortConfig.Load("testdata/bucket-transform.yml")
-	obj, err := NewFileObject("/bucket/width/bucket/height/parent.jpg", mortConfig)
+	obj, err := NewFileObject("/bucket/width/bucket/height/bucket/parent.jpg", mortConfig)
 
-	if err != nil  {
-		t.Errorf("Unexpected to have error when parsing path")
-	}
+	assert.Nil(t, err, "Unexpected to have error when parsing path")
 
-	if obj == nil {
-		t.Errorf("Obj shouldn't be nil")
-	}
+	assert.NotNil(t, obj, "obj should be nil")
 
-	if !obj.HasParent()  {
-		t.Errorf("Obj should have parent")
-		t.FailNow()
-	}
+	assert.True(t, obj.HasParent(), "obj should have parent")
 
 	parent := obj.Parent
 
-	if !parent.HasParent() {
-		t.Errorf("Parent shouldn't have parent")
-	}
+	assert.True(t, parent.HasParent(), "parent should have parent")
 
-	if parent.Parent.Key != "/parent.jpg" {
-		t.Errorf("Parent should have parent /parent.jpg %s", parent.Parent.Key)
-	}
-
+	assert.Equal(t, "/parent.jpg", parent.Parent.Key, "parent of parent should have correct path")
 }
