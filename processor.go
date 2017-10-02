@@ -8,32 +8,63 @@ import (
 	"mort/object"
 	"mort/response"
 	"mort/storage"
+	"mort/transforms"
 )
 
 func Process(obj *object.FileObject) *response.Response {
-	var parent *response.Response
-	if obj.HasParent() {
-		parent = storage.Get(obj.GetParent())
+	// first check if object is on storage
+	res := updateHeaders(storage.Get(obj))
+
+	if res.StatusCode != 404 {
+		return res
 	}
 
-	if obj.Transforms.NotEmpty == false {
-		return updateHeaders(storage.Get(obj))
+	// if not check if we can try to perform transformation on it
+
+	// object doesn't have parent and we cannot do transfrom if it hasn't parent.
+	// So we are returning response from storage
+	if !obj.HasParent() {
+		return res
 	}
 
-	if parent.StatusCode == 404 {
-		return updateHeaders(parent)
+	var currObj *object.FileObject = obj
+	var parentObj *object.FileObject
+	var transforms []transforms.Transforms
+	// search for last parent
+	for currObj.HasParent() {
+		if currObj.HasTransform() {
+			transforms = append(transforms, currObj.Transforms)
+		}
+		currObj = currObj.Parent
+
+		if !currObj.HasParent() {
+			parentObj = currObj
+		}
 	}
 
-	if strings.Contains(parent.Headers[response.ContentType], "image/")  {
-		return updateHeaders(processImage(parent, obj))
+	// get parent from storage
+	res = updateHeaders(storage.Get(parentObj))
+
+	if res.StatusCode == 404 {
+		return res
+	}
+
+	if strings.Contains(res.Headers[response.ContentType], "image/") {
+		// revers order of transforms
+		for i := 0; i < len(transforms)/2; i++ {
+			j := len(transforms) - i - 1
+			transforms[i], transforms[j] = transforms[j], transforms[i]
+		}
+
+		return updateHeaders(processImage(res, transforms))
 	}
 
 	return updateHeaders(storage.Get(obj))
 }
 
-func processImage(parent *response.Response, obj *object.FileObject) *response.Response {
+func processImage(parent *response.Response, transforms []transforms.Transforms) *response.Response {
 	engine := engine.NewImageEngine(parent)
-	result, err := engine.Process(obj)
+	result, err := engine.Process(transforms)
 	if err != nil {
 		return response.NewError(400, err)
 	}

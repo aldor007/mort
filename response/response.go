@@ -1,11 +1,11 @@
 package response
 
 import (
-	"encoding/json"
-	"net/http"
-	"io"
 	"bytes"
+	"encoding/json"
+	"io"
 	"io/ioutil"
+	"net/http"
 )
 
 const (
@@ -63,10 +63,10 @@ func (r *Response) WriteHeaders(writer http.ResponseWriter) {
 	}
 }
 
-func (r *Response) ReadBody() ([]byte, error)  {
+func (r *Response) ReadBody() ([]byte, error) {
 	return ioutil.ReadAll(r.Stream)
 }
 
-func (r *Response) Close()  {
+func (r *Response) Close() {
 	r.Stream.Close()
 }

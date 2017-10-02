@@ -14,7 +14,7 @@ import (
 
 func main() {
 	imgConfig := config.GetInstance()
-	imgConfig.Init("configuration/config.yml")
+	imgConfig.Load("configuration/config.yml")
 	// Echo instance
 	e := echo.New()
 

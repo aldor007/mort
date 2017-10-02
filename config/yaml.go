@@ -27,21 +27,21 @@ type PresetsYaml struct {
 }
 
 type TransformYaml struct {
-	Path    	  string                 `yaml:"path"`
-	PathRegexp   *regexp.Regexp
-	Kind          string                 `yaml:"kind"`
-	Presets       map[string]PresetsYaml `yaml:"presets"`
-	Order        struct {
+	Path       string `yaml:"path"`
+	PathRegexp *regexp.Regexp
+	Kind       string                 `yaml:"kind"`
+	Presets    map[string]PresetsYaml `yaml:"presets"`
+	Order      struct {
 		PresetName int `yaml:"presetName"`
 		Parent     int `yaml:"parent"`
 	} `yaml:"order"`
 }
 
 type Storage struct {
-	RootPath   string `yaml:"rootPath"`
-	Kind       string `yaml:"kind"`
-	Url        string `yaml:"url",omitempty`
-	Headers    map[string]string `yaml:"headers",omitempty`
+	RootPath string            `yaml:"rootPath"`
+	Kind     string            `yaml:"kind"`
+	Url      string            `yaml:"url",omitempty`
+	Headers  map[string]string `yaml:"headers",omitempty`
 }
 
 type StorageTypes struct {
@@ -51,10 +51,10 @@ type StorageTypes struct {
 
 type Bucket struct {
 	Transform *TransformYaml `yaml:"transform",omitempty`
-	Storages  StorageTypes `yaml:"storages"`
+	Storages  StorageTypes   `yaml:"storages"`
 }
 
 type HeaderYaml struct {
-	StatusCodes []int `yaml:"statusCodes""`
-	Values map[string]string `yaml:"values"`
+	StatusCodes []int             `yaml:"statusCodes""`
+	Values      map[string]string `yaml:"values"`
 }

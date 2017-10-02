@@ -5,9 +5,9 @@ import (
 	"mime"
 	"path"
 
-	"github.com/graymeta/stow"
-	fileStorage "github.com/graymeta/stow/local"
-	_ "github.com/graymeta/stow/s3"
+	"github.com/aldor007/stow"
+	fileStorage "github.com/aldor007/stow/local"
+	_ "github.com/aldor007/stow/s3"
 
 	"mort/object"
 	"mort/response"
@@ -15,37 +15,37 @@ import (
 
 const notFound = "{\"error\":\"not found\"}"
 
-
 func Get(obj *object.FileObject) *response.Response {
 	key := obj.Key
 	client, err := getClient(obj)
 	if err != nil {
+
 		return response.NewError(503, err)
 	}
 
-	item, errItem := client.Item(key)
-	if errItem != nil {
-		if errItem == stow.ErrNotFound {
+	item, err := client.Item(key)
+	if err != nil {
+		if err == stow.ErrNotFound {
 			return response.NewBuf(404, []byte(notFound))
 		}
 
-		return response.NewError(544, errItem)
+		return response.NewError(544, err)
 	}
 
-	reader, errOpen := item.Open()
-	if errOpen != nil {
-		return response.NewError(500, errOpen)
+	reader, err := item.Open()
+	if err != nil {
+		return response.NewError(500, err)
 	}
 
 	return prepareResponse(obj, reader)
 }
 
-func getClient(obj *object.FileObject)  (stow.Container, error){
+func getClient(obj *object.FileObject) (stow.Container, error) {
 	storageCfg := obj.Storage
 	var config stow.Config
 	var client stow.Location
 
-	if storageCfg.Kind ==  "local" {
+	if storageCfg.Kind == "local" {
 		config = stow.ConfigMap{
 			fileStorage.ConfigKeyPath: storageCfg.RootPath,
 		}
@@ -53,7 +53,7 @@ func getClient(obj *object.FileObject)  (stow.Container, error){
 
 	client, err := stow.Dial(storageCfg.Kind, config)
 	if err != nil {
-		return nil,  err
+		return nil, err
 	}
 
 	// XXX: check if it is ok
