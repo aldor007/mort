@@ -11,6 +11,9 @@ headers:
 
 buckets:
     liip:
+        keys:
+          - accessKey: "acc"
+            secretAccessKey: "sec"
         transform:
             path: "\\/+(?:cache|resolve)\\/([a-z0-9_]+)\\/+[a-z]+\\/[a-zA-Z0-9]+\\/+(.*)"
             kind: "presets"
@@ -76,6 +79,9 @@ buckets:
                 kind: "local"
                 rootPath: "/Users/aldor/workspace/mkaciubacom/web"
     media:
+        keys:
+          - accessKey: "acc"
+            secretAccessKey: "sec"
         transform:
             path: "\\/\\w+\\/\\w+\\/\\w+\\/[a-z]+_([a-z0-9-]+)_([a-z0-9_]+).*"
             kind: "presets"

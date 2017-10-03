@@ -18,6 +18,8 @@ func main() {
 	// Echo instance
 	e := echo.New()
 
+	e.Use(mort.S3Middleware(imgConfig))
+
 	// Route => handler
 	e.GET("/*", func(ctx echo.Context) error {
 		obj, err := object.NewFileObject(ctx.Request().URL.Path, imgConfig)
