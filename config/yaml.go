@@ -49,9 +49,15 @@ type StorageTypes struct {
 	Basic     Storage `yaml:"basic"`
 }
 
+type S3Key struct {
+	AccessKey       string `yaml:"accessKey"`
+	SecretAccessKey string `yaml:"secretAccessKey"`
+}
+
 type Bucket struct {
 	Transform *TransformYaml `yaml:"transform",omitempty`
 	Storages  StorageTypes   `yaml:"storages"`
+	Keys      []S3Key       `yaml:"keys"`
 }
 
 type HeaderYaml struct {
