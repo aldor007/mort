@@ -13,14 +13,16 @@ const (
 )
 
 type Response struct {
-	StatusCode int
-	Stream     io.ReadCloser
-	Headers    map[string]string
+	StatusCode    int
+	Stream        io.ReadCloser
+	Headers       http.Header
+	ContentLength int64
+	ContentType   string
 }
 
 func New(statusCode int, body io.ReadCloser) *Response {
 	res := Response{StatusCode: statusCode, Stream: body}
-	res.Headers = make(map[string]string)
+	res.Headers = make(http.Header)
 	if body == nil {
 		res.SetContentType("application/octet-stream")
 	} else {
@@ -30,7 +32,8 @@ func New(statusCode int, body io.ReadCloser) *Response {
 }
 func NewBuf(statusCode int, body []byte) *Response {
 	res := Response{StatusCode: statusCode, Stream: ioutil.NopCloser(bytes.NewReader(body))}
-	res.Headers = make(map[string]string)
+	res.ContentLength = int64(len(body))
+	res.Headers = make(http.Header)
 	if body == nil {
 		res.SetContentType("application/octet-stream")
 	} else {
@@ -43,24 +46,27 @@ func NewError(statusCode int, err error) *Response {
 	body := map[string]string{"message": err.Error()}
 	jsonBody, _ := json.Marshal(body)
 	res := Response{StatusCode: statusCode, Stream: ioutil.NopCloser(bytes.NewReader(jsonBody))}
-	res.Headers = make(map[string]string)
+	res.ContentLength = int64(len(jsonBody))
+	res.Headers = make(http.Header)
 	res.SetContentType("application/json")
 	return &res
 }
 
 func (r *Response) SetContentType(contentType string) *Response {
-	r.Headers[ContentType] = contentType
+	r.Headers.Set(ContentType, contentType)
+	r.ContentType = ContentType
 	return r
 }
 
 func (r *Response) Set(headerName string, headerValue string) {
-	r.Headers[headerName] = headerValue
+	r.Headers.Set(headerName, headerValue)
 }
 
 func (r *Response) WriteHeaders(writer http.ResponseWriter) {
 	for headerName, headerValue := range r.Headers {
-		writer.Header().Set(headerName, headerValue)
+		writer.Header().Set(headerName, headerValue[0])
 	}
+	writer.Header().Set(ContentType, r.ContentType)
 }
 
 func (r *Response) ReadBody() ([]byte, error) {

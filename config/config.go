@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"regexp"
 	"sync"
-	"fmt"
 )
 
 type Config struct {
@@ -23,6 +22,14 @@ func GetInstance() *Config {
 	return instance
 }
 
+//func (c *Config) validate() {
+//	for name, bucket := range c.Buckets {
+//		//if bucket.Storages.Basic() == nil {
+//		//	panic("No basic storage for " + name)
+//		//}
+//	}
+//}
+
 func (self *Config) Load(filePath string) {
 	data, err := ioutil.ReadFile(filePath)
 	if err != nil {
@@ -32,12 +39,18 @@ func (self *Config) Load(filePath string) {
 	errYaml := yaml.Unmarshal([]byte(data), self)
 
 	for name, bucket := range self.Buckets {
-		if bucket.Transform != nil && bucket.Transform.Path != "" {
-			bucket.Transform.PathRegexp = regexp.MustCompile(bucket.Transform.Path)
-			self.Buckets[name] = bucket
+		if bucket.Transform != nil {
+			if bucket.Transform.Path != "" {
+				bucket.Transform.PathRegexp = regexp.MustCompile(bucket.Transform.Path)
+			}
+
+			if bucket.Transform.ParentStorage == "" {
+				bucket.Transform.ParentStorage = "basic"
+			}
 		}
+		self.Buckets[name] = bucket
 	}
-	fmt.Println(self)
+
 	if errYaml != nil {
 		panic(errYaml)
 	}

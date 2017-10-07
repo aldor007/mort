@@ -7,7 +7,7 @@ import (
 	"github.com/aldor007/stow"
 	"github.com/pkg/errors"
 
-
+"fmt"
 )
 
 type container struct {
@@ -57,6 +57,7 @@ func (c *container) Put(name string, r io.Reader, size int64, metadata map[strin
 // for this if so.
 func (c *container) getItem(id string) (*item, error) {
 	endpoint := strings.Replace(c.endpoint, "<item>", id, 1)
+	fmt.Println("cont", endpoint)
 	req, err := http.NewRequest("HEAD", endpoint, nil)
 	if err != nil {
 		return nil, err

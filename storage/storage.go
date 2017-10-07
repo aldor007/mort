@@ -1,15 +1,16 @@
 package storage
 
 import (
+	"encoding/json"
 	"io"
 	"mime"
-	"path"
 	"net/http"
-	"encoding/json"
+	"path"
+	"fmt"
 
 	"github.com/aldor007/stow"
 	fileStorage "github.com/aldor007/stow/local"
-	_ "github.com/aldor007/stow/s3"
+	s3Storage "github.com/aldor007/stow/s3"
 	httpStorage "mort/storage/http"
 
 	"mort/object"
@@ -42,7 +43,7 @@ func Get(obj *object.FileObject) *response.Response {
 	return prepareResponse(obj, reader)
 }
 
-func Set(obj *object.FileObject, _ http.Header, contentLen int64, body io.ReadCloser) *response.Response{
+func Set(obj *object.FileObject, _ http.Header, contentLen int64, body io.ReadCloser) *response.Response {
 	client, err := getClient(obj)
 	if err != nil {
 		return response.NewError(503, err)
@@ -59,7 +60,6 @@ func Set(obj *object.FileObject, _ http.Header, contentLen int64, body io.ReadCl
 	return res
 }
 
-
 func getClient(obj *object.FileObject) (stow.Container, error) {
 	storageCfg := obj.Storage
 	var config stow.Config
@@ -73,12 +73,19 @@ func getClient(obj *object.FileObject) (stow.Container, error) {
 	case "http":
 		headers, _ := json.Marshal(storageCfg.Headers)
 		config = stow.ConfigMap{
-			httpStorage.ConfigUrl: storageCfg.Url,
+			httpStorage.ConfigUrl:    storageCfg.Url,
 			httpStorage.ConfigHeader: string(headers),
+		}
+	case "s3":
+		config = stow.ConfigMap{
+			s3Storage.ConfigAccessKeyID: storageCfg.AccessKey,
+			s3Storage.ConfigSecretKey:   storageCfg.SecretAccessKey,
+			s3Storage.ConfigRegion:      storageCfg.Region,
+			s3Storage.ConfigEndpoint:    storageCfg.Endpoint,
 		}
 
 	}
-
+	fmt.Println(config)
 	client, err := stow.Dial(storageCfg.Kind, config)
 	if err != nil {
 		return nil, err

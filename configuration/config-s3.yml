@@ -153,5 +153,9 @@ buckets:
                 kind: "local"
                 rootPath: "/Users/aldor/workspace/mkaciubacom/web"
             basic:
-                kind: "local"
-                rootPath: "/Users/aldor/workspace/mkaciubacom/web"
+                kind: "s3"
+                accessKey: "acc"
+                secretAccessKey: "sec"
+                region: "mort"
+                endpoint: "http://localhost:8080"
+

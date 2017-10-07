@@ -24,24 +24,33 @@ func S3Middleware(config *config.Config) echo.MiddlewareFunc {
 			req := c.Request()
 			path := req.URL.Path
 			pathSlice := strings.Split(path, "/")
+			pathSliceLen := len(pathSlice)
 			//fmt.Printf("slice = %s path = %s len = %d path= %s \n", pathSlice, path, len(pathSlice), pathSlice[0])
-			if len(pathSlice) < 3 {
+			if pathSliceLen < 2 {
 				return echo.NewHTTPError(400, "invalid path")
 			}
 			bucketName := pathSlice[1]
-			realPath := strings.Join(pathSlice[2:], "/")
+			//realPath := ""
+			//if pathSliceLen > 2 {
+			//	realPath = strings.Join(pathSlice[2:], "/")
+			//}
+
 			bucket, ok := config.Buckets[bucketName]
+
 			if !ok {
-				return echo.NewHTTPError(400, "unknown bucket")
+				return echo.NewHTTPError(404, "unknown bucket")
 			}
 
 			// TODO: auth for get request
-			if req.Method == "GET" && realPath != "/" {
-				return next(c)
-			}
 
 
 			auth := req.Header.Get(echo.HeaderAuthorization)
+
+
+			if req.Method == "GET" && auth == "" {
+				return next(c)
+			}
+
 			matches := AutHeaderRegexpv4.FindStringSubmatch(auth)
 			if len(matches) == 5 {
 				alg := matches[1]

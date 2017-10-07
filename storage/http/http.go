@@ -7,7 +7,6 @@ import (
 	"time"
 	"errors"
 	"encoding/json"
-	"fmt"
 
 	"github.com/aldor007/stow"
 )
@@ -26,7 +25,6 @@ const (
 )
 
 func init() {
-	fmt.Println("AAAAAAAa init")
 	makefn := func(config stow.Config) (stow.Location, error) {
 
 		url, ok := config.Config(ConfigUrl)

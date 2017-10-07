@@ -3,18 +3,24 @@ package main
 import (
 	"net/http"
 	"time"
+	"flag"
+	"fmt"
 
 	"github.com/labstack/echo"
 	"mort"
 	"mort/config"
 	"mort/object"
 
-	"mort/response"
 )
 
 func main() {
+	configPath := flag.String("config", "configuration/config.yml", "Path to configuration")
+	listenAddr := flag.String("listen", ":8080", "Listen addr")
+	flag.Parse()
+	fmt.Println(*configPath, *listenAddr)
+
 	imgConfig := config.GetInstance()
-	imgConfig.Load("configuration/config.yml")
+	imgConfig.Load(*configPath)
 	// Echo instance
 	e := echo.New()
 
@@ -31,14 +37,14 @@ func main() {
 		res.WriteHeaders(ctx.Response())
 		defer res.Close()
 
-		return ctx.Stream(res.StatusCode, res.Headers[response.ContentType], res.Stream)
+		return ctx.Stream(res.StatusCode, res.ContentType, res.Stream)
 	})
 
 
 	s := &http.Server{
-		Addr:         ":8080",
-		ReadTimeout:  1 * time.Minute,
-		WriteTimeout: 1 * time.Minute,
+		Addr:        *listenAddr,
+		ReadTimeout:  2 * time.Minute,
+		WriteTimeout: 2 * time.Minute,
 	}
 
 	e.Logger.Fatal(e.StartServer(s))
