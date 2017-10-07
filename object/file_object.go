@@ -3,6 +3,7 @@ package object
 import (
 	"errors"
 	"strings"
+	"fmt"
 
 	Logger "github.com/labstack/gommon/log"
 	"mort/config"
@@ -44,7 +45,8 @@ func NewFileObject(path string, mortConfig *config.Config) (*FileObject, error) 
 	obj.Uri = path
 
 	err := obj.decode(mortConfig)
-	Logger.Infof("key = %s bucket = %s parent = %s\n", obj.Key, obj.Bucket, obj.Parent)
+	fmt.Println(obj.Storage)
+	Logger.Infof("path = %s key = %s bucket = %s storage = %s transforms = %s  hasParent = %s \n",path, obj.Key, obj.Bucket, obj.Storage.Kind, obj.HasTransform(), obj.HasParent())
 	return &obj, err
 }
 

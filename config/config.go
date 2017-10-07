@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"regexp"
 	"sync"
+	"fmt"
 )
 
 type Config struct {
@@ -36,7 +37,7 @@ func (self *Config) Load(filePath string) {
 			self.Buckets[name] = bucket
 		}
 	}
-
+	fmt.Println(self)
 	if errYaml != nil {
 		panic(errYaml)
 	}

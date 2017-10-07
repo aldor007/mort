@@ -4,10 +4,12 @@ import (
 	"net/http"
 	"mort/config"
 	"github.com/labstack/echo"
-	"github.com/crunchytom/go-aws-auth"
+	//"github.com/crunchytom/go-aws-auth"
+	//awsv4 "github.com/aws/aws-sdk-go/aws/signer/v4"
 	"regexp"
 	"strings"
-	//"fmt"
+	"errors"
+	"github.com/crunchytom/go-aws-auth"
 )
 
 var AutHeaderRegexpv4 = regexp.MustCompile("^(:?[A-Za-z0-9-]+) Credential=(:?.+),\\s*SignedHeaders=(:?[a-zA-Z0-9;-]+),\\s*Signature=(:?[a-zA-Z0-9]+)$")
@@ -41,8 +43,14 @@ func S3Middleware(config *config.Config) echo.MiddlewareFunc {
 
 			auth := req.Header.Get(echo.HeaderAuthorization)
 			matches := AutHeaderRegexpv4.FindStringSubmatch(auth)
-			if len(matches) == 4 {
-				accessKey := matches[1]
+			if len(matches) == 5 {
+				alg := matches[1]
+				if alg != "AWS4-HMAC-SHA256" {
+					return echo.NewHTTPError(400, errors.New("invalid algorithm"))
+				}
+
+				reqCredField := matches[2]
+				accessKey := strings.Split(reqCredField, "/")[0]
 				singedHeaders := strings.Split(matches[3], ";")
 				//signature := matches[4]
 				var credential awsauth.Credentials
@@ -57,27 +65,35 @@ func S3Middleware(config *config.Config) echo.MiddlewareFunc {
 
 				}
 				if credential.AccessKeyID == "" {
-					return echo.ErrForbidden
+					return echo.ErrUnauthorized
 				}
 
-				valdiatonReq := new(http.Request)
+				validiatonReq, err := http.NewRequest(req.Method, req.URL.String(), req.Body)
+				if err != nil {
+					return echo.ErrUnauthorized
+				}
 				for h, v := range req.Header {
 					if strings.HasPrefix(strings.ToLower(h),"x-amz")  {
-						valdiatonReq.Header.Set(h, v[0])
+						validiatonReq.Header.Set(h, v[0])
+					}
+
+					switch h {
+						case "Content-Type", "Content-Md5", "Host":
+							validiatonReq.Header.Set(h, v[0])
 					}
 				}
 
 				for _, h := range singedHeaders {
-					valdiatonReq.Header.Set(h, req.Header.Get(h))
+					validiatonReq.Header.Set(h, req.Header.Get(h))
 				}
 
-				valdiatonReq.URL = req.URL
-				valdiatonReq.Method = req.Method
-				valdiatonReq.Body = req.Body
-				valdiatonReq.Host = req.Host
+				validiatonReq.URL = req.URL
+				validiatonReq.Method = req.Method
+				validiatonReq.Body = req.Body
+				validiatonReq.Host = req.Host
 
-				awsauth.Sign4ForRegion(valdiatonReq, "mort", "s3", credential)
-				if auth == valdiatonReq.Header.Get(echo.HeaderAuthorization) {
+				awsauth.Sign4ForRegion(validiatonReq, "mort", "s3", credential)
+				if auth == validiatonReq.Header.Get(echo.HeaderAuthorization) {
 					return next(c)
 				}
 

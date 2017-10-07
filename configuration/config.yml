@@ -88,6 +88,8 @@ buckets:
             order:
               parent: 0
               presetName: 1
+            parent:
+              appendBucket: true
             presets:
                 default_small:
                     quality: 95
@@ -147,6 +149,8 @@ buckets:
                 url: "https://mkaciuba.pl/<container>/download/<item>"
                 headers:
                   "x-auth": "1234"
+#                kind: "local"
+#                rootPath: "/Users/aldor/workspace/mkaciubacom/web"
             transform:
                 kind: "local"
                 rootPath: "/Users/aldor/workspace/mkaciubacom/web"

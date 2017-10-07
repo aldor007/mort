@@ -38,7 +38,7 @@ type TransformYaml struct {
 }
 
 type Storage struct {
-	RootPath string            `yaml:"rootPath"`
+	RootPath string            `yaml:"rootPath", omitempty`
 	Kind     string            `yaml:"kind"`
 	Url      string            `yaml:"url",omitempty`
 	Headers  map[string]string `yaml:"headers",omitempty`

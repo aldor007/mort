@@ -4,10 +4,13 @@ import (
 	"io"
 	"mime"
 	"path"
+	"net/http"
+	"encoding/json"
 
 	"github.com/aldor007/stow"
 	fileStorage "github.com/aldor007/stow/local"
 	_ "github.com/aldor007/stow/s3"
+	httpStorage "mort/storage/http"
 
 	"mort/object"
 	"mort/response"
@@ -19,7 +22,6 @@ func Get(obj *object.FileObject) *response.Response {
 	key := obj.Key
 	client, err := getClient(obj)
 	if err != nil {
-
 		return response.NewError(503, err)
 	}
 
@@ -40,15 +42,41 @@ func Get(obj *object.FileObject) *response.Response {
 	return prepareResponse(obj, reader)
 }
 
+func Set(obj *object.FileObject, _ http.Header, contentLen int64, body io.ReadCloser) *response.Response{
+	client, err := getClient(obj)
+	if err != nil {
+		return response.NewError(503, err)
+	}
+
+	_, err = client.Put(obj.Key, body, contentLen, nil)
+
+	if err != nil {
+		return response.NewError(500, err)
+	}
+
+	res := response.NewBuf(200, []byte(""))
+	res.SetContentType(mime.TypeByExtension(path.Ext(obj.Key)))
+	return res
+}
+
+
 func getClient(obj *object.FileObject) (stow.Container, error) {
 	storageCfg := obj.Storage
 	var config stow.Config
 	var client stow.Location
 
-	if storageCfg.Kind == "local" {
+	switch storageCfg.Kind {
+	case "local":
 		config = stow.ConfigMap{
 			fileStorage.ConfigKeyPath: storageCfg.RootPath,
 		}
+	case "http":
+		headers, _ := json.Marshal(storageCfg.Headers)
+		config = stow.ConfigMap{
+			httpStorage.ConfigUrl: storageCfg.Url,
+			httpStorage.ConfigHeader: string(headers),
+		}
+
 	}
 
 	client, err := stow.Dial(storageCfg.Kind, config)
