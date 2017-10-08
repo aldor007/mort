@@ -54,7 +54,7 @@ func NewError(statusCode int, err error) *Response {
 
 func (r *Response) SetContentType(contentType string) *Response {
 	r.Headers.Set(ContentType, contentType)
-	r.ContentType = ContentType
+	r.ContentType = contentType
 	return r
 }
 
@@ -66,11 +66,23 @@ func (r *Response) WriteHeaders(writer http.ResponseWriter) {
 	for headerName, headerValue := range r.Headers {
 		writer.Header().Set(headerName, headerValue[0])
 	}
+
 	writer.Header().Set(ContentType, r.ContentType)
 }
 
 func (r *Response) ReadBody() ([]byte, error) {
 	return ioutil.ReadAll(r.Stream)
+}
+
+func (r *Response) CopyBody() ([]byte, error) {
+	buf, err := ioutil.ReadAll(r.Stream)
+	if err != nil {
+		return nil, err
+	}
+
+	r.Stream.Close()
+	r.Stream = ioutil.NopCloser(bytes.NewReader(buf))
+	return buf, nil
 }
 
 func (r *Response) Close() {

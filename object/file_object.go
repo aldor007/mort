@@ -87,7 +87,9 @@ func (self *FileObject) decodeKey(bucket config.Bucket, mortConfig *config.Confi
 	parent := "/" + string(matches[trans.Order.Parent+1])
 
 	self.Transforms = presetToTransform(bucket.Transform.Presets[presetName])
-	parent = "/" + path.Join(bucket.Transform.ParentPrefix, parent)
+	if bucket.Transform.ParentBucket != "" {
+		parent = "/" + path.Join(bucket.Transform.ParentBucket, parent)
+	}
 	parentObj, _ := NewFileObject(parent, mortConfig)
 	parentObj.Storage = bucket.Storages.Get(bucket.Transform.ParentStorage)
 	self.Parent = parentObj

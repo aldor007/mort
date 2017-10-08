@@ -29,7 +29,7 @@ type PresetsYaml struct {
 type TransformYaml struct {
 	Path          string `yaml:"path"`
 	ParentStorage string `yaml:"parentStorage"`
-	ParentPrefix  string `yaml:"parentPrefix"`
+	ParentBucket  string `yaml:"parentBucket"`
 	PathRegexp    *regexp.Regexp
 	Kind          string                 `yaml:"kind"`
 	Presets       map[string]PresetsYaml `yaml:"presets"`
@@ -48,6 +48,7 @@ type Storage struct {
 	SecretAccessKey string            `yaml:"secretAccessKey",omitempty`
 	Region          string            `yaml:"region",omitempty`
 	Endpoint        string            `yaml:"endpoint",omitempty`
+	PathPrefix      string            `yaml:"pathPrefix",omitempty"`
 }
 
 type StorageTypes map[string]Storage

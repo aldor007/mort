@@ -3,7 +3,10 @@ package mort
 import (
 	"errors"
 	"strings"
+	"io/ioutil"
+	"bytes"
 
+	Logger "github.com/labstack/gommon/log"
 	"mort/config"
 	"mort/engine"
 	"mort/object"
@@ -34,10 +37,13 @@ func hanldeGET(ctx echo.Context, obj *object.FileObject) *response.Response {
 	if obj.Key == "" {
 		return handleS3Get(ctx, obj);
 	}
+
 	var currObj *object.FileObject = obj
 	var parentObj *object.FileObject = nil
 	var transforms []transforms.Transforms
 	var res        *response.Response
+	var parentRes  *response.Response
+
 	// search for last parent
 	for currObj.HasParent() {
 		if currObj.HasTransform() {
@@ -52,10 +58,10 @@ func hanldeGET(ctx echo.Context, obj *object.FileObject) *response.Response {
 
 	// get parent from storage
 	if parentObj != nil {
-		res = updateHeaders(storage.Get(parentObj))
+		parentRes = updateHeaders(storage.Get(parentObj))
 
-		if res.StatusCode != 200 {
-			return res
+		if parentRes.StatusCode != 200 {
+			return parentRes
 		}
 	}
 
@@ -65,14 +71,17 @@ func hanldeGET(ctx echo.Context, obj *object.FileObject) *response.Response {
 		return res
 	}
 
-	if strings.Contains(res.ContentType, "image/") {
+	defer res.Close()
+
+	if obj.HasTransform() && strings.Contains(parentRes.ContentType, "image/") {
 		// revers order of transforms
 		for i := 0; i < len(transforms)/2; i++ {
 			j := len(transforms) - i - 1
 			transforms[i], transforms[j] = transforms[j], transforms[i]
 		}
 
-		return updateHeaders(processImage(obj, res, transforms))
+		Logger.Infof("Performing transforms obj.Key = %s transformsLen = %s", obj.Key, len(transforms))
+		return updateHeaders(processImage(obj, parentRes, transforms))
 	}
 
 	return updateHeaders(storage.Get(obj))
@@ -91,12 +100,16 @@ func handleS3Get(ctx echo.Context, obj *object.FileObject) *response.Response {
 
 func processImage(obj *object.FileObject, parent *response.Response, transforms []transforms.Transforms) *response.Response {
 	engine := engine.NewImageEngine(parent)
-	res, err := engine.Process(transforms)
+	res, err := engine.Process(obj, transforms)
 	if err != nil {
 		return response.NewError(400, err)
 	}
 
-	storage.Set(obj, res.Headers, res.ContentLength, res.Stream)
+	body, _ := res.CopyBody()
+	go func(buf []byte) {
+		storage.Set(obj, res.Headers, res.ContentLength, ioutil.NopCloser(bytes.NewReader(buf)))
+
+	}(body)
 	return res
 
 }

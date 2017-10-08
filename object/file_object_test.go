@@ -57,6 +57,51 @@ func TestNewFileObjectTransform(t *testing.T) {
 
 }
 
+func TestNewFileObjectTransformParentBucket(t *testing.T) {
+	mortConfig := config.GetInstance()
+	mortConfig.Load("testdata/bucket-transform-parent-bucket.yml")
+	obj, err := NewFileObject("/bucket/blog_small/thumb_2334.jpg", mortConfig)
+
+	assert.Nil(t, err, "Unexpected to have error when parsing path")
+
+	assert.NotNil(t, obj, "obj should be nil")
+
+	assert.True(t, obj.HasParent(), "obj should have parent")
+
+	parent := obj.Parent
+
+	assert.Equal(t, "/2334.jpg", parent.Key, "invalid parent key")
+
+	assert.False(t, parent.HasParent(), "parent should't have parent")
+
+	assert.True(t, obj.HasTransform(), "obj should have transform")
+
+	transCfg := obj.Transforms.BimgOptions()
+
+	assert.Equal(t, 100, transCfg.Width, "invalid width for transform")
+
+	assert.Equal(t, 100, transCfg.Height, "invalid height for transform")
+
+}
+
+func TestNewFileObjectTransformParentStorage(t *testing.T) {
+	mortConfig := config.GetInstance()
+	mortConfig.Load("testdata/bucket-transform-parent-storage.yml")
+	obj, err := NewFileObject("/bucket/blog_small/thumb_2334.jpg", mortConfig)
+
+	assert.Nil(t, err, "Unexpected to have error when parsing path")
+
+	assert.NotNil(t, obj, "obj should be nil")
+
+	assert.True(t, obj.HasParent(), "obj should have parent")
+
+	parent := obj.Parent
+
+	assert.Equal(t, "other", parent.Storage.Kind, "invalid parent storage")
+
+
+}
+
 func TestNewFileObjectTransformOnlyWitdh(t *testing.T) {
 	mortConfig := config.GetInstance()
 	mortConfig.Load("testdata/bucket-transform.yml")

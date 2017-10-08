@@ -6,7 +6,6 @@ import (
 	"mime"
 	"net/http"
 	"path"
-	"fmt"
 
 	"github.com/aldor007/stow"
 	fileStorage "github.com/aldor007/stow/local"
@@ -17,10 +16,10 @@ import (
 	"mort/response"
 )
 
-const notFound = "{\"error\":\"not found\"}"
+const notFound = "{\"error\":\"item not found\"}"
 
 func Get(obj *object.FileObject) *response.Response {
-	key := obj.Key
+	key := getKey(obj)
 	client, err := getClient(obj)
 	if err != nil {
 		return response.NewError(503, err)
@@ -35,12 +34,17 @@ func Get(obj *object.FileObject) *response.Response {
 		return response.NewError(544, err)
 	}
 
+	metadata, err := item.Metadata()
+	if err != nil {
+		return response.NewError(500, err)
+	}
+
 	reader, err := item.Open()
 	if err != nil {
 		return response.NewError(500, err)
 	}
 
-	return prepareResponse(obj, reader)
+	return prepareResponse(obj, reader, metadata)
 }
 
 func Set(obj *object.FileObject, _ http.Header, contentLen int64, body io.ReadCloser) *response.Response {
@@ -49,7 +53,7 @@ func Set(obj *object.FileObject, _ http.Header, contentLen int64, body io.ReadCl
 		return response.NewError(503, err)
 	}
 
-	_, err = client.Put(obj.Key, body, contentLen, nil)
+	_, err = client.Put(getKey(obj), body, contentLen, nil)
 
 	if err != nil {
 		return response.NewError(500, err)
@@ -85,7 +89,7 @@ func getClient(obj *object.FileObject) (stow.Container, error) {
 		}
 
 	}
-	fmt.Println(config)
+
 	client, err := stow.Dial(storageCfg.Kind, config)
 	if err != nil {
 		return nil, err
@@ -97,8 +101,25 @@ func getClient(obj *object.FileObject) (stow.Container, error) {
 	return client.Container(obj.Bucket)
 }
 
-func prepareResponse(obj *object.FileObject, stream io.ReadCloser) *response.Response {
+
+func getKey (obj *object.FileObject) string {
+	return path.Join(obj.Storage.PathPrefix, obj.Key)
+}
+func prepareResponse(obj *object.FileObject, stream io.ReadCloser, metadata map[string]interface{}) *response.Response {
 	res := response.New(200, stream)
-	res.SetContentType(mime.TypeByExtension(path.Ext(obj.Key)))
+
+	for k, v := range metadata {
+		switch k {
+		case  "etag", "last-modified":
+			res.Set(k, v.(string))
+
+		}
+	}
+
+	if contentType, ok := metadata["content-type"]; ok {
+		res.SetContentType(contentType.(string))
+	} else {
+		res.SetContentType(mime.TypeByExtension(path.Ext(obj.Key)))
+	}
 	return res
 }
