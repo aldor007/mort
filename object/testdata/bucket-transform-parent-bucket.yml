@@ -6,7 +6,7 @@ buckets:
             order:
               presetName: 0
               parent: 1
-            parentBucket: "media"
+            parentBucket: "bucket"
             presets:
                 blog_small:
                     quality: 75

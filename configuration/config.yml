@@ -89,7 +89,7 @@ buckets:
               parent: 0
               presetName: 1
             parentStorage: "api"
-            parentPrefix: "media"
+            parentBucket: "media"
             presets:
                 default_small:
                     quality: 95

@@ -71,6 +71,7 @@ func TestNewFileObjectTransformParentBucket(t *testing.T) {
 	parent := obj.Parent
 
 	assert.Equal(t, "/2334.jpg", parent.Key, "invalid parent key")
+	assert.Equal(t, "bucket", parent.Bucket, "invalid parent key")
 
 	assert.False(t, parent.HasParent(), "parent should't have parent")
 
