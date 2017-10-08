@@ -74,6 +74,7 @@ type Bucket struct {
 	Transform *TransformYaml `yaml:"transform",omitempty`
 	Storages  StorageTypes   `yaml:"storages"`
 	Keys      []S3Key        `yaml:"keys"`
+	Name      string
 }
 
 type HeaderYaml struct {

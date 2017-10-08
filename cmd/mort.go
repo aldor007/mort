@@ -24,6 +24,7 @@ func main() {
 	// Echo instance
 	e := echo.New()
 
+	e.Use(mort.S3AuthMiddleware(imgConfig))
 	e.Use(mort.S3Middleware(imgConfig))
 
 	// Route => handler

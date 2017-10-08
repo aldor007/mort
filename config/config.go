@@ -10,6 +10,7 @@ import (
 type Config struct {
 	Buckets map[string]Bucket `yaml:"buckets"`
 	Headers []HeaderYaml      `yaml:"headers"`
+	accessKeyBucket map[string][] string
 }
 
 var instance *Config
@@ -38,6 +39,7 @@ func (self *Config) Load(filePath string) {
 
 	errYaml := yaml.Unmarshal([]byte(data), self)
 
+	self.accessKeyBucket = make(map[string][]string)
 	for name, bucket := range self.Buckets {
 		if bucket.Transform != nil {
 			if bucket.Transform.Path != "" {
@@ -48,11 +50,30 @@ func (self *Config) Load(filePath string) {
 				bucket.Transform.ParentStorage = "basic"
 			}
 		}
+
+		bucket.Name = name
 		self.Buckets[name] = bucket
+		for _, key := range bucket.Keys {
+			//if self.accessKeyBucket[key.AccessKey] == nil {
+			//	self.accessKeyBucket[key.AccessKey] = make([]stri
+			//}
+
+			self.accessKeyBucket[key.AccessKey] = append(self.accessKeyBucket[key.AccessKey], name)
+		}
 	}
 
 	if errYaml != nil {
 		panic(errYaml)
 	}
 
+}
+
+func (c *Config) BucketsByAccessKey(accessKey string) []Bucket {
+	list := c.accessKeyBucket[accessKey]
+	var buckets []Bucket = make([]Bucket, len(list))
+	for _, name := range list {
+		buckets = append(buckets, c.Buckets[name])
+	}
+
+	return buckets
 }
