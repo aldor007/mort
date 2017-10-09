@@ -27,26 +27,42 @@ type PresetsYaml struct {
 }
 
 type TransformYaml struct {
-	Path       string `yaml:"path"`
-	PathRegexp *regexp.Regexp
-	Kind       string                 `yaml:"kind"`
-	Presets    map[string]PresetsYaml `yaml:"presets"`
-	Order      struct {
+	Path          string `yaml:"path"`
+	ParentStorage string `yaml:"parentStorage"`
+	ParentBucket  string `yaml:"parentBucket"`
+	PathRegexp    *regexp.Regexp
+	Kind          string                 `yaml:"kind"`
+	Presets       map[string]PresetsYaml `yaml:"presets"`
+	Order         struct {
 		PresetName int `yaml:"presetName"`
 		Parent     int `yaml:"parent"`
 	} `yaml:"order"`
 }
 
 type Storage struct {
-	RootPath string            `yaml:"rootPath"`
-	Kind     string            `yaml:"kind"`
-	Url      string            `yaml:"url",omitempty`
-	Headers  map[string]string `yaml:"headers",omitempty`
+	RootPath        string            `yaml:"rootPath", omitempty`
+	Kind            string            `yaml:"kind"`
+	Url             string            `yaml:"url",omitempty`
+	Headers         map[string]string `yaml:"headers",omitempty`
+	AccessKey       string            `yaml:"accessKey",omitempty`
+	SecretAccessKey string            `yaml:"secretAccessKey",omitempty`
+	Region          string            `yaml:"region",omitempty`
+	Endpoint        string            `yaml:"endpoint",omitempty`
+	PathPrefix      string            `yaml:"pathPrefix",omitempty"`
 }
 
-type StorageTypes struct {
-	Transform Storage `yaml:"transform"`
-	Basic     Storage `yaml:"basic"`
+type StorageTypes map[string]Storage
+
+func (s *StorageTypes) Basic() Storage {
+	return s.Get("basic")
+}
+
+func (s *StorageTypes) Transform() Storage {
+	return s.Get("transform")
+}
+
+func (s *StorageTypes) Get(name string) Storage {
+	return (*s)[name]
 }
 
 type S3Key struct {
@@ -57,7 +73,8 @@ type S3Key struct {
 type Bucket struct {
 	Transform *TransformYaml `yaml:"transform",omitempty`
 	Storages  StorageTypes   `yaml:"storages"`
-	Keys      []S3Key       `yaml:"keys"`
+	Keys      []S3Key        `yaml:"keys"`
+	Name      string
 }
 
 type HeaderYaml struct {

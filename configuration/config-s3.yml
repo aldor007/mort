@@ -89,7 +89,7 @@ buckets:
               parent: 0
               presetName: 1
             parentStorage: "api"
-            parentBucket: "media"
+            parentPrefix: "media"
             presets:
                 default_small:
                     quality: 95
@@ -152,7 +152,10 @@ buckets:
             transform:
                 kind: "local"
                 rootPath: "/Users/aldor/workspace/mkaciubacom/web"
-                pathPrefix: "transforms"
             basic:
-                kind: "local"
-                rootPath: "/Users/aldor/workspace/mkaciubacom/web"
+                kind: "s3"
+                accessKey: "acc"
+                secretAccessKey: "sec"
+                region: "mort"
+                endpoint: "http://localhost:8080"
+

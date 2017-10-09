@@ -3,6 +3,7 @@ package object
 import (
 	"errors"
 	"strings"
+	"path"
 
 	Logger "github.com/labstack/gommon/log"
 	"mort/config"
@@ -39,29 +40,29 @@ type FileObject struct {
 	Parent     *FileObject
 }
 
-func NewFileObject(path string, mortConfig *config.Config) (*FileObject, error) {
+func NewFileObject(uri string, mortConfig *config.Config) (*FileObject, error) {
 	obj := FileObject{}
-	obj.Uri = path
+	obj.Uri = uri
 
 	err := obj.decode(mortConfig)
-	Logger.Infof("key = %s bucket = %s parent = %s\n", obj.Key, obj.Bucket, obj.Parent)
+	Logger.Infof("path = %s key = %s bucket = %s storage = %s transforms = %s  hasParent = %s \n", uri, obj.Key, obj.Bucket, obj.Storage.Kind, obj.HasTransform(), obj.HasParent())
 	return &obj, err
 }
 
 func (self *FileObject) decode(mortConfig *config.Config) error {
 	elements := strings.Split(self.Uri, "/")
-	if len(elements) < 3 {
-		return errors.New("Invalid path")
-	}
 
 	self.Bucket = elements[1]
-	self.Key = "/" + strings.Join(elements[2:], "/")
+	if len(elements) > 2 {
+		self.Key = "/" + strings.Join(elements[2:], "/")
+	}
+
 	if bucket, ok := mortConfig.Buckets[self.Bucket]; ok {
 		self.decodeKey(bucket, mortConfig)
 		if self.HasTransform() {
-			self.Storage = bucket.Storages.Transform
+			self.Storage = bucket.Storages.Transform()
 		} else {
-			self.Storage = bucket.Storages.Basic
+			self.Storage = bucket.Storages.Basic()
 		}
 
 	} else {
@@ -86,7 +87,11 @@ func (self *FileObject) decodeKey(bucket config.Bucket, mortConfig *config.Confi
 	parent := "/" + string(matches[trans.Order.Parent+1])
 
 	self.Transforms = presetToTransform(bucket.Transform.Presets[presetName])
+	if bucket.Transform.ParentBucket != "" {
+		parent = "/" + path.Join(bucket.Transform.ParentBucket, parent)
+	}
 	parentObj, _ := NewFileObject(parent, mortConfig)
+	parentObj.Storage = bucket.Storages.Get(bucket.Transform.ParentStorage)
 	self.Parent = parentObj
 	return nil
 }

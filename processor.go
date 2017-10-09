@@ -1,35 +1,49 @@
 package mort
 
 import (
+	"errors"
 	"strings"
+	"io/ioutil"
+	"bytes"
 
+	Logger "github.com/labstack/gommon/log"
 	"mort/config"
 	"mort/engine"
 	"mort/object"
 	"mort/response"
 	"mort/storage"
 	"mort/transforms"
+	"github.com/labstack/echo"
 )
+const S3_LOCATION_STR = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><LocationConstraint xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">EU</LocationConstraint>"
 
-func Process(obj *object.FileObject) *response.Response {
-	// first check if object is on storage
-	res := updateHeaders(storage.Get(obj))
+func Process(ctx echo.Context, obj *object.FileObject) *response.Response {
+	switch ctx.Request().Method {
+		case "GET":
+			return hanldeGET(ctx, obj)
+		case "PUT":
+			return handlePUT(ctx, obj)
 
-	if res.StatusCode != 404 {
-		return res
+	default:
+		return response.NewError(405, errors.New("method not allowed"))
 	}
+}
 
-	// if not check if we can try to perform transformation on it
+func handlePUT(ctx echo.Context, obj *object.FileObject) *response.Response {
+	return storage.Set(obj, ctx.Request().Header, ctx.Request().ContentLength, ctx.Request().Body)
+}
 
-	// object doesn't have parent and we cannot do transfrom if it hasn't parent.
-	// So we are returning response from storage
-	if !obj.HasParent() {
-		return res
+func hanldeGET(ctx echo.Context, obj *object.FileObject) *response.Response {
+	if obj.Key == "" {
+		return handleS3Get(ctx, obj);
 	}
 
 	var currObj *object.FileObject = obj
-	var parentObj *object.FileObject
+	var parentObj *object.FileObject = nil
 	var transforms []transforms.Transforms
+	var res        *response.Response
+	var parentRes  *response.Response
+
 	// search for last parent
 	for currObj.HasParent() {
 		if currObj.HasTransform() {
@@ -43,33 +57,60 @@ func Process(obj *object.FileObject) *response.Response {
 	}
 
 	// get parent from storage
-	res = updateHeaders(storage.Get(parentObj))
+	if parentObj != nil {
+		parentRes = updateHeaders(storage.Get(parentObj))
 
-	if res.StatusCode == 404 {
+		if parentRes.StatusCode != 200 {
+			return parentRes
+		}
+	}
+
+	// check if object is on storage
+	res = updateHeaders(storage.Get(obj))
+	if res.StatusCode != 404 {
 		return res
 	}
 
-	if strings.Contains(res.Headers[response.ContentType], "image/") {
+	defer res.Close()
+
+	if obj.HasTransform() && strings.Contains(parentRes.ContentType, "image/") {
 		// revers order of transforms
 		for i := 0; i < len(transforms)/2; i++ {
 			j := len(transforms) - i - 1
 			transforms[i], transforms[j] = transforms[j], transforms[i]
 		}
 
-		return updateHeaders(processImage(res, transforms))
+		Logger.Infof("Performing transforms obj.Key = %s transformsLen = %s", obj.Key, len(transforms))
+		return updateHeaders(processImage(obj, parentRes, transforms))
 	}
 
 	return updateHeaders(storage.Get(obj))
 }
 
-func processImage(parent *response.Response, transforms []transforms.Transforms) *response.Response {
+func handleS3Get(ctx echo.Context, obj *object.FileObject) *response.Response {
+	req := ctx.Request()
+	query := req.URL.Query()
+
+	if _, ok := query["location"]; ok {
+		return response.NewBuf(200, []byte(S3_LOCATION_STR))
+	}
+
+	return response.NewBuf(405, []byte(""))
+}
+
+func processImage(obj *object.FileObject, parent *response.Response, transforms []transforms.Transforms) *response.Response {
 	engine := engine.NewImageEngine(parent)
-	result, err := engine.Process(transforms)
+	res, err := engine.Process(obj, transforms)
 	if err != nil {
 		return response.NewError(400, err)
 	}
 
-	return result
+	body, _ := res.CopyBody()
+	go func(buf []byte) {
+		storage.Set(obj, res.Headers, res.ContentLength, ioutil.NopCloser(bytes.NewReader(buf)))
+
+	}(body)
+	return res
 
 }
 
