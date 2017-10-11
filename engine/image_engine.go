@@ -18,7 +18,6 @@ type ImageEngine struct {
 }
 
 func NewImageEngine(res *response.Response) *ImageEngine {
-
 	return &ImageEngine{parent: res}
 }
 

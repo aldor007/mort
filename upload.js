@@ -13,7 +13,7 @@ const s3opts = {
    sslEnabled: false,
    accessKeyId: accessKeyId,
    secretAccessKey: secretAccessKey,
-   signatureVersion: 's3',
+   signatureVersion: 'v4',
    computeChecksums: true
 };
 const body = fs.readFileSync('file.jpeg')
@@ -44,10 +44,11 @@ const options = {
 s3.listBuckets({}, function (err, data) {
 	console.info(err, data)
 })
-// s3.upload(params, options, function (err, data) {
-//     if (err) {
-//         console.error('Error uploading file', err);
-//     }
+s3.upload(params, options, function (err, data) {
+    if (err) {
+        console.error('Error uploading file', err);
+        return;
+    }
 
-//     console.info('Successful uploaded file');
-// });
+    console.info('Successful uploaded file');
+});
