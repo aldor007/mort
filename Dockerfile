@@ -54,11 +54,14 @@ RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH"
 WORKDIR $GOPATH
 RUN curl -fsSL -o /usr/local/bin/dep https://github.com/golang/dep/releases/download/$DEP_VERSION/dep-linux-amd64 && chmod +x /usr/local/bin/dep
 ADD . /go/src/mort
+
 # when dep will be ready
 RUN cd /go/src/mort &&  dep ensure -vendor-only
 RUN go get -u go.uber.org/zap
 # RUN goinstall
-RUN cd /go/src/mort; go build cmd/mort.go; cp mort /go/mort
+RUN cd /go/src/mort; go build cmd/mort.go; cp mort /go/mort; cp -r /go/src/mort/configuration /go/
+# clean up
+RUN rm -rf /go/src
 
 # Run the outyet command by default when the container starts.
 ENTRYPOINT ["/go/mort"]

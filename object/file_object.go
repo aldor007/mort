@@ -46,7 +46,8 @@ func NewFileObject(uri string, mortConfig *config.Config) (*FileObject, error) {
 	obj.Uri = uri
 
 	err := obj.decode(mortConfig)
-	log.Log().Infof("path = %s key = %s bucket = %s storage = %s transforms = %s  hasParent = %s \n", uri, obj.Key, obj.Bucket, obj.Storage.Kind, obj.HasTransform(), obj.HasParent())
+	log.Log().Infow("New FileObject", "path", uri,  "key", obj.Key, "bucket", obj.Bucket, "storage", obj.Storage,
+		"hasTransforms", obj.HasTransform(), "hasParent" , obj.HasParent())
 	return &obj, err
 }
 

@@ -80,7 +80,7 @@ func hanldeGET(ctx echo.Context, obj *object.FileObject) *response.Response {
 			transforms[i], transforms[j] = transforms[j], transforms[i]
 		}
 
-		log.Log().Infof("Performing transforms obj.Key = %s transformsLen = %s", obj.Key, len(transforms))
+		log.Log().Infow("Performing transforms", "obj.Bucket", obj.Bucket, "obj.Key", obj.Key, "transformsLen", len(transforms))
 		return updateHeaders(processImage(obj, parentRes, transforms))
 	}
 

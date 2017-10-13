@@ -34,19 +34,19 @@ func Get(obj *object.FileObject) *response.Response {
 			return response.NewBuf(404, []byte(notFound))
 		}
 
-		log.Log().Infow("Storage/Get item response", "obj.Key", obj.Key,"error", err)
+		log.Log().Infow("Storage/Get item response", "obj.Key", obj.Key, "error", err)
 		return response.NewError(500, err)
 	}
 
 	metadata, err := item.Metadata()
 	if err != nil {
-		log.Log().Warnf("Storage/Get read metadata obj.Key = %s sc = 500 err = %s", obj.Key, err)
+		log.Log().Warnw("Storage/Get read metadata", "obj.Key", obj.Key,"sc", 500, "error", err)
 		return response.NewError(500, err)
 	}
 
 	reader, err := item.Open()
 	if err != nil {
-		log.Log().Warnf("Storage/Get open item obj.Key = %s sc = 500 err = %s", obj.Key, err)
+		log.Log().Warnw("Storage/Get open item", "obj.Key", obj.Key, "sc", 500, "error", err)
 		return response.NewError(500, err)
 	}
 
@@ -56,14 +56,14 @@ func Get(obj *object.FileObject) *response.Response {
 func Set(obj *object.FileObject, _ http.Header, contentLen int64, body io.ReadCloser) *response.Response {
 	client, err := getClient(obj)
 	if err != nil {
-		log.Log().Warnf("Storage/Set cannot create client obj.Key = %s sc = 503 err = %s", obj.Key, err)
+		log.Log().Warnw("Storage/Set create client", "obj.Key", obj.Key, "sc", 503, "error", err)
 		return response.NewError(503, err)
 	}
 
 	_, err = client.Put(getKey(obj), body, contentLen, nil)
 
 	if err != nil {
-		log.Log().Warnf("Storage/Set cannot set object obj.Key = %s sc = 500 err = %s", obj.Key, err)
+		log.Log().Warnw("Storage/Set cannot set" , "obj.Key", obj.Key, "sc", 500, "error", err)
 		return response.NewError(500, err)
 	}
 
