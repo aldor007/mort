@@ -5,15 +5,15 @@ import (
 	"strings"
 	"io/ioutil"
 	"bytes"
+	"github.com/labstack/echo"
 
-	Logger "github.com/labstack/gommon/log"
 	"mort/config"
 	"mort/engine"
 	"mort/object"
 	"mort/response"
 	"mort/storage"
 	"mort/transforms"
-	"github.com/labstack/echo"
+	"mort/log"
 )
 const S3_LOCATION_STR = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><LocationConstraint xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">EU</LocationConstraint>"
 
@@ -67,7 +67,7 @@ func hanldeGET(ctx echo.Context, obj *object.FileObject) *response.Response {
 
 	// check if object is on storage
 	res = updateHeaders(storage.Get(obj))
-	if res.StatusCode != 404 {
+	if res.StatusCode == 200 {
 		return res
 	}
 
@@ -80,7 +80,7 @@ func hanldeGET(ctx echo.Context, obj *object.FileObject) *response.Response {
 			transforms[i], transforms[j] = transforms[j], transforms[i]
 		}
 
-		Logger.Infof("Performing transforms obj.Key = %s transformsLen = %s", obj.Key, len(transforms))
+		log.Log().Infow("Performing transforms", "obj.Bucket", obj.Bucket, "obj.Key", obj.Key, "transformsLen", len(transforms))
 		return updateHeaders(processImage(obj, parentRes, transforms))
 	}
 

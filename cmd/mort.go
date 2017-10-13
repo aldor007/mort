@@ -10,7 +10,9 @@ import (
 	"mort"
 	"mort/config"
 	"mort/object"
+	"mort/log"
 
+	"go.uber.org/zap"
 )
 
 func main() {
@@ -18,6 +20,9 @@ func main() {
 	listenAddr := flag.String("listen", ":8080", "Listen addr")
 	flag.Parse()
 	fmt.Println(*configPath, *listenAddr)
+	logger, _ := zap.NewDevelopment()
+	zap.ReplaceGlobals(logger)
+	log.RegisterLogger(logger.Sugar())
 
 	imgConfig := config.GetInstance()
 	imgConfig.Load(*configPath)
@@ -31,12 +36,15 @@ func main() {
 	e.Any ("/*", func(ctx echo.Context) error {
 		obj, err := object.NewFileObject(ctx.Request().URL.Path, imgConfig)
 		if err != nil {
+			logger.Sugar().Errorf("Unable to create file object err = %s", err)
 			return ctx.NoContent(400)
 		}
+
 		// dodac placeholder
 		res := mort.Process(ctx, obj)
 		res.WriteHeaders(ctx.Response())
 		defer res.Close()
+		defer logger.Sync() // flushes buffer, if any
 
 		return ctx.Stream(res.StatusCode, res.ContentType, res.Stream)
 	})

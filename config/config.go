@@ -71,8 +71,8 @@ func (self *Config) Load(filePath string) {
 func (c *Config) BucketsByAccessKey(accessKey string) []Bucket {
 	list := c.accessKeyBucket[accessKey]
 	var buckets []Bucket = make([]Bucket, len(list))
-	for _, name := range list {
-		buckets = append(buckets, c.Buckets[name])
+	for i, name := range list {
+		buckets[i] = c.Buckets[name]
 	}
 
 	return buckets

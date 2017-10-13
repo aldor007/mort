@@ -5,10 +5,11 @@ import (
 	"strings"
 	"path"
 
-	Logger "github.com/labstack/gommon/log"
+	"mort/log"
 	"mort/config"
 	"mort/transforms"
 )
+
 
 func presetToTransform(preset config.PresetsYaml) transforms.Transforms {
 	var trans transforms.Transforms
@@ -45,7 +46,8 @@ func NewFileObject(uri string, mortConfig *config.Config) (*FileObject, error) {
 	obj.Uri = uri
 
 	err := obj.decode(mortConfig)
-	Logger.Infof("path = %s key = %s bucket = %s storage = %s transforms = %s  hasParent = %s \n", uri, obj.Key, obj.Bucket, obj.Storage.Kind, obj.HasTransform(), obj.HasParent())
+	log.Log().Infow("New FileObject", "path", uri,  "key", obj.Key, "bucket", obj.Bucket, "storage", obj.Storage,
+		"hasTransforms", obj.HasTransform(), "hasParent" , obj.HasParent())
 	return &obj, err
 }
 
@@ -58,12 +60,13 @@ func (self *FileObject) decode(mortConfig *config.Config) error {
 	}
 
 	if bucket, ok := mortConfig.Buckets[self.Bucket]; ok {
-		self.decodeKey(bucket, mortConfig)
+		err := self.decodeKey(bucket, mortConfig)
 		if self.HasTransform() {
 			self.Storage = bucket.Storages.Transform()
 		} else {
 			self.Storage = bucket.Storages.Basic()
 		}
+		return err
 
 	} else {
 		return errors.New("Unknown bucket")
@@ -90,10 +93,10 @@ func (self *FileObject) decodeKey(bucket config.Bucket, mortConfig *config.Confi
 	if bucket.Transform.ParentBucket != "" {
 		parent = "/" + path.Join(bucket.Transform.ParentBucket, parent)
 	}
-	parentObj, _ := NewFileObject(parent, mortConfig)
+	parentObj, err := NewFileObject(parent, mortConfig)
 	parentObj.Storage = bucket.Storages.Get(bucket.Transform.ParentStorage)
 	self.Parent = parentObj
-	return nil
+	return err
 }
 
 func (self *FileObject) HasParent() bool {
