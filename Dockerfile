@@ -62,6 +62,7 @@ RUN go get -u go.uber.org/zap
 RUN cd /go/src/mort; go build cmd/mort.go; cp mort /go/mort; cp -r /go/src/mort/configuration /go/
 # clean up
 RUN rm -rf /go/src
+RUN rm -rf /go/pkg
 
 # Run the outyet command by default when the container starts.
 ENTRYPOINT ["/go/mort"]
