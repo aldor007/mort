@@ -73,6 +73,10 @@ func (i *item) Open() (io.ReadCloser, error) {
 	}
 
 	response, err := i.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	
 	return response.Body, err
 }
 
