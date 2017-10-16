@@ -130,7 +130,7 @@ func S3AuthMiddleware(mortConfig *config.Config) echo.MiddlewareFunc {
 			validiatonReq.Body = req.Body
 			validiatonReq.Host = req.Host
 
-			if authAlg== "s3" {
+			if authAlg == "s3" {
 				awsauth.SignS3(validiatonReq,  credential)
 
 			} else {

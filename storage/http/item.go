@@ -76,7 +76,7 @@ func (i *item) Open() (io.ReadCloser, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return response.Body, err
 }
 

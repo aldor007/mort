@@ -15,6 +15,8 @@ import (
 	"mort/object"
 	"mort/response"
 	"mort/log"
+	"encoding/xml"
+	"time"
 )
 
 const notFound = "{\"error\":\"item not found\"}"
@@ -69,6 +71,56 @@ func Set(obj *object.FileObject, _ http.Header, contentLen int64, body io.ReadCl
 
 	res := response.NewBuf(200, []byte(""))
 	res.SetContentType(mime.TypeByExtension(path.Ext(obj.Key)))
+	return res
+}
+
+func List(obj *object.FileObject, maxKeys int, delimeter string, prefix string, marker string) *response.Response {
+	client, err := getClient(obj)
+	if err != nil {
+		log.Log().Warnw("Storage/Set create client", "obj.Key", obj.Key, "sc", 503, "error", err)
+		return response.NewError(503, err)
+	}
+
+	items, resultMarker, err := client.Items(prefix, "", maxKeys)
+	if err != nil {
+		return response.NewError(500, err)
+	}
+
+	type contentXml struct {
+		Key   string `xml:"Key"`
+		LastModified time.Time`xml:"LastModified"`
+		ETag         string `xml:"ETag"`
+		Size         int64 `xml:"Size"`
+	}
+
+
+	type listBucketResult struct {
+		XMLName     xml.Name `xml:"ListBucketResult"`
+		Name        string   `xml:"Name"`
+		Prefix      string   `xml:"Prefix"`
+		Marker      string   `xml:"Marker"`
+		MaxKeys     int      `xml:"MaxKeys"`
+		IsTruncated bool      `xml:"IsTruncated"`
+		Contents   []contentXml`xml:"Contents"`
+	}
+
+	result := listBucketResult{Name: obj.Bucket, Prefix: prefix, Marker: resultMarker, MaxKeys: maxKeys, IsTruncated: false}
+
+
+	for _, item := range items {
+		lastMod, _ := item.LastMod()
+		size, _ := item.Size()
+		etag, _ := item.ETag()
+		result.Contents = append(result.Contents, contentXml{Key: item.ID(), LastModified: lastMod, Size: size, ETag: etag})
+	}
+
+	resultXml, err := xml.Marshal(result)
+	if err != nil {
+		return response.NewError(500, err)
+	}
+
+	res := response.NewBuf(200, resultXml)
+	res.SetContentType("application/xml")
 	return res
 }
 

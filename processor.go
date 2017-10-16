@@ -14,6 +14,7 @@ import (
 	"mort/storage"
 	"mort/transforms"
 	"mort/log"
+	"strconv"
 )
 const S3_LOCATION_STR = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><LocationConstraint xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">EU</LocationConstraint>"
 
@@ -96,7 +97,29 @@ func handleS3Get(ctx echo.Context, obj *object.FileObject) *response.Response {
 		return response.NewBuf(200, []byte(S3_LOCATION_STR))
 	}
 
-	return response.NewBuf(405, []byte(""))
+	maxKeys := 1000
+	delimeter := ""
+	prefix := ""
+	marker := ""
+
+	if maxKeysQuery, ok := query["max-keys"]; ok {
+		maxKeys, _ = strconv.Atoi(maxKeysQuery[0])
+	}
+
+	if delimeterQuery, ok := query["delimeter"]; ok {
+		delimeter = delimeterQuery[0]
+	}
+
+	if prefixQuery, ok := query["query"]; ok {
+		prefix = prefixQuery[0]
+	}
+
+	if markerQuery, ok := query["marker"]; ok {
+		marker = markerQuery[0]
+	}
+
+	return storage.List(obj, maxKeys, delimeter, prefix, marker)
+
 }
 
 func processImage(obj *object.FileObject, parent *response.Response, transforms []transforms.Transforms) *response.Response {
