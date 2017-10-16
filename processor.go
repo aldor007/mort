@@ -72,6 +72,7 @@ func hanldeGET(ctx echo.Context, obj *object.FileObject) *response.Response {
 	}
 
 	defer res.Close()
+	defer parentRes.Close()
 
 	if obj.HasTransform() && strings.Contains(parentRes.ContentType, "image/") {
 		// revers order of transforms

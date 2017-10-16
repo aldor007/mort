@@ -74,12 +74,12 @@ func (c *container) getItem(id string) (*item, error) {
 		}
 		return nil, errors.Wrap(err, "getItem, getting the object")
 	}
+	defer res.Body.Close()
 
 	if res.StatusCode == 404 {
 		return nil, stow.ErrNotFound
 	}
 
-	defer res.Body.Close()
 	var etag string
 
 	if res.Header.Get("ETag") != "" {
