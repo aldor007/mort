@@ -160,7 +160,7 @@ func S3Middleware(mortConfig *config.Config) echo.MiddlewareFunc {
 	}
 
 	type listAllBucketsResult struct {
-		XMLName     xml.Name `xml:"ListBucketsResult"`
+		XMLName     xml.Name `xml:"ListAllMyBucketsResult"`
 		Owner      struct {
 			ID     string `xml:"ID"`
 			DisplayName string `xml:"DisplayName"`
@@ -170,16 +170,16 @@ func S3Middleware(mortConfig *config.Config) echo.MiddlewareFunc {
 
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			accessKey := c.Get("accessKey")
+			accessKeyVal := c.Get("accessKey")
 
 			if c.Request().URL.Path != "/" {
 				return next(c)
 			}
-
-			buckets := mortConfig.BucketsByAccessKey(accessKey.(string))
+			accessKey := accessKeyVal.(string)
+			buckets := mortConfig.BucketsByAccessKey(accessKey)
 			listAllBucketsXML := listAllBucketsResult{}
-			listAllBucketsXML.Owner.DisplayName = "test"
-			listAllBucketsXML.Owner.ID = "test"
+			listAllBucketsXML.Owner.DisplayName = accessKey
+			listAllBucketsXML.Owner.ID = accessKey
 			//listAllBucketsXML.Buckets = make([]bucketXml, len(buckets))
 			for _, bucket := range buckets {
 				b := bucketXml{}

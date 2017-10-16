@@ -17,7 +17,6 @@ RUN \
   libwebp-dev libtiff5-dev libgif-dev libexif-dev libxml2-dev libpoppler-glib-dev \
   swig libmagickwand-dev libpango1.0-dev libmatio-dev libopenslide-dev libcfitsio-dev \
   libgsf-1-dev fftw3-dev liborc-0.4-dev librsvg2-dev && \
-
   # Build libvips
   cd /tmp && \
   curl -OL https://github.com/jcupitt/libvips/releases/download/v${LIBVIPS_VERSION}/vips-${LIBVIPS_VERSION}.tar.gz && \
@@ -27,7 +26,6 @@ RUN \
   make && \
   make install && \
   ldconfig && \
-
   # Clean up
   apt-get remove -y curl automake build-essential && \
   apt-get autoremove -y && \
