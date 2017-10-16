@@ -116,7 +116,7 @@ func S3AuthMiddleware(mortConfig *config.Config) echo.MiddlewareFunc {
 				}
 
 				switch h {
-				case "Content-Type", "Content-Md5", "Host":
+				case "Content-Type", "Content-Md5", "Host", "Date":
 					validiatonReq.Header.Set(h, v[0])
 				}
 			}
