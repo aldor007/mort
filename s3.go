@@ -105,7 +105,7 @@ func S3AuthMiddleware(mortConfig *config.Config) echo.MiddlewareFunc {
 				return echo.ErrUnauthorized
 			}
 
-			validiatonReq, err := http.NewRequest(req.Method, req.URL.String(), req.Body)
+			validiatonReq, err := http.NewRequest(req.Method, req.RequestURI, req.Body)
 			if err != nil {
 				return echo.ErrUnauthorized
 			}

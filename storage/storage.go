@@ -132,18 +132,17 @@ func List(obj *object.FileObject, maxKeys int, delimeter string, prefix string, 
 				commonPrefixes[commonPrefix] = true
 			} else {
 				commonPrefix = ""
-				key = ""
 			}
-			log.Log().Infof("if key = %s commonprefix = %s %s %s", key, commonPrefix, filePath, prefixPath)
+			key = ""
 		} else {
 			key = item.Name()
-			log.Log().Infof("else %s %s %s %s", key, commonPrefix, item.ID(), item.Name())
 			// FIXME: add is dir for others adapters
 			itemMeta, _ := item.Metadata()
 			_, ok := commonPrefixes[key]
 			if itemMeta["is_dir"].(bool)  && !ok{
 				commonPrefix = key
 				commonPrefixes[key] = true
+				key = ""
 			}
 		}
 
@@ -153,7 +152,7 @@ func List(obj *object.FileObject, maxKeys int, delimeter string, prefix string, 
 
 
 		if commonPrefix != ""  {
-			result.CommonPrefixes = append(result.CommonPrefixes, commonPrefixXml{commonPrefix})
+			result.CommonPrefixes = append(result.CommonPrefixes, commonPrefixXml{commonPrefix + "/"})
 		}
 
 	}
