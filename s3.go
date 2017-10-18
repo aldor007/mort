@@ -125,6 +125,7 @@ func S3AuthMiddleware(mortConfig *config.Config) echo.MiddlewareFunc {
 				validiatonReq.Header.Set(h, req.Header.Get(h))
 			}
 
+			// FIXME: there will be problem with escaped paths
 			validiatonReq.URL = req.URL
 			validiatonReq.Method = req.Method
 			validiatonReq.Body = req.Body

@@ -12,10 +12,11 @@ import (
 	s3Storage "github.com/aldor007/stow/s3"
 	httpStorage "mort/storage/http"
 
+	"encoding/xml"
+	"mort/log"
 	"mort/object"
 	"mort/response"
-	"mort/log"
-	"encoding/xml"
+	"strings"
 	"time"
 )
 
@@ -25,7 +26,7 @@ func Get(obj *object.FileObject) *response.Response {
 	key := getKey(obj)
 	client, err := getClient(obj)
 	if err != nil {
-		log.Log().Infow("Storage/Get get client","obj.Key" ,obj.Key, "error", err)
+		log.Log().Infow("Storage/Get get client", "obj.Key", obj.Key, "error", err)
 		return response.NewError(503, err)
 	}
 
@@ -42,7 +43,7 @@ func Get(obj *object.FileObject) *response.Response {
 
 	metadata, err := item.Metadata()
 	if err != nil {
-		log.Log().Warnw("Storage/Get read metadata", "obj.Key", obj.Key,"sc", 500, "error", err)
+		log.Log().Warnw("Storage/Get read metadata", "obj.Key", obj.Key, "sc", 500, "error", err)
 		return response.NewError(500, err)
 	}
 
@@ -65,7 +66,7 @@ func Set(obj *object.FileObject, _ http.Header, contentLen int64, body io.ReadCl
 	_, err = client.Put(getKey(obj), body, contentLen, nil)
 
 	if err != nil {
-		log.Log().Warnw("Storage/Set cannot set" , "obj.Key", obj.Key, "sc", 500, "error", err)
+		log.Log().Warnw("Storage/Set cannot set", "obj.Key", obj.Key, "sc", 500, "error", err)
 		return response.NewError(500, err)
 	}
 
@@ -81,37 +82,80 @@ func List(obj *object.FileObject, maxKeys int, delimeter string, prefix string, 
 		return response.NewError(503, err)
 	}
 
-	items, resultMarker, err := client.Items(prefix, "", maxKeys)
+	items, resultMarker, err := client.Items(prefix, marker, maxKeys)
 	if err != nil {
 		return response.NewError(500, err)
 	}
 
 	type contentXml struct {
-		Key   string `xml:"Key"`
-		LastModified time.Time`xml:"LastModified"`
-		ETag         string `xml:"ETag"`
-		Size         int64 `xml:"Size"`
+		Key          string    `xml:"Key"`
+		StorageClass string    `xml::"StorageClass"`
+		LastModified time.Time `xml:"LastModified"`
+		ETag         string    `xml:"ETag"`
+		Size         int64     `xml:"Size"`
 	}
 
+	type commonPrefixXml struct {
+		Prefix string `xml:"Prefix"`
+	}
 
 	type listBucketResult struct {
-		XMLName     xml.Name `xml:"ListBucketResult"`
-		Name        string   `xml:"Name"`
-		Prefix      string   `xml:"Prefix"`
-		Marker      string   `xml:"Marker"`
-		MaxKeys     int      `xml:"MaxKeys"`
-		IsTruncated bool      `xml:"IsTruncated"`
-		Contents   []contentXml`xml:"Contents"`
+		XMLName        xml.Name          `xml:"ListBucketResult"`
+		Name           string            `xml:"Name"`
+		Prefix         string            `xml:"Prefix"`
+		Marker         string            `xml:"Marker"`
+		MaxKeys        int               `xml:"MaxKeys"`
+		IsTruncated    bool              `xml:"IsTruncated"`
+		Contents       []contentXml      `xml:"Contents"`
+		CommonPrefixes []commonPrefixXml `xml:"CommonPrefixes"`
 	}
 
 	result := listBucketResult{Name: obj.Bucket, Prefix: prefix, Marker: resultMarker, MaxKeys: maxKeys, IsTruncated: false}
 
-
+	commonPrefixes := make(map[string]bool, len(items))
 	for _, item := range items {
 		lastMod, _ := item.LastMod()
 		size, _ := item.Size()
 		etag, _ := item.ETag()
-		result.Contents = append(result.Contents, contentXml{Key: item.ID(), LastModified: lastMod, Size: size, ETag: etag})
+		filePath := strings.Split(item.ID(), "/")
+		prefixPath := strings.Split(prefix, "/")
+		var commonPrefix string
+		var key string
+
+
+		if len(filePath) > len(prefixPath) {
+			key = strings.Join(filePath[0:len(prefixPath)], "/")
+
+			_, ok := commonPrefixes[key]
+			if !ok {
+				commonPrefix = key
+				commonPrefixes[commonPrefix] = true
+			} else {
+				commonPrefix = ""
+				key = ""
+			}
+			log.Log().Infof("if key = %s commonprefix = %s %s %s", key, commonPrefix, filePath, prefixPath)
+		} else {
+			key = item.Name()
+			log.Log().Infof("else %s %s %s %s", key, commonPrefix, item.ID(), item.Name())
+			// FIXME: add is dir for others adapters
+			itemMeta, _ := item.Metadata()
+			_, ok := commonPrefixes[key]
+			if itemMeta["is_dir"].(bool)  && !ok{
+				commonPrefix = key
+				commonPrefixes[key] = true
+			}
+		}
+
+		if key != "" {
+			result.Contents = append(result.Contents, contentXml{Key: key, LastModified: lastMod, Size: size, ETag: etag, StorageClass: "STANDARD"})
+		}
+
+
+		if commonPrefix != ""  {
+			result.CommonPrefixes = append(result.CommonPrefixes, commonPrefixXml{commonPrefix})
+		}
+
 	}
 
 	resultXml, err := xml.Marshal(result)
@@ -169,17 +213,16 @@ func getClient(obj *object.FileObject) (stow.Container, error) {
 				return nil, err
 			}
 
-			return container,nil
+			return container, nil
 		}
 
-		return  nil, err
+		return nil, err
 	}
 
 	return container, nil
 }
 
-
-func getKey (obj *object.FileObject) string {
+func getKey(obj *object.FileObject) string {
 	return path.Join(obj.Storage.PathPrefix, obj.Key)
 }
 func prepareResponse(obj *object.FileObject, stream io.ReadCloser, metadata map[string]interface{}) *response.Response {
@@ -187,7 +230,7 @@ func prepareResponse(obj *object.FileObject, stream io.ReadCloser, metadata map[
 
 	for k, v := range metadata {
 		switch k {
-		case  "etag", "last-modified":
+		case "etag", "last-modified":
 			res.Set(k, v.(string))
 
 		}

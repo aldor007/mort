@@ -3,6 +3,7 @@ const AWS = require('aws-sdk');
 // const mime = require('mime')
 
 const host = 'localhost:8080'
+// const host = 'mort.mkaciuba.com'
 const accessKeyId = 'acc'
 const secretAccessKey = 'sec'
 
@@ -13,7 +14,7 @@ const s3opts = {
    sslEnabled: false,
    accessKeyId: accessKeyId,
    secretAccessKey: secretAccessKey,
-   signatureVersion: 'v4',
+   signatureVersion: 's3',
    computeChecksums: true
 };
 const body = fs.readFileSync('file.jpeg')
@@ -41,14 +42,27 @@ const options = {
     queueSize: 1
 };
 
-s3.listBuckets({}, function (err, data) {
-	console.info(err, data)
-})
-s3.upload(params, options, function (err, data) {
-    if (err) {
-        console.error('Error uploading file', err);
-        return;
-    }
+// s3.listBuckets({}, function (err, data) {
+// 	console.info(err, data)
+// })
 
-    console.info('Successful uploaded file');
-});
+const listParams = {
+    Bucket: 'liip',
+}
+
+s3.listObjects(listParams, function (err, data) {
+    if (err) {
+        console.error(err);
+        throw err;
+    }
+    console.info('list', data)
+})
+
+// s3.upload(params, options, function (err, data) {
+//     if (err) {
+//         console.error('Error uploading file', err);
+//         return;
+//     }
+
+//     console.info('Successful uploaded file');
+// });

@@ -110,7 +110,7 @@ func handleS3Get(ctx echo.Context, obj *object.FileObject) *response.Response {
 		delimeter = delimeterQuery[0]
 	}
 
-	if prefixQuery, ok := query["query"]; ok {
+	if prefixQuery, ok := query["prefix"]; ok {
 		prefix = prefixQuery[0]
 	}
 

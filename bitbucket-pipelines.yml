@@ -14,7 +14,7 @@ pipelines:
     - step:
         script: # Modify the commands below to build your repository.
           # Set $DOCKER_HUB_USERNAME and $DOCKER_HUB_PASSWORD as environment variables in repository settings
-          - export IMAGE_NAME=aldor007/mort:$BITBUCKET_COMMIT
+          - export IMAGE_NAME=aldor007/mort:latest
 
           # build the Docker image (this will use the Dockerfile in the root of the repo)
           - docker build -t $IMAGE_NAME .
