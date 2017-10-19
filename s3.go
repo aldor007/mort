@@ -133,6 +133,19 @@ func S3AuthMiddleware(mortConfig *config.Config) echo.MiddlewareFunc {
 
 			if authAlg == "s3" {
 				awsauth.SignS3(validiatonReq,  credential)
+				if auth == validiatonReq.Header.Get(echo.HeaderAuthorization) {
+					c.Set("accessKey", accessKey)
+					return next(c)
+				}
+
+				reqDate := validiatonReq.Header.Get("Date")
+				if reqDate != "" {
+					fDate, err := time.Parse(time.RFC1123, reqDate)
+					if err == nil {
+						validiatonReq.Header.Set("Date", fDate.Format(time.RFC1123Z))
+						awsauth.SignS3(validiatonReq,  credential)
+					}
+				}
 
 			} else {
 				awsauth.Sign4ForRegion(validiatonReq, "mort", "s3", credential)

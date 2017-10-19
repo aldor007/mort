@@ -26,7 +26,7 @@ headers['content-type'] = headers['content-type'] ||  'image/jpeg'
 
 const params = {
     Body: body,
-    Bucket: 'media',
+    Bucket: 'media2',
     Key: '/file.jpg',
     ContentDisposition: headers['content-disposition'],
     ContentEncoding: headers['content-encoding'],
@@ -50,19 +50,19 @@ const listParams = {
     Bucket: 'liip',
 }
 
-s3.listObjects(listParams, function (err, data) {
-    if (err) {
-        console.error(err);
-        throw err;
-    }
-    console.info('list', data)
-})
-
-// s3.upload(params, options, function (err, data) {
+// s3.listObjects(listParams, function (err, data) {
 //     if (err) {
-//         console.error('Error uploading file', err);
-//         return;
+//         console.error(err);
+//         throw err;
 //     }
+//     console.info('list', data)
+// })
 
-//     console.info('Successful uploaded file');
-// });
+s3.upload(params, options, function (err, data) {
+    if (err) {
+        console.error('Error uploading file', err);
+        return;
+    }
+
+    console.info('Successful uploaded file');
+});
