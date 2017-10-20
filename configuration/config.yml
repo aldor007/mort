@@ -78,7 +78,7 @@ buckets:
             transform:
                 kind: "local"
                 rootPath: "/Users/aldor/workspace/mkaciubacom/web"
-    media:
+    media2:
         keys:
           - accessKey: "acc"
             secretAccessKey: "sec"

@@ -86,5 +86,7 @@ func (r *Response) CopyBody() ([]byte, error) {
 }
 
 func (r *Response) Close() {
-	r.Stream.Close()
+	if r.Stream != nil {
+		r.Stream.Close()
+	}
 }

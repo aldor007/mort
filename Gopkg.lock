@@ -23,7 +23,7 @@
   branch = "master"
   name = "github.com/aldor007/go-aws-auth"
   packages = ["."]
-  revision = "cbb0700b447fec031e4f1ca11752684aa31692fd"
+  revision = "a311e63fcbecebfb250403327210949e3bf5c565"
 
 [[projects]]
   branch = "develop"

@@ -105,7 +105,7 @@ func S3AuthMiddleware(mortConfig *config.Config) echo.MiddlewareFunc {
 				return echo.ErrUnauthorized
 			}
 
-			validiatonReq, err := http.NewRequest(req.Method, req.URL.String(), req.Body)
+			validiatonReq, err := http.NewRequest(req.Method, req.RequestURI, req.Body)
 			if err != nil {
 				return echo.ErrUnauthorized
 			}
@@ -116,7 +116,7 @@ func S3AuthMiddleware(mortConfig *config.Config) echo.MiddlewareFunc {
 				}
 
 				switch h {
-				case "Content-Type", "Content-Md5", "Host":
+				case "Content-Type", "Content-Md5", "Host", "Date":
 					validiatonReq.Header.Set(h, v[0])
 				}
 			}
@@ -125,13 +125,27 @@ func S3AuthMiddleware(mortConfig *config.Config) echo.MiddlewareFunc {
 				validiatonReq.Header.Set(h, req.Header.Get(h))
 			}
 
+			// FIXME: there will be problem with escaped paths
 			validiatonReq.URL = req.URL
 			validiatonReq.Method = req.Method
 			validiatonReq.Body = req.Body
 			validiatonReq.Host = req.Host
 
-			if authAlg== "s3" {
+			if authAlg == "s3" {
 				awsauth.SignS3(validiatonReq,  credential)
+				if auth == validiatonReq.Header.Get(echo.HeaderAuthorization) {
+					c.Set("accessKey", accessKey)
+					return next(c)
+				}
+
+				reqDate := validiatonReq.Header.Get("Date")
+				if reqDate != "" {
+					fDate, err := time.Parse(time.RFC1123, reqDate)
+					if err == nil {
+						validiatonReq.Header.Set("Date", fDate.Format(time.RFC1123Z))
+						awsauth.SignS3(validiatonReq,  credential)
+					}
+				}
 
 			} else {
 				awsauth.Sign4ForRegion(validiatonReq, "mort", "s3", credential)
@@ -160,7 +174,7 @@ func S3Middleware(mortConfig *config.Config) echo.MiddlewareFunc {
 	}
 
 	type listAllBucketsResult struct {
-		XMLName     xml.Name `xml:"ListBucketsResult"`
+		XMLName     xml.Name `xml:"ListAllMyBucketsResult"`
 		Owner      struct {
 			ID     string `xml:"ID"`
 			DisplayName string `xml:"DisplayName"`
@@ -170,16 +184,16 @@ func S3Middleware(mortConfig *config.Config) echo.MiddlewareFunc {
 
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			accessKey := c.Get("accessKey")
+			accessKeyVal := c.Get("accessKey")
 
 			if c.Request().URL.Path != "/" {
 				return next(c)
 			}
-
-			buckets := mortConfig.BucketsByAccessKey(accessKey.(string))
+			accessKey := accessKeyVal.(string)
+			buckets := mortConfig.BucketsByAccessKey(accessKey)
 			listAllBucketsXML := listAllBucketsResult{}
-			listAllBucketsXML.Owner.DisplayName = "test"
-			listAllBucketsXML.Owner.ID = "test"
+			listAllBucketsXML.Owner.DisplayName = accessKey
+			listAllBucketsXML.Owner.ID = accessKey
 			//listAllBucketsXML.Buckets = make([]bucketXml, len(buckets))
 			for _, bucket := range buckets {
 				b := bucketXml{}
