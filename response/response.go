@@ -44,7 +44,10 @@ func NewBuf(statusCode int, body []byte) *Response {
 
 func NewError(statusCode int, err error) *Response {
 	body := map[string]string{"message": err.Error()}
-	jsonBody, _ := json.Marshal(body)
+	jsonBody, err := json.Marshal(body)
+	if err != nil {
+		panic(err)
+	}
 	res := Response{StatusCode: statusCode, Stream: ioutil.NopCloser(bytes.NewReader(jsonBody))}
 	res.ContentLength = int64(len(jsonBody))
 	res.Headers = make(http.Header)
@@ -86,7 +89,7 @@ func (r *Response) CopyBody() ([]byte, error) {
 }
 
 func (r *Response) Close() {
-	if r.Stream != nil {
+	if r != nil &&& r.Stream != nil {
 		r.Stream.Close()
 	}
 }

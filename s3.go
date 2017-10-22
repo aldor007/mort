@@ -186,7 +186,7 @@ func S3Middleware(mortConfig *config.Config) echo.MiddlewareFunc {
 		return func(c echo.Context) error {
 			accessKeyVal := c.Get("accessKey")
 
-			if c.Request().URL.Path != "/" {
+			if c.Request().URL.Path != "/" || c.Request().Header.Get(echo.HeaderAuthorization) == "" {
 				return next(c)
 			}
 			accessKey := accessKeyVal.(string)
