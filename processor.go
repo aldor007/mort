@@ -72,10 +72,11 @@ func hanldeGET(ctx echo.Context, obj *object.FileObject) *response.Response {
 		return res
 	}
 
-	defer res.Close()
 	defer parentRes.Close()
 
 	if obj.HasTransform() && strings.Contains(parentRes.ContentType, "image/") {
+		defer res.Close()
+
 		// revers order of transforms
 		for i := 0; i < len(transforms)/2; i++ {
 			j := len(transforms) - i - 1
@@ -86,7 +87,7 @@ func hanldeGET(ctx echo.Context, obj *object.FileObject) *response.Response {
 		return updateHeaders(processImage(obj, parentRes, transforms))
 	}
 
-	return updateHeaders(storage.Get(obj))
+	return updateHeaders(res)
 }
 
 func handleS3Get(ctx echo.Context, obj *object.FileObject) *response.Response {
