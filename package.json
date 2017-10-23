@@ -1,0 +1,30 @@
+{
+  "name": "mort-integrations-tests",
+  "version": "1.0.0",
+  "dependencies": {
+    "aws-sdk": "^2.131.0",
+    "chai": "^4.1.2",
+    "supertest": "^3.0.0"
+  },
+  "devDependencies": {
+    "mocha": "^4.0.1"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@bitbucket.org/aldor007/go-img.git"
+  },
+  "keywords": [
+    "s3",
+    "images",
+    "microservice",
+    "processing",
+    "thumbnails",
+    "processing"
+  ],
+  "author": "",
+  "license": "ISC",
+  "homepage": "https://bitbucket.org/aldor007/go-img#readme"
+}

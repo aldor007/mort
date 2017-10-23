@@ -86,12 +86,12 @@ func S3AuthMiddleware(mortConfig *config.Config) echo.MiddlewareFunc {
 			if !ok {
 				buckets := mortConfig.BucketsByAccessKey(accessKey)
 				if len(buckets) == 0 {
-					return echo.NewHTTPError(404, "unknown bucket")
+					return echo.ErrForbidden
 				}
 
 				bucket = buckets[0]
 			}
-
+			fmt.Println("aaa ", accessKey)
 			keys := bucket.Keys
 			for _, key := range keys {
 				if accessKey == key.AccessKey {
@@ -151,7 +151,9 @@ func S3AuthMiddleware(mortConfig *config.Config) echo.MiddlewareFunc {
 				awsauth.Sign4ForRegion(validiatonReq, "mort", "s3", credential)
 			}
 
+
 			if auth == validiatonReq.Header.Get(echo.HeaderAuthorization) {
+				req.Body = validiatonReq.Body
 				c.Set("accessKey", accessKey)
 				return next(c)
 			}

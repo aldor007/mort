@@ -14,7 +14,7 @@ const s3opts = {
    sslEnabled: false,
    accessKeyId: accessKeyId,
    secretAccessKey: secretAccessKey,
-   signatureVersion: 's3',
+   signatureVersion: 'v4',
    computeChecksums: true
 };
 const body = fs.readFileSync('file.jpeg')
@@ -24,10 +24,12 @@ const headers = {}
 headers['content-length'] = headers['content-length'] || body.length;
 headers['content-type'] = headers['content-type'] ||  'image/jpeg'
 
+console.info('Body len', body.length)
+
 const params = {
     Body: body,
     Bucket: 'media2',
-    Key: '/file.jpg',
+    Key: 'file.jpg2',
     ContentDisposition: headers['content-disposition'],
     ContentEncoding: headers['content-encoding'],
     ContentLanguage: headers['content-language'],
