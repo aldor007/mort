@@ -30,7 +30,6 @@ func main() {
 	e := echo.New()
 
 	e.Use(mort.S3AuthMiddleware(imgConfig))
-	e.Use(mort.S3Middleware(imgConfig))
 
 	// Route => handler
 	e.Any ("/*", func(ctx echo.Context) error {

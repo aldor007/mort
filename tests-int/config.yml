@@ -60,7 +60,7 @@ buckets:
                 default_small:
                     quality: 95
                     filters:
-                        thumbnail: {size: [150]}
+                        thumbnail: {size: [150, 200]}
         storages:
             api:
                 kind: "http"
