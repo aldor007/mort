@@ -28,6 +28,7 @@ func isAuthRequired(method string, auth string, path string) bool {
 		if auth != "" {
 			return true
 		}
+
 		return false
 	case "POST", "PUT", "DELETE", "PATCH":
 		return true
@@ -39,7 +40,6 @@ func isAuthRequired(method string, auth string, path string) bool {
 // BasicAuthWithConfig returns an BasicAuth middleware with config.
 // See `BasicAuth()`.
 func S3AuthMiddleware(mortConfig *config.Config) echo.MiddlewareFunc {
-
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			req := c.Request()
@@ -86,12 +86,12 @@ func S3AuthMiddleware(mortConfig *config.Config) echo.MiddlewareFunc {
 			if !ok {
 				buckets := mortConfig.BucketsByAccessKey(accessKey)
 				if len(buckets) == 0 {
-					return echo.NewHTTPError(404, "unknown bucket")
+					return echo.ErrForbidden
 				}
 
 				bucket = buckets[0]
 			}
-
+			fmt.Println("aaa ", accessKey)
 			keys := bucket.Keys
 			for _, key := range keys {
 				if accessKey == key.AccessKey {
@@ -133,26 +133,17 @@ func S3AuthMiddleware(mortConfig *config.Config) echo.MiddlewareFunc {
 
 			if authAlg == "s3" {
 				awsauth.SignS3(validiatonReq,  credential)
-				if auth == validiatonReq.Header.Get(echo.HeaderAuthorization) {
-					c.Set("accessKey", accessKey)
-					return next(c)
-				}
-
-				reqDate := validiatonReq.Header.Get("Date")
-				if reqDate != "" {
-					fDate, err := time.Parse(time.RFC1123, reqDate)
-					if err == nil {
-						validiatonReq.Header.Set("Date", fDate.Format(time.RFC1123Z))
-						awsauth.SignS3(validiatonReq,  credential)
-					}
-				}
-
 			} else {
 				awsauth.Sign4ForRegion(validiatonReq, "mort", "s3", credential)
 			}
 
+
 			if auth == validiatonReq.Header.Get(echo.HeaderAuthorization) {
+				req.Body = validiatonReq.Body
 				c.Set("accessKey", accessKey)
+				if path == "/"  {
+					return listAllMyBuckets(c, mortConfig, accessKey)
+				}
 				return next(c)
 			}
 
@@ -164,8 +155,7 @@ func S3AuthMiddleware(mortConfig *config.Config) echo.MiddlewareFunc {
 }
 
 
-func S3Middleware(mortConfig *config.Config) echo.MiddlewareFunc {
-
+func listAllMyBuckets(c echo.Context, mortConfig *config.Config, accessKey string) error {
 	type bucketXml struct {
 		XMLName     xml.Name `xml:"Bucket"`
 		Name string `xml:"Name"`
@@ -182,28 +172,18 @@ func S3Middleware(mortConfig *config.Config) echo.MiddlewareFunc {
 		Buckets []bucketXml `xml:"Buckets>Bucket"`
 	}
 
-	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			accessKeyVal := c.Get("accessKey")
-
-			if c.Request().URL.Path != "/" || c.Request().Header.Get(echo.HeaderAuthorization) == "" {
-				return next(c)
-			}
-			accessKey := accessKeyVal.(string)
-			buckets := mortConfig.BucketsByAccessKey(accessKey)
-			listAllBucketsXML := listAllBucketsResult{}
-			listAllBucketsXML.Owner.DisplayName = accessKey
-			listAllBucketsXML.Owner.ID = accessKey
-			//listAllBucketsXML.Buckets = make([]bucketXml, len(buckets))
-			for _, bucket := range buckets {
-				b := bucketXml{}
-				b.Name = bucket.Name
-				b.CreationDate = time.Now().Format(time.RFC3339)
-				listAllBucketsXML.Buckets = append(listAllBucketsXML.Buckets, b)
-			}
-
-			c.XML(200, listAllBucketsXML)
-			return nil
-		}
+	buckets := mortConfig.BucketsByAccessKey(accessKey)
+	listAllBucketsXML := listAllBucketsResult{}
+	listAllBucketsXML.Owner.DisplayName = accessKey
+	listAllBucketsXML.Owner.ID = accessKey
+	//listAllBucketsXML.Buckets = make([]bucketXml, len(buckets))
+	for _, bucket := range buckets {
+		b := bucketXml{}
+		b.Name = bucket.Name
+		b.CreationDate = time.Now().Format(time.RFC3339)
+		listAllBucketsXML.Buckets = append(listAllBucketsXML.Buckets, b)
 	}
+
+	c.XML(200, listAllBucketsXML)
+	return nil
 }

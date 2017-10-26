@@ -1,0 +1,74 @@
+headers:
+  - statusCodes: [200]
+    values:
+      "cache-control": "max-age=84000, public"
+  - statusCodes: [404, 400]
+    values:
+      "cache-control": "max-age=60, public"
+  - statusCodes: [500, 503]
+    values:
+      "cache-control": "max-age=10, public"
+
+buckets:
+    local:
+        keys:
+          - accessKey: "acc"
+            secretAccessKey: "sec"
+        transform:
+            path: "\\/+(?:cache|resolve)\\/([a-z0-9_]+)\\/+[a-z]+\\/[a-zA-Z0-9]+\\/+(.*)"
+            kind: "presets"
+            order:
+              presetName: 0
+              parent: 1
+            presets:
+                blog_small:
+                    quality: 75
+                    filters:
+                        thumbnail: { size: [100, 70], mode: outbound }
+                        interlace:
+                            mode: line
+                blog_medium:
+                    quality: 75
+                    filters:
+                        thumbnail: { size: [903, 600], mode: outbound }
+                        crop: { start: [0, 0], size: [900, 320] }
+
+                blog_home:
+                    quality: 75
+                    filters:
+                        entropy_crop: { size: [756, 396], mode: outbound }
+        storages:
+            basic:
+                kind: "local"
+                rootPath: "/tmp/mort-tests/"
+            transform:
+                kind: "local"
+                rootPath: "/tmp/mort-tests/"
+    remote:
+        keys:
+          - accessKey: "acc"
+            secretAccessKey: "sec"
+        transform:
+            path: "\\/([a-zA-Z0-9-\\.]+)\\/([a-z0-9_]+).*"
+            kind: "presets"
+            order:
+              parent: 0
+              presetName: 1
+            parentStorage: "api"
+            parentBucket: "remote"
+            presets:
+                default_small:
+                    quality: 95
+                    filters:
+                        thumbnail: {size: [150, 200]}
+        storages:
+            api:
+                kind: "http"
+                url: "https://i.imgur.com/<item>" # ChzUb.jpg
+            transform:
+                kind: "local"
+                rootPath: "/tmp/mort-tests/"
+                pathPrefix: "transforms"
+            basic:
+                kind: "local"
+                rootPath: "/tmp/mort-tests/"
