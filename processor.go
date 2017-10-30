@@ -15,10 +15,31 @@ import (
 	"mort/transforms"
 	"mort/log"
 	"strconv"
+	"fmt"
+	"time"
 )
 const S3_LOCATION_STR = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><LocationConstraint xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">EU</LocationConstraint>"
 
-func Process(ctx echo.Context, obj *object.FileObject) *response.Response {
+type struct RequestProcessor  {
+	responseChan chan<- response.Response
+	ctx echo.Context
+}
+
+
+
+func Process(ctx echo.Context, obj *object.FileObject)  *response.Response{
+
+	select {
+	case res := <-queue:
+		return res
+	case <-time.After(time.Second * 60):
+		return response.NewBuf(504, "timeout")
+	}
+}
+
+
+
+func process(ctx echo.Context, obj *object.FileObject) *response.Response {
 	switch ctx.Request().Method {
 		case "GET":
 			return hanldeGET(ctx, obj)
