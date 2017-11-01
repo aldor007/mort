@@ -23,6 +23,7 @@ func main() {
 	logger, _ := zap.NewDevelopment()
 	zap.ReplaceGlobals(logger)
 	log.RegisterLogger(logger.Sugar())
+	rp := mort.NewRequestProcessor(5)
 
 	imgConfig := config.GetInstance()
 	imgConfig.Load(*configPath)
@@ -40,8 +41,7 @@ func main() {
 			return ctx.NoContent(400)
 		}
 
-		// dodac placeholder
-		res := mort.Process(ctx, obj)
+		res := rp.Process(ctx, obj)
 		res.SetDebug(ctx.Request().Header.Get("X-Mort-Debug"))
 		res.WriteHeaders(ctx.Response())
 		defer res.Close()

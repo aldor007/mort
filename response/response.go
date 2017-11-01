@@ -99,7 +99,7 @@ func (r *Response) SetDebug(debug string)  {
 	}
 
 	r.debug = false
-	r.Headers["Cache-Control"] = "no-cache"
+	r.Set("Cache-Control",  "no-cache")
 }
 
 func (r *Response) HasError()  bool {

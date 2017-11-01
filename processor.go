@@ -15,31 +15,59 @@ import (
 	"mort/transforms"
 	"mort/log"
 	"strconv"
-	"fmt"
 	"time"
 )
+
 const S3_LOCATION_STR = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><LocationConstraint xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">EU</LocationConstraint>"
 
-type struct RequestProcessor  {
-	responseChan chan<- response.Response
-	ctx echo.Context
+func NewRequestProcessor(max int) RequestProcessor{
+	rp := RequestProcessor{}
+	rp.Init(max)
+	return rp
 }
 
+type requestMessage struct {
+	responseChan chan *response.Response
+	ctx echo.Context
+	obj *object.FileObject
+}
 
+type RequestProcessor struct {
+	queue chan requestMessage
+}
 
-func Process(ctx echo.Context, obj *object.FileObject)  *response.Response{
+func (r *RequestProcessor) Init(max int)  {
+	r.queue = make(chan requestMessage, max)
+}
+
+func (r *RequestProcessor) Process(ctx echo.Context, obj *object.FileObject)  *response.Response{
+
+	msg := requestMessage{}
+	msg.ctx = ctx
+	msg.obj = obj
+	msg.responseChan = make(chan *response.Response)
+
+	go r.processChan()
+	r.queue <- msg
 
 	select {
-	case res := <-queue:
+	//case <-ctx.Done():
+	//	return response.NewBuf(504, "timeout")
+	case res := <-msg.responseChan:
 		return res
 	case <-time.After(time.Second * 60):
-		return response.NewBuf(504, "timeout")
+		return response.NewBuf(504, []byte("timeout"))
 	}
 }
 
+func (r *RequestProcessor) processChan()  {
+	msg := <- r.queue
+	res := r.process(msg.ctx, msg.obj)
+	msg.responseChan <- res
+}
 
 
-func process(ctx echo.Context, obj *object.FileObject) *response.Response {
+func (r *RequestProcessor) process(ctx echo.Context, obj *object.FileObject) *response.Response {
 	switch ctx.Request().Method {
 		case "GET":
 			return hanldeGET(ctx, obj)
@@ -78,6 +106,14 @@ func hanldeGET(ctx echo.Context, obj *object.FileObject) *response.Response {
 		}
 	}
 
+	
+
+	// check if object is on storage
+	res = updateHeaders(storage.Get(obj))
+	if res.StatusCode == 200 {
+		return res
+	}
+
 	// get parent from storage
 	if parentObj != nil {
 		parentRes = updateHeaders(storage.Get(parentObj))
@@ -87,11 +123,6 @@ func hanldeGET(ctx echo.Context, obj *object.FileObject) *response.Response {
 		}
 	}
 
-	// check if object is on storage
-	res = updateHeaders(storage.Get(obj))
-	if res.StatusCode == 200 {
-		return res
-	}
 
 	defer parentRes.Close()
 
