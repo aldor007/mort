@@ -106,28 +106,58 @@ func hanldeGET(ctx echo.Context, obj *object.FileObject) *response.Response {
 		}
 	}
 
-	
+	resChan := make(chan *response.Response)
+	parentChan := make(chan *response.Response)
 
-	// check if object is on storage
-	res = updateHeaders(storage.Get(obj))
-	if res.StatusCode == 200 {
-		return res
-	}
+	go func(o *object.FileObject) {
+		resChan <- storage.Get(o)
+	}(obj)
 
 	// get parent from storage
 	if parentObj != nil {
-		parentRes = updateHeaders(storage.Get(parentObj))
+		go func(p *object.FileObject) {
+			parentChan <- storage.Head(p)
+		}(parentObj)
+	}
 
-		if parentRes.StatusCode != 200 {
-			return parentRes
+resLoop:
+	for {
+		select {
+		case res = <-resChan:
+			if parentObj != nil && (parentRes == nil || parentRes.StatusCode == 0) {
+				go func () {
+					resChan <- res
+				}()
+
+			} else {
+				if res.StatusCode == 200 && parentRes.StatusCode == 200 {
+					return updateHeaders(res)
+				}
+
+				if res.StatusCode == 404 {
+					break resLoop
+				} else {
+					return updateHeaders(res)
+				}
+			}
+		case parentRes = <-parentChan:
+			if parentRes.StatusCode == 404 {
+				return updateHeaders(parentRes)
+			}
+		default:
+
 		}
 	}
 
-
-	defer parentRes.Close()
-
 	if obj.HasTransform() && strings.Contains(parentRes.ContentType, "image/") {
 		defer res.Close()
+		parentRes = updateHeaders(storage.Get(parentObj))
+
+		if parentRes.StatusCode != 200 {
+			return updateHeaders(parentRes)
+		}
+
+		defer parentRes.Close()
 
 		// revers order of transforms
 		for i := 0; i < len(transforms)/2; i++ {

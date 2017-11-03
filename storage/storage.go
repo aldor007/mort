@@ -56,6 +56,34 @@ func Get(obj *object.FileObject) *response.Response {
 	return prepareResponse(obj, reader, metadata)
 }
 
+func Head(obj *object.FileObject) *response.Response {
+	key := getKey(obj)
+	client, err := getClient(obj)
+	if err != nil {
+		log.Log().Infow("Storage/Get get client", "obj.Key", obj.Key, "error", err)
+		return response.NewError(503, err)
+	}
+
+	item, err := client.Item(key)
+	if err != nil {
+		if err == stow.ErrNotFound {
+			log.Log().Infow("Storage/Get item response", "obj.Key", obj.Key, "sc", 404)
+			return response.NewBuf(404, []byte(notFound))
+		}
+
+		log.Log().Infow("Storage/Get item response", "obj.Key", obj.Key, "error", err)
+		return response.NewError(500, err)
+	}
+
+	metadata, err := item.Metadata()
+	if err != nil {
+		log.Log().Warnw("Storage/Get read metadata", "obj.Key", obj.Key, "sc", 500, "error", err)
+		return response.NewError(500, err)
+	}
+
+	return prepareResponse(obj, nil, metadata)
+}
+
 func Set(obj *object.FileObject, _ http.Header, contentLen int64, body io.ReadCloser) *response.Response {
 	client, err := getClient(obj)
 	if err != nil {
@@ -224,6 +252,7 @@ func getClient(obj *object.FileObject) (stow.Container, error) {
 func getKey(obj *object.FileObject) string {
 	return path.Join(obj.Storage.PathPrefix, obj.Key)
 }
+
 func prepareResponse(obj *object.FileObject, stream io.ReadCloser, metadata map[string]interface{}) *response.Response {
 	res := response.New(200, stream)
 

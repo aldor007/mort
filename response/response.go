@@ -95,11 +95,11 @@ func (r *Response) Close() {
 func (r *Response) SetDebug(debug string)  {
 	if debug == "1" {
 		r.debug = true
+		r.Set("Cache-Control",  "no-cache")
 		return
 	}
 
 	r.debug = false
-	r.Set("Cache-Control",  "no-cache")
 }
 
 func (r *Response) HasError()  bool {
