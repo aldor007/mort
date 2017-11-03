@@ -23,6 +23,7 @@ func main() {
 	logger, _ := zap.NewDevelopment()
 	zap.ReplaceGlobals(logger)
 	log.RegisterLogger(logger.Sugar())
+	rp := mort.NewRequestProcessor(5)
 
 	imgConfig := config.GetInstance()
 	imgConfig.Load(*configPath)
@@ -30,6 +31,7 @@ func main() {
 	e := echo.New()
 
 	e.Use(mort.S3AuthMiddleware(imgConfig))
+	// TODO: change echo to pressly/chi
 
 	// Route => handler
 	e.Any ("/*", func(ctx echo.Context) error {
@@ -39,11 +41,14 @@ func main() {
 			return ctx.NoContent(400)
 		}
 
-		// dodac placeholder
-		res := mort.Process(ctx, obj)
+		res := rp.Process(ctx, obj)
+		res.SetDebug(ctx.Request().Header.Get("X-Mort-Debug"))
 		res.WriteHeaders(ctx.Response())
 		defer res.Close()
 		defer logger.Sync() // flushes buffer, if any
+		if res.HasError() {
+			log.Log().Warnw("Mort process error", "error", res.Error())
+		}
 
 		return ctx.Stream(res.StatusCode, res.ContentType, res.Stream)
 	})
