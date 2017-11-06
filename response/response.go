@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"github.com/labstack/echo"
 )
 
 const (
@@ -108,6 +109,15 @@ func (r *Response) HasError()  bool {
 
 func (r *Response) Error()  error {
 	return r.errorValue
+}
+
+func (r *Response) Write(ctx echo.Context) error {
+	if r.Stream != nil {
+		defer r.Close()
+		return ctx.Stream(r.StatusCode, r.ContentType, r.Stream)
+	}
+
+	return ctx.NoContent(r.StatusCode)
 }
 
 func (r *Response) writeDebug() {

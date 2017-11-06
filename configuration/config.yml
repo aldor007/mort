@@ -73,10 +73,10 @@ buckets:
                             mode: line
         storages:
             basic:
-                kind: "local"
+                kind: "local-meta"
                 rootPath: "/Users/aldor/workspace/mkaciubacom/web"
             transform:
-                kind: "local"
+                kind: "local-meta"
                 rootPath: "/Users/aldor/workspace/mkaciubacom/web"
     media:
         keys:
@@ -150,7 +150,7 @@ buckets:
                 headers:
                   "x-security-key": "123qwe123qwe"
             transform:
-                kind: "local"
+                kind: "local-meta"
                 rootPath: "/Users/aldor/workspace/mkaciubacom/web"
                 pathPrefix: "transforms"
 #                kind: "http"
@@ -158,5 +158,5 @@ buckets:
 #                headers:
 #                  "x-security-key": "123qwe123qwe"
             basic:
-                kind: "local"
+                kind: "local-meta"
                 rootPath: "/Users/aldor/workspace/mkaciubacom/web"
