@@ -9,6 +9,7 @@ import (
 
 	"github.com/aldor007/stow"
 	fileStorage "github.com/aldor007/stow/local"
+	metaStorage "github.com/aldor007/stow/local-meta"
 	s3Storage "github.com/aldor007/stow/s3"
 	httpStorage "mort/storage/http"
 
@@ -41,29 +42,51 @@ func Get(obj *object.FileObject) *response.Response {
 		return response.NewError(500, err)
 	}
 
-	metadata, err := item.Metadata()
-	if err != nil {
-		log.Log().Warnw("Storage/Get read metadata", "obj.Key", obj.Key, "sc", 500, "error", err)
-		return response.NewError(500, err)
-	}
-
 	reader, err := item.Open()
 	if err != nil {
 		log.Log().Warnw("Storage/Get open item", "obj.Key", obj.Key, "sc", 500, "error", err)
 		return response.NewError(500, err)
 	}
 
-	return prepareResponse(obj, reader, metadata)
+	return prepareResponse(obj, reader, item)
 }
 
-func Set(obj *object.FileObject, _ http.Header, contentLen int64, body io.ReadCloser) *response.Response {
+func Head(obj *object.FileObject) *response.Response {
+	key := getKey(obj)
+	client, err := getClient(obj)
+	if err != nil {
+		log.Log().Infow("Storage/Get get client", "obj.Key", obj.Key, "error", err)
+		return response.NewError(503, err)
+	}
+
+	item, err := client.Item(key)
+	if err != nil {
+		if err == stow.ErrNotFound {
+			log.Log().Infow("Storage/Get item response", "obj.Key", obj.Key, "sc", 404)
+			return response.NewBuf(404, []byte(notFound))
+		}
+
+		log.Log().Infow("Storage/Get item response", "obj.Key", obj.Key, "error", err)
+		return response.NewError(500, err)
+	}
+
+
+	return prepareResponse(obj, nil, item)
+}
+
+func Set(obj *object.FileObject, headers http.Header, contentLen int64, body io.ReadCloser) *response.Response {
 	client, err := getClient(obj)
 	if err != nil {
 		log.Log().Warnw("Storage/Set create client", "obj.Key", obj.Key, "sc", 503, "error", err)
 		return response.NewError(503, err)
 	}
 
-	_, err = client.Put(getKey(obj), body, contentLen, nil)
+	metadata := make(map[string]interface{})
+	for k, v := range headers {
+		metadata[k] = v[0]
+	}
+
+	_, err = client.Put(getKey(obj), body, contentLen, metadata)
 
 	if err != nil {
 		log.Log().Warnw("Storage/Set cannot set", "obj.Key", obj.Key, "sc", 500, "error", err)
@@ -174,8 +197,13 @@ func getClient(obj *object.FileObject) (stow.Container, error) {
 
 	switch storageCfg.Kind {
 	case "local":
+		allowMetadata := ""
+		if storageCfg.AllowMetadata {
+			allowMetadata = "true"
+		}
 		config = stow.ConfigMap{
 			fileStorage.ConfigKeyPath: storageCfg.RootPath,
+			fileStorage.ConfigKeyMetaAllow: allowMetadata,
 		}
 	case "http":
 		headers, _ := json.Marshal(storageCfg.Headers)
@@ -189,6 +217,10 @@ func getClient(obj *object.FileObject) (stow.Container, error) {
 			s3Storage.ConfigSecretKey:   storageCfg.SecretAccessKey,
 			s3Storage.ConfigRegion:      storageCfg.Region,
 			s3Storage.ConfigEndpoint:    storageCfg.Endpoint,
+		}
+	case "local-meta":
+		config = stow.ConfigMap{
+			metaStorage.ConfigKeyPath: storageCfg.RootPath,
 		}
 
 	}
@@ -224,21 +256,46 @@ func getClient(obj *object.FileObject) (stow.Container, error) {
 func getKey(obj *object.FileObject) string {
 	return path.Join(obj.Storage.PathPrefix, obj.Key)
 }
-func prepareResponse(obj *object.FileObject, stream io.ReadCloser, metadata map[string]interface{}) *response.Response {
+
+func prepareResponse(obj *object.FileObject, stream io.ReadCloser, item stow.Item) *response.Response {
 	res := response.New(200, stream)
+
+	metadata, err := item.Metadata()
+	if err != nil {
+		log.Log().Warnw("Storage/prepareResponse read metadata", "obj.Key", obj.Key, "sc", 500, "error", err)
+		return response.NewError(500, err)
+	}
 
 	for k, v := range metadata {
 		switch k {
-		case "etag", "last-modified":
+		case "Cache-Control":
 			res.Set(k, v.(string))
 
 		}
+
+		if strings.HasPrefix(strings.ToLower(k), "x-") {
+			res.Set(k, v.(string))
+		}
 	}
 
-	if contentType, ok := metadata["content-type"]; ok {
+	etag, err := item.ETag()
+	if err != nil {
+		return response.NewError(500, err)
+	}
+
+	lastMod, err := item.LastMod()
+	if err != nil {
+		return response.NewError(500, err)
+	}
+
+	res.Set("ETag", etag)
+	res.Set("Last-Modified", lastMod.String())
+
+	if contentType, ok := metadata["Content-Type"]; ok {
 		res.SetContentType(contentType.(string))
 	} else {
 		res.SetContentType(mime.TypeByExtension(path.Ext(obj.Key)))
 	}
+
 	return res
 }

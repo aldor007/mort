@@ -10,7 +10,7 @@ import (
 	"mort/transforms"
 	"mort/response"
 	"mort/object"
-	//Logger "github.com/labstack/gommon/log"
+	"mort/log"
 )
 
 type ImageEngine struct {
@@ -35,19 +35,22 @@ func (self *ImageEngine) Process(obj *object.FileObject, trans []transforms.Tran
 		}
 	}
 
-	hash := murmur3.New32()
+	hash := murmur3.New64()
 	hash.Write([]byte(obj.Key))
 	//hash.Write([]byte(len(trans)))
 
 	res := response.NewBuf(200, buf)
 	res.SetContentType("image/" + bimg.DetermineImageTypeName(buf))
 	res.Set("cache-control", "max-age=6000, public")
-	res.Set("last-modified", time.Now().Format(time.RFC1123))
-	res.Set("etag", strconv.FormatInt(int64(hash.Sum32()), 16))
+	res.Set("Last-Modified", time.Now().Format(time.RFC1123))
+	res.Set("ETag", strconv.FormatInt(int64(hash.Sum64()), 16))
 	meta, err := bimg.Metadata(buf)
 	if err == nil {
 		res.Set("x-amz-public-width", strconv.Itoa(meta.Size.Width))
 		res.Set("x-amz-public-height", strconv.Itoa(meta.Size.Height))
+
+	} else {
+		log.Log().Warnw("ImageEngine/process unable to process", "obj.key", obj.Key, "err", err)
 	}
 
 	return res, nil

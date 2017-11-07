@@ -158,7 +158,7 @@ func cleanEtag(etag string) string {
 func parseMetadata(md http.Header) (map[string]interface{}, error) {
 	m := make(map[string]interface{}, len(md))
 	for key, value := range md {
-		m[strings.ToLower(key)] = value[0]
+		m[key] = value[0]
 	}
 	return m, nil
 }

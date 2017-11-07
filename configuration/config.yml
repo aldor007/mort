@@ -73,12 +73,12 @@ buckets:
                             mode: line
         storages:
             basic:
-                kind: "local"
+                kind: "local-meta"
                 rootPath: "/Users/aldor/workspace/mkaciubacom/web"
             transform:
-                kind: "local"
+                kind: "local-meta"
                 rootPath: "/Users/aldor/workspace/mkaciubacom/web"
-    media2:
+    media:
         keys:
           - accessKey: "acc"
             secretAccessKey: "sec"
@@ -150,13 +150,13 @@ buckets:
                 headers:
                   "x-security-key": "123qwe123qwe"
             transform:
-#                kind: "local"
-#                rootPath: "/Users/aldor/workspace/mkaciubacom/web"
-#                pathPrefix: "transforms"
-                kind: "http"
-                url: "https://mkaciuba.pl/download<item>"
-                headers:
-                  "x-security-key": "123qwe123qwe"
+                kind: "local-meta"
+                rootPath: "/Users/aldor/workspace/mkaciubacom/web"
+                pathPrefix: "transforms"
+#                kind: "http"
+#                url: "https://mkaciuba.pl/download<item>"
+#                headers:
+#                  "x-security-key": "123qwe123qwe"
             basic:
-                kind: "local"
+                kind: "local-meta"
                 rootPath: "/Users/aldor/workspace/mkaciubacom/web"

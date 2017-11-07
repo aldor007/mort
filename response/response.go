@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"github.com/labstack/echo"
 )
 
 const (
@@ -18,6 +19,8 @@ type Response struct {
 	Headers       http.Header
 	ContentLength int64
 	ContentType   string
+	debug 		  bool
+	errorValue    error
 }
 
 func New(statusCode int, body io.ReadCloser) *Response {
@@ -43,13 +46,7 @@ func NewBuf(statusCode int, body []byte) *Response {
 }
 
 func NewError(statusCode int, err error) *Response {
-	body := map[string]string{"message": err.Error()}
-	jsonBody, err := json.Marshal(body)
-	if err != nil {
-		panic(err)
-	}
-	res := Response{StatusCode: statusCode, Stream: ioutil.NopCloser(bytes.NewReader(jsonBody))}
-	res.ContentLength = int64(len(jsonBody))
+	res := Response{StatusCode: statusCode, errorValue: err}
 	res.Headers = make(http.Header)
 	res.SetContentType("application/json")
 	return &res
@@ -66,6 +63,8 @@ func (r *Response) Set(headerName string, headerValue string) {
 }
 
 func (r *Response) WriteHeaders(writer http.ResponseWriter) {
+	r.writeDebug()
+
 	for headerName, headerValue := range r.Headers {
 		writer.Header().Set(headerName, headerValue[0])
 	}
@@ -91,5 +90,49 @@ func (r *Response) CopyBody() ([]byte, error) {
 func (r *Response) Close() {
 	if r != nil &&& r.Stream != nil {
 		r.Stream.Close()
+	}
+}
+
+func (r *Response) SetDebug(debug string)  {
+	if debug == "1" {
+		r.debug = true
+		r.Set("Cache-Control",  "no-cache")
+		return
+	}
+
+	r.debug = false
+}
+
+func (r *Response) HasError()  bool {
+	return r.errorValue != nil
+}
+
+func (r *Response) Error()  error {
+	return r.errorValue
+}
+
+func (r *Response) Write(ctx echo.Context) error {
+	if r.Stream != nil {
+		defer r.Close()
+		return ctx.Stream(r.StatusCode, r.ContentType, r.Stream)
+	}
+
+	return ctx.NoContent(r.StatusCode)
+}
+
+func (r *Response) writeDebug() {
+	if !r.debug {
+		return
+	}
+
+	if r.errorValue != nil {
+		body := map[string]string{"message": r.errorValue.Error()}
+		jsonBody, err := json.Marshal(body)
+		if err != nil {
+			panic(err)
+		}
+		r.Stream = ioutil.NopCloser(bytes.NewReader(jsonBody))
+		r.ContentLength = int64(len(jsonBody))
+		r.SetContentType("application/json")
 	}
 }

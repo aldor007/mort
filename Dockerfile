@@ -55,7 +55,6 @@ ADD . /go/src/mort
 
 # when dep will be ready
 RUN cd /go/src/mort &&  dep ensure -vendor-only
-RUN go get -u go.uber.org/zap
 # RUN goinstall
 RUN cd /go/src/mort; go build cmd/mort.go; cp mort /go/mort; cp -r /go/src/mort/configuration /go/
 # clean up

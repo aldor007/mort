@@ -10,8 +10,8 @@
 [[projects]]
   branch = "develop"
   name = "github.com/aldor007/stow"
-  packages = [".","local","s3"]
-  revision = "6dfd7f2b9688c4113f3b77c1611b5e3d69936d84"
+  packages = [".","local","local-meta","s3"]
+  revision = "c33c98c0dc85fae20761fd07320301ab7ebdaea5"
 
 [[projects]]
   name = "github.com/aws/aws-sdk-go"
@@ -30,6 +30,12 @@
   packages = ["."]
   revision = "20b96f641a5ea98f2f8619ff4f3e061cff4833bd"
   version = "v1.28.2"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/golang/protobuf"
+  packages = ["proto"]
+  revision = "1643683e1b54a9e88ad26d98f81400c8c9d9f4f9"
 
 [[projects]]
   name = "github.com/jmespath/go-jmespath"
@@ -104,6 +110,12 @@
   revision = "dcecefd839c4193db0d35b88ec65b4c12d360ab0"
 
 [[projects]]
+  name = "github.com/vmihailenco/msgpack"
+  packages = [".","codes"]
+  revision = "df5e5d20905d833657b92cafe6f6341ca1378083"
+  version = "v3.2.0"
+
+[[projects]]
   name = "go.uber.org/atomic"
   packages = ["."]
   revision = "4e336646b2ef9fc6e47be8e21594178f98e5ebcf"
@@ -129,9 +141,21 @@
 
 [[projects]]
   branch = "master"
+  name = "golang.org/x/net"
+  packages = ["context"]
+  revision = "01c190206fbdffa42f334f4b2bf2220f50e64920"
+
+[[projects]]
+  branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
   revision = "429f518978ab01db8bb6f44b66785088e7fba58b"
+
+[[projects]]
+  name = "google.golang.org/appengine"
+  packages = [".","datastore","internal","internal/app_identity","internal/base","internal/datastore","internal/log","internal/modules","internal/remote_api"]
+  revision = "150dc57a1b433e64154302bdc40b6bb8aefa313a"
+  version = "v1.0.0"
 
 [[projects]]
   name = "gopkg.in/h2non/bimg.v1"
@@ -148,6 +172,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "44e07e6af8bf9c8b91025af80702df967e26e857dc312d368f06cd895af51c68"
+  inputs-digest = "5c5cfd6f5c2b6f21d57be02db0578475b320687fffe6621bc6667f47fb7d007a"
   solver-name = "gps-cdcl"
   solver-version = 1
