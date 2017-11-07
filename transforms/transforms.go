@@ -1,56 +1,93 @@
 package transforms
 
-import "gopkg.in/h2non/bimg.v1"
+import (
+	"gopkg.in/h2non/bimg.v1"
+)
 
 type Transforms struct {
-	Height        int
-	Width         int
-	AreaHeight    int
-	AreaWidth     int
-	Top           int
-	Left          int
-	Quality       int
-	Compression   int
-	Zoom          int
-	Crop          bool
-	Enlarge       bool
-	Embed         bool
-	Flip          bool
-	Flop          bool
-	Force         bool
-	NoAutoRotate  bool
-	NoProfile     bool
-	Interlace     bool
-	StripMetadata bool
-	Trim          bool
+	height        int
+	width         int
+	areaHeight    int
+	areaWidth     int
+	top           int
+	left          int
+	quality       int
+	compression   int
+	zoom          int
+	crop          bool
+	enlarge       bool
+	embed         bool
+	flip          bool
+	flop          bool
+	force         bool
+	noAutoRotate  bool
+	noProfile     bool
+	interlace     bool
+	stripMetadata bool
+	trim          bool
+
+	sigma         float64
+	minAmpl       float64
 
 	NotEmpty bool
 }
 
-func (self *Transforms) ResizeT(size []int, enlarge bool) *Transforms {
-	self.Width = size[0]
+func (t *Transforms) Resize(size []int, enlarge bool) *Transforms {
+	t.width = size[0]
 	if len(size) == 2 {
-		self.Height = size[1]
+		t.height = size[1]
 	}
-	self.Enlarge = enlarge
-	self.NotEmpty = true
-	return self
+	t.enlarge = enlarge
+	t.NotEmpty = true
+	return t
 }
 
-func (self *Transforms) CropT(size []int, enlarge bool) *Transforms {
-	self.Width = size[0]
-	self.Height = size[1]
-	self.Enlarge = enlarge
-	self.Crop = true
-	self.NotEmpty = true
-	return self
+func (t *Transforms) Crop(size []int, enlarge bool) *Transforms {
+	t.width = size[0]
+	t.height = size[1]
+	t.enlarge = enlarge
+	t.crop = true
+	t.NotEmpty = true
+	return t
 }
 
-func (self *Transforms) BimgOptions() bimg.Options {
+func (t *Transforms) Interlace()  *Transforms{
+	t.interlace = true
+	t.NotEmpty = true
+	return t
+}
+
+func (t *Transforms) Quality(quality int) *Transforms {
+	t.quality = quality
+	t.NotEmpty = true
+	return t
+}
+
+func (t *Transforms) StripMetadata() *Transforms {
+	t.stripMetadata = true
+	t.NotEmpty = true
+	return t
+}
+
+func (t *Transforms) Blur(sigma, minAmpl float64) *Transforms {
+	t.NotEmpty = true
+	t.sigma = sigma
+	t.minAmpl = minAmpl
+	return t
+}
+
+func (t *Transforms) BimgOptions() bimg.Options {
 	return bimg.Options{
-		Width:   self.Width,
-		Height:  self.Height,
-		Enlarge: self.Enlarge,
-		Crop:    self.Crop,
+		Width:   t.width,
+		Height:  t.height,
+		Enlarge: t.enlarge,
+		Crop:    t.crop,
+		Interlace: t.interlace,
+		Quality: t.quality,
+		StripMetadata: t.stripMetadata,
+		GaussianBlur: bimg.GaussianBlur{
+			Sigma: t.sigma,
+			MinAmpl: t.minAmpl,
+		},
 	}
 }

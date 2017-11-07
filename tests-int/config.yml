@@ -25,8 +25,7 @@ buckets:
                     quality: 75
                     filters:
                         thumbnail: { size: [100, 70], mode: outbound }
-                        interlace:
-                            mode: line
+                        interlace: yes
                 blog_medium:
                     quality: 75
                     filters:

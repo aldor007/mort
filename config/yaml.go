@@ -9,9 +9,7 @@ type PresetsYaml struct {
 			Size []int  `yaml:"size"`
 			Mode string `yaml:"mode"`
 		} `yaml:"thumbnail"`
-		Interlace struct {
-			Mode string `yaml:"mode"`
-		} `yaml:"interlace"`
+		Interlace bool  `yaml:"interlace"`
 		Crop struct {
 			Size  []int  `yaml:"size"`
 			Start []int  `yaml:"start"`
@@ -21,8 +19,8 @@ type PresetsYaml struct {
 			Size []int  `yaml:"size"`
 			Mode string `yaml:"mode"`
 		} `yaml:"entropy_crop"`
-		AutoRotate interface{} `yaml:"auto_rtate"`
-		Strip      interface{} `yaml:"strip"`
+		AutoRotate  bool `yaml:"auto_rtate"`
+		Strip      bool `yaml:"strip"`
 	} `yaml:"filters"`
 }
 

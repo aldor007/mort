@@ -25,8 +25,7 @@ buckets:
                     quality: 75
                     filters:
                         thumbnail: { size: [100, 70], mode: outbound }
-                        interlace:
-                            mode: line
+                        interlace: true
                 blog_medium:
                     quality: 75
                     filters:
@@ -69,8 +68,7 @@ buckets:
                         entropy_crop: { size: [600, 450], mode: outbound }
                         auto_rotate: ~
                         strip: ~
-                        interlace:
-                            mode: line
+                        interlace: true
         storages:
             basic:
                 kind: "local-meta"

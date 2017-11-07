@@ -16,18 +16,26 @@ func presetToTransform(preset config.PresetsYaml) transforms.Transforms {
 	filters := preset.Filters
 
 	if len(filters.Thumbnail.Size) > 0 {
-		trans.ResizeT(filters.Thumbnail.Size, filters.Thumbnail.Mode == "outbound")
+		trans.Resize(filters.Thumbnail.Size, filters.Thumbnail.Mode == "outbound")
 	}
 
 	if len(filters.SmartCrop.Size) > 0 {
-		trans.CropT(filters.SmartCrop.Size, filters.SmartCrop.Mode == "outbound")
+		trans.Crop(filters.SmartCrop.Size, filters.SmartCrop.Mode == "outbound")
 	}
 
 	if len(filters.Crop.Size) > 0 {
-		trans.CropT(filters.Crop.Size, filters.Crop.Mode == "outbound")
+		trans.Crop(filters.Crop.Size, filters.Crop.Mode == "outbound")
 	}
 
-	trans.Quality = preset.Quality
+	trans.Quality(preset.Quality)
+
+	if filters.Interlace == true {
+		trans.Interlace()
+	}
+
+	if filters.Strip == true{
+		trans.StripMetadata()
+	}
 
 	return trans
 }
