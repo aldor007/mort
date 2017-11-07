@@ -32,3 +32,4 @@ buckets:
                 rootPath: "/Users/aldor/workspace/mkaciubacom/web"
             transform:
                 kind: "local"
+                rootPath: "/Users/aldor/workspace/mkaciubacom/web"

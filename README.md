@@ -61,7 +61,9 @@ Give an example
 ## Deployment
 
 ```bash
-git clone https://github.com/aldor007/mort.git && cd mort 
+git clone https://github.com/aldor007/mort.git && cd mort
+go get -d github.com/aldor007/mort
+cd $GOPATH/src/github.com/aldor007/mort
 ```
 Install dependencies:
 ```bash
@@ -89,10 +91,6 @@ Please read [CONTRIBUTING.md](https://github.com/aldor007/mort/CONTRIBUTING.md) 
 ## Versioning
 
 We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/aldor007/mort/tags). 
-
-## Authors
-
-* **Marcin Kaciuba** - *Initial work* - [Aldor007](https://github.com/aldor007)
 
 ## License
 

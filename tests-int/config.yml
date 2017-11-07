@@ -39,10 +39,10 @@ buckets:
                         entropy_crop: { size: [756, 396], mode: outbound }
         storages:
             basic:
-                kind: "local"
+                kind: "local-meta"
                 rootPath: "/tmp/mort-tests/"
             transform:
-                kind: "local"
+                kind: "local-meta"
                 rootPath: "/tmp/mort-tests/"
     remote:
         keys:
@@ -66,9 +66,9 @@ buckets:
                 kind: "http"
                 url: "https://i.imgur.com/<item>" # ChzUb.jpg
             transform:
-                kind: "local"
+                kind: "local-meta"
                 rootPath: "/tmp/mort-tests/"
                 pathPrefix: "transforms"
             basic:
-                kind: "local"
+                kind: "local-meta"
                 rootPath: "/tmp/mort-tests/"

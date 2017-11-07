@@ -7,6 +7,7 @@ buckets:
               presetName: 0
               parent: 1
             parentStorage: "other"
+            parentBucket: "bucket"
             presets:
                 blog_small:
                     quality: 75
@@ -32,5 +33,7 @@ buckets:
                 rootPath: "/Users/aldor/workspace/mkaciubacom/web"
             transform:
                 kind: "local"
+                rootPath: "/Users/aldor/workspace/mkaciubacom/web"
             other:
-                kind: "other"
+                kind: "http"
+                url: "https://domain.pl"

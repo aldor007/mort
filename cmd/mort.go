@@ -41,12 +41,12 @@ func main() {
 			return ctx.NoContent(400)
 		}
 
-		res := rp.Process(ctx, obj)
+		res := rp.Process(ctx.Request(), obj)
 		res.SetDebug(ctx.Request().Header.Get("X-Mort-Debug"))
 		res.WriteHeaders(ctx.Response())
 		defer logger.Sync() // flushes buffer, if any
 		if res.HasError() {
-			log.Log().Warnw("Mort process error", "error", res.Error())
+			log.Log().Warnw("Mort process error", "obj.Key", obj.Key, "error", res.Error())
 		}
 
 		return res.Write(ctx)
