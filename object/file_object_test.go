@@ -1,12 +1,24 @@
 package object
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 
 	"mort/config"
+	"mort/log"
 )
+
+func TestMain(m *testing.M) {
+	logger, _ := zap.NewDevelopment()
+	zap.ReplaceGlobals(logger)
+	log.RegisterLogger(logger.Sugar())
+	code := m.Run()
+	defer logger.Sync()
+	os.Exit(code)
+}
 
 func TestNewFileObjectWhenUnknowBucket(t *testing.T) {
 	mortConfig := config.GetInstance()
@@ -82,12 +94,12 @@ func TestNewFileObjectTransformParentBucket(t *testing.T) {
 	assert.Equal(t, 100, transCfg.Width, "invalid width for transform")
 
 	assert.Equal(t, 100, transCfg.Height, "invalid height for transform")
-
 }
 
 func TestNewFileObjectTransformParentStorage(t *testing.T) {
 	mortConfig := config.GetInstance()
-	mortConfig.Load("testdata/bucket-transform-parent-storage.yml")
+	err := mortConfig.Load("testdata/bucket-transform-parent-storage.yml")
+	assert.Nil(t, err, "Unexpected to have error when parsing config")
 	obj, err := NewFileObject("/bucket/blog_small/thumb_2334.jpg", mortConfig)
 
 	assert.Nil(t, err, "Unexpected to have error when parsing path")
@@ -98,8 +110,7 @@ func TestNewFileObjectTransformParentStorage(t *testing.T) {
 
 	parent := obj.Parent
 
-	assert.Equal(t, "other", parent.Storage.Kind, "invalid parent storage")
-
+	assert.Equal(t, "http", parent.Storage.Kind, "invalid parent storage")
 
 }
 

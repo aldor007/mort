@@ -1,12 +1,12 @@
 buckets:
     bucket:
         transform:
-            path: "\\/([a-z0-9_]+)\\/(.*)"
+            path: "\\/([a-z0-9_]+)\\/thumb_(.*)"
             kind: "presets"
             order:
               presetName: 0
               parent: 1
-
+            parentStorage: "niema"
             presets:
                 blog_small:
                     quality: 75

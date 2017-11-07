@@ -1,12 +1,11 @@
 buckets:
     bucket:
         transform:
-            path: "\\/([a-z0-9_]+)\\/(.*)"
+            path: "\\/([a-z0-9_]+)\\/thumb_(.*)"
             kind: "presets"
             order:
               presetName: 0
               parent: 1
-
             presets:
                 blog_small:
                     quality: 75
@@ -14,20 +13,8 @@ buckets:
                         thumbnail: { size: [100, 100], mode: outbound }
                         interlace:
                             mode: line
-                width:
-                    quality: 75
-                    filters:
-                        thumbnail: { size: [100], mode: outbound }
-                        interlace:
-                            mode: line
-                height:
-                    quality: 75
-                    filters:
-                        thumbnail: { size: [0, 100], mode: outbound }
-                        interlace:
-                            mode: line
         storages:
-            basic:
+            basicss:
                 kind: "local"
                 rootPath: "/Users/aldor/workspace/mkaciubacom/web"
             transform:

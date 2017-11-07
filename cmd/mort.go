@@ -46,7 +46,7 @@ func main() {
 		res.WriteHeaders(ctx.Response())
 		defer logger.Sync() // flushes buffer, if any
 		if res.HasError() {
-			log.Log().Warnw("Mort process error", "error", res.Error())
+			log.Log().Warnw("Mort process error", "obj.Key", obj.Key, "error", res.Error())
 		}
 
 		return res.Write(ctx)
