@@ -5,7 +5,6 @@ import (
 	"strings"
 	"io/ioutil"
 	"bytes"
-	"github.com/labstack/echo"
 
 	"mort/config"
 	"mort/engine"
@@ -16,6 +15,7 @@ import (
 	"mort/log"
 	"strconv"
 	"time"
+	"net/http"
 )
 
 const S3_LOCATION_STR = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><LocationConstraint xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">EU</LocationConstraint>"
@@ -28,8 +28,8 @@ func NewRequestProcessor(max int) RequestProcessor{
 
 type requestMessage struct {
 	responseChan chan *response.Response
-	ctx echo.Context
 	obj *object.FileObject
+	request *http.Request
 }
 
 type RequestProcessor struct {
@@ -40,10 +40,9 @@ func (r *RequestProcessor) Init(max int)  {
 	r.queue = make(chan requestMessage, max)
 }
 
-func (r *RequestProcessor) Process(ctx echo.Context, obj *object.FileObject)  *response.Response{
-
+func (r *RequestProcessor) Process(req *http.Request, obj *object.FileObject)  *response.Response{
 	msg := requestMessage{}
-	msg.ctx = ctx
+	msg.request = req
 	msg.obj = obj
 	msg.responseChan = make(chan *response.Response)
 
@@ -62,30 +61,30 @@ func (r *RequestProcessor) Process(ctx echo.Context, obj *object.FileObject)  *r
 
 func (r *RequestProcessor) processChan()  {
 	msg := <- r.queue
-	res := r.process(msg.ctx, msg.obj)
+	res := r.process(msg.request, msg.obj)
 	msg.responseChan <- res
 }
 
 
-func (r *RequestProcessor) process(ctx echo.Context, obj *object.FileObject) *response.Response {
-	switch ctx.Request().Method {
+func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *response.Response {
+	switch req.Method {
 		case "GET":
-			return hanldeGET(ctx, obj)
+			return hanldeGET(req, obj)
 		case "PUT":
-			return handlePUT(ctx, obj)
+			return handlePUT(req, obj)
 
 	default:
 		return response.NewError(405, errors.New("method not allowed"))
 	}
 }
 
-func handlePUT(ctx echo.Context, obj *object.FileObject) *response.Response {
-	return storage.Set(obj, ctx.Request().Header, ctx.Request().ContentLength, ctx.Request().Body)
+func handlePUT(req *http.Request, obj *object.FileObject) *response.Response {
+	return storage.Set(obj, req.Header, req.ContentLength, req.Body)
 }
 
-func hanldeGET(ctx echo.Context, obj *object.FileObject) *response.Response {
+func hanldeGET(req *http.Request, obj *object.FileObject) *response.Response {
 	if obj.Key == "" {
-		return handleS3Get(ctx, obj);
+		return handleS3Get(req, obj)
 	}
 
 	var currObj *object.FileObject = obj
@@ -172,8 +171,7 @@ resLoop:
 	return updateHeaders(res)
 }
 
-func handleS3Get(ctx echo.Context, obj *object.FileObject) *response.Response {
-	req := ctx.Request()
+func handleS3Get(req *http.Request, obj *object.FileObject) *response.Response {
 	query := req.URL.Query()
 
 	if _, ok := query["location"]; ok {

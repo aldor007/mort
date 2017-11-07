@@ -41,7 +41,7 @@ func main() {
 			return ctx.NoContent(400)
 		}
 
-		res := rp.Process(ctx, obj)
+		res := rp.Process(ctx.Request(), obj)
 		res.SetDebug(ctx.Request().Header.Get("X-Mort-Debug"))
 		res.WriteHeaders(ctx.Response())
 		defer logger.Sync() // flushes buffer, if any
