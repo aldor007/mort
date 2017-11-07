@@ -13,7 +13,12 @@ describe('Image processing', function () {
            .end(function(err, res) {
                expect(res.headers['x-amz-public-width']).to.eql('150');
                expect(res.headers['x-amz-public-height']).to.eql('200');
-               done(err)
+               request.get('/remote/ChzUb.jpg/default_small')
+                   .end(function (err2, res2) {
+                       expect(res2.headers['x-amz-public-width']).to.eql('150');
+                       expect(res2.headers['x-amz-public-height']).to.eql('200');
+                       done(err2)
+                   });
            });
     });
 

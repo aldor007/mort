@@ -1,6 +1,10 @@
 const chai = require('chai');
 const expect = chai.expect;
 const AWS = require('aws-sdk');
+const supertest  = require('supertest');
+
+const host = 'localhost:' + process.env.MORT_PORT;
+const request = supertest(`http://${host}`);
 
 describe('S3 features', function () {
     beforeEach(function () {
@@ -194,7 +198,7 @@ describe('S3 features', function () {
                 const headers = {};
                 const body = 'aaaa body';
                 headers['content-length'] = headers['content-length'] || body.length;
-                headers['content-type'] = headers['content-type'] ||  'image/jpeg'
+                headers['content-type'] = headers['content-type'] ||  'image/jpeg';
 
                 const params = {
                     Body: body,
@@ -203,13 +207,24 @@ describe('S3 features', function () {
                     ContentType: headers['content-type'],
                     ContentLength: headers['content-length'],
                     Etag: headers['etag'],
-                    Metadata: {}
+                    Metadata: {
+                        'header': 'meta'
+                    }
                 };
 
                 this.s3.upload(params, function (err, data) {
                     expect(err).to.be.null;
                     done(err)
                 });
+            });
+
+            it('should return valid metadata for uploaded file', function (done) {
+                request.get('/local/file.jpg')
+                    .expect(200)
+                    .end(function(err, res) {
+                        expect(res.headers['x-amz-meta-header']).to.eql('meta');
+                        done(err)
+                    });
             });
 
             it('should return error when invalid access key', function (done) {

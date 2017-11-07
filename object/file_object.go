@@ -39,11 +39,13 @@ type FileObject struct {
 	Transforms transforms.Transforms `json:"transforms"`
 	Storage    config.Storage        `json:"storage"`
 	Parent     *FileObject
+	CheckParent bool
 }
 
 func NewFileObject(uri string, mortConfig *config.Config) (*FileObject, error) {
 	obj := FileObject{}
 	obj.Uri = uri
+	obj.CheckParent = false
 
 	err := obj.decode(mortConfig)
 	log.Log().Infow("FileObject", "path", uri,  "key", obj.Key, "bucket", obj.Bucket, "storage", obj.Storage.Kind,
@@ -96,6 +98,7 @@ func (self *FileObject) decodeKey(bucket config.Bucket, mortConfig *config.Confi
 	parentObj, err := NewFileObject(parent, mortConfig)
 	parentObj.Storage = bucket.Storages.Get(bucket.Transform.ParentStorage)
 	self.Parent = parentObj
+	self.CheckParent = trans.CheckParent
 	return err
 }
 

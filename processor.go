@@ -113,7 +113,7 @@ func hanldeGET(req *http.Request, obj *object.FileObject) *response.Response {
 	}(obj)
 
 	// get parent from storage
-	if parentObj != nil {
+	if parentObj != nil && obj.CheckParent {
 		go func(p *object.FileObject) {
 			parentChan <- storage.Head(p)
 		}(parentObj)
@@ -123,13 +123,17 @@ resLoop:
 	for {
 		select {
 		case res = <-resChan:
-			if parentObj != nil && (parentRes == nil || parentRes.StatusCode == 0) {
+			if obj.CheckParent && parentObj != nil && (parentRes == nil || parentRes.StatusCode == 0) {
 				go func () {
 					resChan <- res
 				}()
 
 			} else {
-				if res.StatusCode == 200 && parentRes.StatusCode == 200 {
+				if res.StatusCode == 200 {
+					if obj.CheckParent && parentObj != nil && parentRes.StatusCode == 200 {
+						return updateHeaders(res)
+					}
+
 					return updateHeaders(res)
 				}
 
@@ -148,25 +152,32 @@ resLoop:
 		}
 	}
 
-	if obj.HasTransform() && strings.Contains(parentRes.ContentType, "image/") {
-		defer res.Close()
-		parentRes = updateHeaders(storage.Get(parentObj))
-
-		if parentRes.StatusCode != 200 {
-			return updateHeaders(parentRes)
+	if parentObj != nil {
+		if !obj.CheckParent {
+			parentRes = storage.Head(parentObj)
 		}
 
-		defer parentRes.Close()
+		if obj.HasTransform() && strings.Contains(parentRes.ContentType, "image/") {
+			defer res.Close()
+			parentRes = updateHeaders(storage.Get(parentObj))
 
-		// revers order of transforms
-		for i := 0; i < len(transforms)/2; i++ {
-			j := len(transforms) - i - 1
-			transforms[i], transforms[j] = transforms[j], transforms[i]
+			if parentRes.StatusCode != 200 {
+				return updateHeaders(parentRes)
+			}
+
+			defer parentRes.Close()
+
+			// revers order of transforms
+			for i := 0; i < len(transforms)/2; i++ {
+				j := len(transforms) - i - 1
+				transforms[i], transforms[j] = transforms[j], transforms[i]
+			}
+
+			log.Log().Infow("Performing transforms", "obj.Bucket", obj.Bucket, "obj.Key", obj.Key, "transformsLen", len(transforms))
+			return updateHeaders(processImage(obj, parentRes, transforms))
 		}
-
-		log.Log().Infow("Performing transforms", "obj.Bucket", obj.Bucket, "obj.Key", obj.Key, "transformsLen", len(transforms))
-		return updateHeaders(processImage(obj, parentRes, transforms))
 	}
+
 
 	return updateHeaders(res)
 }

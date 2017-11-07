@@ -19,7 +19,7 @@ type Config struct {
 
 var instance *Config
 var once sync.Once
-var storageKinds []string = []string{"local", "local-meta", "s3", "http"}
+var storageKinds []string = []string{"local", "local-meta", "s3", "http", "noop"}
 
 func GetInstance() *Config {
 	once.Do(func() {

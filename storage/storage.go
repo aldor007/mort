@@ -6,12 +6,12 @@ import (
 	"mime"
 	"net/http"
 	"path"
-
 	"github.com/aldor007/stow"
 	fileStorage "github.com/aldor007/stow/local"
 	metaStorage "github.com/aldor007/stow/local-meta"
 	s3Storage "github.com/aldor007/stow/s3"
 	httpStorage "mort/storage/http"
+	_ "mort/storage/noop"
 
 	"encoding/xml"
 	"mort/log"
@@ -237,7 +237,7 @@ func getClient(obj *object.FileObject) (stow.Container, error) {
 	container, err := client.Container(obj.Bucket)
 
 	if err != nil {
-		log.Log().Infow("Storage/getClient ", "kind", storageCfg.Kind, "error", err)
+		log.Log().Infow("Storage/getClient error", "kind", storageCfg.Kind, "bucket", obj.Bucket, "error", err)
 		if err == stow.ErrNotFound && storageCfg.Kind == "local" {
 			container, err = client.CreateContainer(obj.Bucket)
 			if err != nil {
