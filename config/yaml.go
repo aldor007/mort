@@ -21,6 +21,11 @@ type PresetsYaml struct {
 		} `yaml:"entropy_crop"`
 		AutoRotate  bool `yaml:"auto_rtate"`
 		Strip      bool `yaml:"strip"`
+		Format     string `yaml:"format"`
+		Blur   struct {
+			Sigma   float64 `yaml:"sigma"`
+			MinAmpl float64 `yaml:"minAmpl"`
+		} `yaml:"blur"`
 	} `yaml:"filters"`
 }
 

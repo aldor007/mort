@@ -37,6 +37,14 @@ func presetToTransform(preset config.PresetsYaml) transforms.Transforms {
 		trans.StripMetadata()
 	}
 
+	if filters.Format != "" {
+		trans.Format(filters.Format)
+	}
+
+	if filters.Blur.Sigma != 0 {
+		trans.Blur(filters.Blur.Sigma, filters.Blur.MinAmpl)
+	}
+
 	return trans
 }
 

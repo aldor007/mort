@@ -29,6 +29,8 @@ type Transforms struct {
 	sigma         float64
 	minAmpl       float64
 
+	format        bimg.ImageType
+
 	NotEmpty bool
 }
 
@@ -76,8 +78,30 @@ func (t *Transforms) Blur(sigma, minAmpl float64) *Transforms {
 	return t
 }
 
+func (t *Transforms) Format(format string) *Transforms {
+	t.NotEmpty = true
+	switch format {
+	case "jpeg", "jpg":
+		t.format = bimg.JPEG
+	case "webp":
+		t.format = bimg.WEBP
+	case "png":
+		t.format = bimg.PNG
+	case "gif":
+		t.format = bimg.GIF
+	case "svg":
+		t.format = bimg.SVG
+	case "pdf":
+		t.format = bimg.PDF
+	default:
+		t.format = bimg.UNKNOWN
+	}
+
+	return t
+}
+
 func (t *Transforms) BimgOptions() bimg.Options {
-	return bimg.Options{
+	b := bimg.Options{
 		Width:   t.width,
 		Height:  t.height,
 		Enlarge: t.enlarge,
@@ -90,4 +114,10 @@ func (t *Transforms) BimgOptions() bimg.Options {
 			MinAmpl: t.minAmpl,
 		},
 	}
+
+	if t.format != bimg.UNKNOWN || t.format != 0 {
+		b.Type = t.format
+	}
+
+	return b
 }
