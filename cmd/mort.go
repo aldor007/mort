@@ -20,7 +20,7 @@ func main() {
 	listenAddr := flag.String("listen", ":8080", "Listen addr")
 	flag.Parse()
 	fmt.Println(*configPath, *listenAddr)
-	logger, _ := zap.NewDevelopment()
+	logger, _ := zap.NewProduction()
 	zap.ReplaceGlobals(logger)
 	log.RegisterLogger(logger.Sugar())
 	rp := mort.NewRequestProcessor(5)

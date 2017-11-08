@@ -11,41 +11,69 @@ import (
 )
 
 
-func presetToTransform(preset config.PresetsYaml) transforms.Transforms {
+func presetToTransform(preset config.PresetsYaml) (transforms.Transforms, error) {
 	var trans transforms.Transforms
 	filters := preset.Filters
 
 	if len(filters.Thumbnail.Size) > 0 {
-		trans.Resize(filters.Thumbnail.Size, filters.Thumbnail.Mode == "outbound")
+		err := trans.Resize(filters.Thumbnail.Size, filters.Thumbnail.Mode == "outbound")
+		if err != nil {
+			return trans, err
+		}
 	}
 
 	if len(filters.SmartCrop.Size) > 0 {
-		trans.Crop(filters.SmartCrop.Size, filters.SmartCrop.Mode == "outbound")
+		err := trans.Crop(filters.SmartCrop.Size, filters.SmartCrop.Mode == "outbound")
+		if err != nil {
+			return trans, err
+		}
 	}
 
 	if len(filters.Crop.Size) > 0 {
-		trans.Crop(filters.Crop.Size, filters.Crop.Mode == "outbound")
+		err := trans.Crop(filters.Crop.Size, filters.Crop.Mode == "outbound")
+		if err != nil {
+			return trans, err
+		}
 	}
 
 	trans.Quality(preset.Quality)
 
 	if filters.Interlace == true {
-		trans.Interlace()
+		err := trans.Interlace()
+		if err != nil {
+			return trans, err
+		}
 	}
 
 	if filters.Strip == true{
-		trans.StripMetadata()
+		err := trans.StripMetadata()
+		if err != nil {
+			return trans, err
+		}
 	}
 
-	if filters.Format != "" {
-		trans.Format(filters.Format)
+	if preset.Format != "" {
+		err := trans.Format(preset.Format)
+		if err != nil {
+			return trans, err
+		}
 	}
 
 	if filters.Blur.Sigma != 0 {
-		trans.Blur(filters.Blur.Sigma, filters.Blur.MinAmpl)
+		err := trans.Blur(filters.Blur.Sigma, filters.Blur.MinAmpl)
+		if err != nil {
+			return trans, err
+		}
 	}
 
-	return trans
+	if filters.Watermark.Image != "" {
+		err := trans.Watermark(filters.Watermark.Image, filters.Watermark.Position, filters.Watermark.Opacity)
+		if err != nil {
+			return trans, err
+		}
+	}
+
+	return trans, nil
 }
 
 type FileObject struct {
@@ -107,7 +135,12 @@ func (self *FileObject) decodeKey(bucket config.Bucket, mortConfig *config.Confi
 	presetName := string(matches[trans.Order.PresetName+1])
 	parent := "/" + string(matches[trans.Order.Parent+1])
 
-	self.Transforms = presetToTransform(bucket.Transform.Presets[presetName])
+	var err error
+	self.Transforms, err = presetToTransform(bucket.Transform.Presets[presetName])
+	if err != nil {
+		return err
+	}
+
 	if bucket.Transform.ParentBucket != "" {
 		parent = "/" + path.Join(bucket.Transform.ParentBucket, parent)
 	}

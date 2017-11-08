@@ -22,10 +22,6 @@ func BenchmarkNewRequestProcessor(b *testing.B) {
 		{"Process large image, small result", "http://mort/local/large.jpeg-small", "./tests/benchmark/local/large.jpeg", "./tests/benchmark/small.yml"},
 	}
 
-	logger, _ := zap.NewDevelopment()
-	zap.ReplaceGlobals(logger)
-	log.RegisterLogger(logger.Sugar())
-
 	for _, bm := range benchmarks {
 		data, err := ioutil.ReadFile(bm.filePath)
 		if err != nil {
