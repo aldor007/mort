@@ -22,9 +22,9 @@ describe('Image processing', function () {
            });
     });
 
-    it('should return 404 when invalid preset given', function (done) {
+    it('should return 400 when invalid preset given', function (done) {
         request.get('/remote/ChzUb.jpg/default_smalaaal')
-            .expect(404)
+            .expect(400)
             .end(function(err) {
                 done(err)
             });
