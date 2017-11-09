@@ -289,7 +289,7 @@ func prepareResponse(obj *object.FileObject, stream io.ReadCloser, item stow.Ite
 	}
 
 	res.Set("ETag", etag)
-	res.Set("Last-Modified", lastMod.String())
+	res.Set("Last-Modified", lastMod.Format(http.TimeFormat))
 
 	if contentType, ok := metadata["Content-Type"]; ok {
 		res.SetContentType(contentType.(string))

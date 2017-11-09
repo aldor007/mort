@@ -10,131 +10,42 @@ headers:
       "cache-control": "max-age=10, public"
 
 buckets:
-    liip:
-        keys:
-          - accessKey: "acc"
-            secretAccessKey: "sec"
-        transform:
-            path: "\\/+(?:cache|resolve)\\/([a-z0-9_]+)\\/+[a-z]+\\/[a-zA-Z0-9]+\\/+(.*)"
-            kind: "presets"
-            order:
-              presetName: 0
-              parent: 1
-            presets:
-                blog_small:
-                    quality: 75
-                    filters:
-                        thumbnail: { size: [100, 70], mode: outbound }
-                        interlace:
-                            mode: line
-                blog_medium:
-                    quality: 75
-                    filters:
-                        thumbnail: { size: [903, 600], mode: outbound }
-                        crop: { start: [0, 0], size: [900, 320] }
-
-                blog_home:
-                    quality: 75
-                    filters:
-                        entropy_crop: { size: [756, 396], mode: outbound }
-                recent_gallery:
-                    quality: 75
-                    filters:
-                        entropy_crop: { size: [85, 85], mode: outbound }
-
-                promoted:
-                    quality: 75
-                    filters:
-                        entropy_crop: { size: [896, 465], mode: outbound }
-
-                relatedposts:
-                    quality: 75
-                    filters:
-                        entropy_crop: { size: [504, 369], mode: outbound }
-
-                blog_big:
-                    quality: 75
-                    filters:
-                        auto_rotate: ~
-                        strip: ~
-                gallery_thumb:
-                    quality: 75
-                    filters:
-                        thumbnail: { size: [200], mode: outbound }
-                        auto_rotate: ~
-                        strip: ~
-                photocategory_img:
-                    quality: 75
-                    filters:
-                        entropy_crop: { size: [600, 450], mode: outbound }
-                        auto_rotate: ~
-                        strip: ~
-                        interlace:
-                            mode: line
-        storages:
-            basic:
-                kind: "local-meta"
-                rootPath: "/Users/aldor/workspace/mkaciubacom/web"
-            transform:
-                kind: "local-meta"
-                rootPath: "/Users/aldor/workspace/mkaciubacom/web"
     media:
         keys:
           - accessKey: "acc"
             secretAccessKey: "sec"
         transform:
-            path: "\\/\\w+\\/\\w+\\/\\w+\\/[a-z]+_([a-z0-9-]+)_([a-z0-9_]+).*"
+            path: "\\/([a-z0-9_]+)\\/(.*)"
             kind: "presets"
             order:
-              parent: 0
-              presetName: 1
-            parentStorage: "api"
+              parent: 1
+              presetName: 0
             parentBucket: "media"
             presets:
-                default_small:
-                    quality: 95
-                    filters:
-                        thumbnail: {size: [150]}
-                default_medium:
-                    quality: 95
-                    filters:
-                        thumbnail: {size: [450]}
-                default_big:
-                    quality: 95
-                    filters:
-                        thumbnail: {size: [700]}
-                blog_small:
+                small:
                     quality: 75
                     filters:
                         thumbnail: {size: [150]}
-                blog_big:
+                blur:
                     quality: 80
                     filters:
                         thumbnail: {size: [700]}
-                blog_big1000:
+                        blur:
+                          sigma: 5.0
+                webp:
                     quality: 100
+                    format: webp
                     filters:
                         thumbnail: {size: [1000]}
-                blog_big1300:
+                watermark:
                     quality: 100
                     filters:
                         thumbnail: {size: [1300]}
-                gallery_small:
-                    quality: 75
-                    filters:
-                        thumbnail: {size: [150]}
-                gallery_big:
-                    quality: 80
-                    filters:
-                        thumbnail: {size: [700]}
-                gallery_big1000:
-                    quality: 100
-                    filters:
-                        thumbnail: {size: [1000]}
-                gallery_big1300:
-                    quality: 100
-                    filters:
-                        thumbnail: {size: [1300]}
+                        watermark:
+                            image: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Imgur_logo.svg/150px-Imgur_logo.svg.png"
+                            position: "center-center"
+                            opacity: 0.5
+
                 gallery_big300:
                     quality: 100
                     filters:
@@ -144,15 +55,12 @@ buckets:
                     filters:
                         thumbnail: {size: [200]}
         storages:
-            api:
+            basic:
                 kind: "http"
-                url: "https://mkaciuba.pl/download<item>"
+                url: "https://i.imgur.com/<item>"
                 headers:
-                  "x-security-key": "sec"
+                  "x--key": "sec"
             transform:
                 kind: "local-meta"
                 rootPath: "/Users/aldor/workspace/mkaciubacom/web"
                 pathPrefix: "transforms"
-            basic:
-                kind: "local-meta"
-                rootPath: "/Users/aldor/workspace/mkaciubacom/web"

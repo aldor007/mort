@@ -11,7 +11,7 @@
   branch = "develop"
   name = "github.com/aldor007/stow"
   packages = [".","local","local-meta","s3"]
-  revision = "c33c98c0dc85fae20761fd07320301ab7ebdaea5"
+  revision = "8e56bc32c1237503bf2e5897dcac3f9b3fc04e5f"
 
 [[projects]]
   name = "github.com/aws/aws-sdk-go"
