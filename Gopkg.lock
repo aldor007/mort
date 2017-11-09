@@ -81,8 +81,7 @@
 [[projects]]
   name = "github.com/spaolacci/murmur3"
   packages = ["."]
-  revision = "0d12bf811670bf6a1a63828dfbd003eded177fce"
-  version = "v1.0"
+  revision = "9f5d223c60793748f04a9d5b4b4eacddfc1f755d"
 
 [[projects]]
   name = "github.com/stretchr/testify"
