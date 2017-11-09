@@ -147,7 +147,7 @@
 
 [[constraint]]
   name = "gopkg.in/h2non/bimg.v1"
-  version = "1.0.14"
+  version = "1.0.16"
 
 [[constraint]]
   name = "gopkg.in/h2non/filetype.v1"
