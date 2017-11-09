@@ -78,6 +78,8 @@ func (w watermark) fetchImage() ([]byte, error) {
 		return nil, err
 	}
 
+	defer f.Close()
+
 	return ioutil.ReadAll(f)
 }
 
@@ -137,7 +139,7 @@ func (t *Transforms) Resize(size []int, enlarge bool) error {
 	}
 	t.enlarge = enlarge
 
-	t.transHash = t.transHash + uint64(t.width) + uint64(t.height)
+	t.transHash = 1000 + t.transHash + uint64(t.width) + uint64(t.height)
 
 	if t.enlarge {
 		t.transHash = t.transHash + 1
@@ -154,28 +156,28 @@ func (t *Transforms) Crop(size []int, enlarge bool) error {
 	t.crop = true
 	t.NotEmpty = true
 
-	t.transHash = t.transHash + uint64(t.width) + uint64(t.height)
+	t.transHash = 1200 + t.transHash + uint64(t.width) + uint64(t.height)
 	return nil
 }
 
 func (t *Transforms) Interlace() error {
 	t.interlace = true
 	t.NotEmpty = true
-	t.transHash = t.transHash + 71
+	t.transHash = 1300 + t.transHash + 71
 	return nil
 }
 
 func (t *Transforms) Quality(quality int)  error {
 	t.quality = quality
 	t.NotEmpty = true
-	t.transHash = t.transHash + uint64(t.quality)
+	t.transHash = 1400 + t.transHash + uint64(t.quality)
 	return nil
 }
 
 func (t *Transforms) StripMetadata() (error) {
 	t.stripMetadata = true
 	t.NotEmpty = true
-	t.transHash = t.transHash + 85
+	t.transHash = 1500 + t.transHash + 85
 	return nil
 }
 
@@ -183,7 +185,7 @@ func (t *Transforms) Blur(sigma, minAmpl float64)  error {
 	t.NotEmpty = true
 	t.blur.sigma = sigma
 	t.blur.minAmpl = minAmpl
-	t.transHash = t.transHash + uint64(t.blur.sigma) + uint64(t.blur.minAmpl)
+	t.transHash = 1600 + t.transHash + uint64(t.blur.sigma) + uint64(t.blur.minAmpl)
 	return nil
 }
 
@@ -197,7 +199,7 @@ func (t * Transforms) Hash() hash.Hash64 {
 
 func (t *Transforms) Format(format string)  error {
 	t.NotEmpty = true
-	t.transHash = t.transHash + 11
+	t.transHash = 1700 + t.transHash + 11
 	f, err := imageFormat(format)
 	if err != nil {
 		return err
@@ -223,7 +225,7 @@ func (t *Transforms) Watermark(image string, position string, opacity float32) e
 	}
 
 	t.NotEmpty = true
-	t.transHash = t.transHash + uint64(len(image)) + uint64(len(position))
+	t.transHash = 1700 + t.transHash + uint64(len(image)) + uint64(len(position))
 	t.watermark = watermark{image:image, xPos: p[1], yPos: p[0] , opacity:opacity}
 	return nil
 }
