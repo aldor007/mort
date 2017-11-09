@@ -33,6 +33,7 @@ func main() {
 	e.Use(mort.S3AuthMiddleware(imgConfig))
 	// TODO: change echo to pressly/chi
 
+
 	// Route => handler
 	e.Any ("/*", func(ctx echo.Context) error {
 		obj, err := object.NewFileObject(ctx.Request().URL.Path, imgConfig)
@@ -43,6 +44,10 @@ func main() {
 
 		res := rp.Process(ctx.Request(), obj)
 		res.SetDebug(ctx.Request().Header.Get("X-Mort-Debug"))
+		// FIXME
+		res.Set("Access-Control-Allow-Headers", "Content-Type, X-Amz-Public-Width, X-Amz-Public-Height")
+		res.Set("Access-Control-Expose-Headers", "Content-Type, X-Amz-Public-Width, X-Amz-Public-Height")
+		res.Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, HEAD")
 		res.WriteHeaders(ctx.Response())
 		defer logger.Sync() // flushes buffer, if any
 		if res.HasError() {

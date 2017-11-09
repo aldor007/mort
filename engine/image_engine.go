@@ -63,8 +63,8 @@ func (self *ImageEngine) Process(obj *object.FileObject, trans []transforms.Tran
 	res.Set("ETag", strconv.FormatUint(hash.Sum64(), 16))
 	meta, err := bimg.Metadata(buf)
 	if err == nil {
-		res.Set("x-amz-public-width", strconv.Itoa(meta.Size.Width))
-		res.Set("x-amz-public-height", strconv.Itoa(meta.Size.Height))
+		res.Set("x-amz-meta-public-width", strconv.Itoa(meta.Size.Width))
+		res.Set("x-amz-meta-public-height", strconv.Itoa(meta.Size.Height))
 
 	} else {
 		log.Log().Warnw("ImageEngine/process unable to get metadata", "obj.key", obj.Key, "err", err)

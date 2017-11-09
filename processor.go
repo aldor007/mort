@@ -68,7 +68,7 @@ func (r *RequestProcessor) processChan()  {
 
 func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *response.Response {
 	switch req.Method {
-		case "GET":
+		case "GET", "HEAD":
 			return hanldeGET(req, obj)
 		case "PUT":
 			return handlePUT(req, obj)
