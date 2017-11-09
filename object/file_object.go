@@ -8,6 +8,7 @@ import (
 	"mort/log"
 	"mort/config"
 	"mort/transforms"
+	"strconv"
 )
 
 
@@ -135,17 +136,28 @@ func (self *FileObject) decodeKey(bucket config.Bucket, mortConfig *config.Confi
 	presetName := string(matches[trans.Order.PresetName+1])
 	parent := "/" + string(matches[trans.Order.Parent+1])
 
+	if _, ok := bucket.Transform.Presets[presetName]; !ok {
+		return errors.New("Unknown preset " + presetName)
+	}
+
 	var err error
 	self.Transforms, err = presetToTransform(bucket.Transform.Presets[presetName])
 	if err != nil {
 		return err
 	}
 
+
 	if bucket.Transform.ParentBucket != "" {
 		parent = "/" + path.Join(bucket.Transform.ParentBucket, parent)
 	}
+
 	parentObj, err := NewFileObject(parent, mortConfig)
 	parentObj.Storage = bucket.Storages.Get(bucket.Transform.ParentStorage)
+
+	if parentObj != nil && bucket.Transform.ResultKey == "hash" {
+		self.Key = "/" + strings.Join([]string{strconv.FormatUint(uint64(self.Transforms.Hash().Sum64()), 16), string(matches[trans.Order.Parent + 1])}, "-")
+	}
+
 	self.Parent = parentObj
 	self.CheckParent = trans.CheckParent
 	return err

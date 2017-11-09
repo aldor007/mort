@@ -47,6 +47,7 @@ type TransformYaml struct {
 		Parent     int `yaml:"parent"`
 	} `yaml:"order"`
 	CheckParent bool `yaml:"checkParent"`
+	ResultKey  string `yaml:"resultKey"`
 }
 
 type Storage struct {

@@ -21,6 +21,7 @@ buckets:
               parent: 1
               presetName: 0
             parentBucket: "media"
+            resultKey: "hash"
             presets:
                 small:
                     quality: 75

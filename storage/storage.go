@@ -238,7 +238,7 @@ func getClient(obj *object.FileObject) (stow.Container, error) {
 
 	if err != nil {
 		log.Log().Infow("Storage/getClient error", "kind", storageCfg.Kind, "bucket", obj.Bucket, "error", err)
-		if err == stow.ErrNotFound && storageCfg.Kind == "local" {
+		if err == stow.ErrNotFound && strings.HasPrefix(storageCfg.Kind, "local")  {
 			container, err = client.CreateContainer(obj.Bucket)
 			if err != nil {
 				return nil, err

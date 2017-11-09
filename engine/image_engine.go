@@ -60,20 +60,14 @@ func (self *ImageEngine) Process(obj *object.FileObject, trans []transforms.Tran
 	res.SetContentType("image/" + bimg.DetermineImageTypeName(buf))
 	//res.Set("cache-control", "max-age=6000, public")
 	res.Set("Last-Modified", time.Now().Format(http.TimeFormat))
-	h := int64(hash.Sum64())
-
-	if h < 0 {
-		h = h * -1
-	}
-
-	res.Set("ETag", strconv.FormatInt(h, 16))
+	res.Set("ETag", strconv.FormatUint(hash.Sum64(), 16))
 	meta, err := bimg.Metadata(buf)
 	if err == nil {
 		res.Set("x-amz-public-width", strconv.Itoa(meta.Size.Width))
 		res.Set("x-amz-public-height", strconv.Itoa(meta.Size.Height))
 
 	} else {
-		log.Log().Warnw("ImageEngine/process unable to process", "obj.key", obj.Key, "err", err)
+		log.Log().Warnw("ImageEngine/process unable to get metadata", "obj.key", obj.Key, "err", err)
 	}
 
 	return res, nil
