@@ -11,13 +11,13 @@
   branch = "develop"
   name = "github.com/aldor007/stow"
   packages = [".","local","local-meta","s3"]
-  revision = "8e56bc32c1237503bf2e5897dcac3f9b3fc04e5f"
+  revision = "8795e6857c72ef7077a88909badae77050981882"
 
 [[projects]]
   name = "github.com/aws/aws-sdk-go"
   packages = ["aws","aws/awserr","aws/awsutil","aws/client","aws/client/metadata","aws/corehandlers","aws/credentials","aws/credentials/ec2rolecreds","aws/credentials/endpointcreds","aws/credentials/stscreds","aws/defaults","aws/ec2metadata","aws/endpoints","aws/request","aws/session","aws/signer/v4","internal/shareddefaults","private/protocol","private/protocol/query","private/protocol/query/queryutil","private/protocol/rest","private/protocol/restxml","private/protocol/xml/xmlutil","service/s3","service/sts"]
-  revision = "b69f447375c7fa0047ebcdd8ae5d585d5aac2f71"
-  version = "v1.10.51"
+  revision = "e6c5e190452424b404ecdb81d6e3991d46b18e9d"
+  version = "v1.12.26"
 
 [[projects]]
   name = "github.com/davecgh/go-spew"
@@ -28,8 +28,8 @@
 [[projects]]
   name = "github.com/go-ini/ini"
   packages = ["."]
-  revision = "20b96f641a5ea98f2f8619ff4f3e061cff4833bd"
-  version = "v1.28.2"
+  revision = "f280b3ba517bf5fc98922624f21fb0e7a92adaec"
+  version = "v1.30.3"
 
 [[projects]]
   branch = "master"
@@ -40,20 +40,19 @@
 [[projects]]
   name = "github.com/jmespath/go-jmespath"
   packages = ["."]
-  revision = "3433f3ea46d9f8019119e7dd41274e112a2359a9"
-  version = "0.2.2"
+  revision = "0b12d6b5"
 
 [[projects]]
   name = "github.com/labstack/echo"
   packages = ["."]
-  revision = "cec7629194fe4bf83b0c72d9a02d340c7a1468ac"
-  version = "3.2.3"
+  revision = "b28538b2e3f5446fe6e0e47ee34cd74b662ca2ab"
+  version = "3.2.4"
 
 [[projects]]
   name = "github.com/labstack/gommon"
   packages = ["color","log"]
-  revision = "779b8a8b9850a97acba6a3fe20feb628c39e17c1"
-  version = "0.2.2"
+  revision = "57409ada9da0f2afad6664c49502f8c50fbd8476"
+  version = "0.2.3"
 
 [[projects]]
   name = "github.com/mattn/go-colorable"
@@ -64,8 +63,8 @@
 [[projects]]
   name = "github.com/mattn/go-isatty"
   packages = ["."]
-  revision = "fc9e8d8ef48496124e79ae0df75490096eccf6fe"
-  version = "v0.0.2"
+  revision = "0360b2af4f38e8d38c7fce2a9f4e702702d73a39"
+  version = "v0.0.3"
 
 [[projects]]
   name = "github.com/pkg/errors"
@@ -137,19 +136,19 @@
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["acme","acme/autocert"]
-  revision = "7d9177d70076375b9a59c8fde23d52d9c4a7ecd5"
+  revision = "6a293f2d4b14b8e6d3f0539e383f6d0d30fce3fd"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/net"
   packages = ["context"]
-  revision = "01c190206fbdffa42f334f4b2bf2220f50e64920"
+  revision = "a337091b0525af65de94df2eb7e98bd9962dcbe2"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "429f518978ab01db8bb6f44b66785088e7fba58b"
+  revision = "4b45465282a4624cf39876842a017334f13b8aff"
 
 [[projects]]
   name = "google.golang.org/appengine"
@@ -160,8 +159,8 @@
 [[projects]]
   name = "gopkg.in/h2non/bimg.v1"
   packages = ["."]
-  revision = "276e0541892a9c518de3cf332536cd30ebef25de"
-  version = "v1.0.14"
+  revision = "1a5477aae5b261f4f8efb40cdeba8198b75c2238"
+  version = "v1.0.16"
 
 [[projects]]
   branch = "v2"
@@ -172,6 +171,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "5c5cfd6f5c2b6f21d57be02db0578475b320687fffe6621bc6667f47fb7d007a"
+  inputs-digest = "32df22caf712e59409082e955c73e56050dd03ee4adf4cf26fec4d260149cb14"
   solver-name = "gps-cdcl"
   solver-version = 1
