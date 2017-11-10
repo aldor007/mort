@@ -222,10 +222,10 @@ func processImage(obj *object.FileObject, parent *response.Response, transforms 
 	}
 
 	body, _ := res.CopyBody()
-	go func(buf []byte) {
-		storage.Set(obj, res.Headers, res.ContentLength, ioutil.NopCloser(bytes.NewReader(buf)))
+	go func(objS object.FileObject, resS response.Response, buf []byte) {
+		storage.Set(&objS, resS.Headers, resS.ContentLength, ioutil.NopCloser(bytes.NewReader(buf)))
 
-	}(body)
+	}(*obj, *res, body)
 	return res
 
 }
