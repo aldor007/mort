@@ -12,6 +12,7 @@ import (
 	"mort/transforms"
 	"mort/log"
 	"mort/lock"
+	"mort/throttler"
 	"strconv"
 	"time"
 	"net/http"
@@ -34,11 +35,13 @@ type requestMessage struct {
 type RequestProcessor struct {
 	queue chan requestMessage
 	collapse lock.Lock
+	throttler *throttler.Throttler
 }
 
 func (r *RequestProcessor) Init(max int, l lock.Lock)  {
 	r.queue = make(chan requestMessage, max)
 	r.collapse = l
+	r.throttler = throttler.New(10)
 }
 
 func (r *RequestProcessor) Process(req *http.Request, obj *object.FileObject)  *response.Response{
@@ -232,7 +235,7 @@ resLoop:
 			}
 
 			log.Log().Infow("Performing transforms", "obj.Bucket", obj.Bucket, "obj.Key", obj.Key, "transformsLen", len(transforms))
-			return updateHeaders(processImage(obj, parentRes, transforms))
+			return updateHeaders(r.processImage(obj, parentRes, transforms))
 		}
 	}
 
@@ -272,7 +275,13 @@ func handleS3Get(req *http.Request, obj *object.FileObject) *response.Response {
 
 }
 
-func processImage(obj *object.FileObject, parent *response.Response, transforms []transforms.Transforms) *response.Response {
+func (r *RequestProcessor) processImage(obj *object.FileObject, parent *response.Response, transforms []transforms.Transforms) *response.Response {
+	taked := r.throttler.Take()
+	if !taked {
+		log.Log().Warnw("Processor/processImage", "obj.Key", obj.Key, "error", "throttled")
+		return response.NewNoContent(503)
+	}
+
 	engine := engine.NewImageEngine(parent)
 	res, err := engine.Process(obj, transforms)
 	if err != nil {
@@ -288,6 +297,8 @@ func processImage(obj *object.FileObject, parent *response.Response, transforms 
 	} else {
 		log.Log().Warnw("Processor/processImage", "obj.Key", obj.Key, "error", err)
 	}
+
+	defer r.throttler.Release()
 
 	return res
 

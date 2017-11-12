@@ -7,7 +7,6 @@ import (
 	"fmt"
 
 	"github.com/go-chi/chi"
-	"github.com/go-chi/chi/middleware"
 
 	"mort"
 	"mort/config"
@@ -50,8 +49,6 @@ func main() {
 	imgConfig.Load(*configPath)
 
 	s3Auth := mortMiddleware.NewS3AuthMiddleware(imgConfig)
-
-	router.Use(middleware.Throttle(20))
 
 	router.Use(s3Auth.Handler)
 
