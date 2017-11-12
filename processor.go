@@ -3,6 +3,10 @@ package mort
 import (
 	"errors"
 	"strings"
+	"strconv"
+	"time"
+	"net/http"
+	"context"
 
 	"mort/config"
 	"mort/engine"
@@ -13,9 +17,6 @@ import (
 	"mort/log"
 	"mort/lock"
 	"mort/throttler"
-	"strconv"
-	"time"
-	"net/http"
 )
 
 const S3_LOCATION_STR = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><LocationConstraint xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">EU</LocationConstraint>"
@@ -49,14 +50,14 @@ func (r *RequestProcessor) Process(req *http.Request, obj *object.FileObject)  *
 	msg.request = req
 	msg.obj = obj
 	msg.responseChan = make(chan *response.Response)
-
+	ctx := req.Context()
 	go r.processChan()
 	r.queue <- msg
 
 	for {
 		select {
-		//case <-ctx.Done():
-		//	return response.NewBuf(504, "timeout")
+		case <-ctx.Done():
+			return response.NewNoContent(499)
 		case res := <-msg.responseChan:
 			return res
 		case <-time.After(time.Second * 60):
@@ -98,6 +99,7 @@ func handlePUT(req *http.Request, obj *object.FileObject) *response.Response {
 }
 
 func (r *RequestProcessor) collapseGET(req *http.Request, obj *object.FileObject) *response.Response {
+	ctx := req.Context()
 	l, locked := r.collapse.Lock(req.URL.Path)
 	if locked {
 		log.Log().Infow("Lock acquired", "obj.Key", obj.Key)
@@ -105,9 +107,11 @@ func (r *RequestProcessor) collapseGET(req *http.Request, obj *object.FileObject
 		resCpy, err := res.Copy()
 		if err != nil {
 			go func(resC *response.Response, inLock lock.LockData) {
+
+				log.Log().Infof("---------------------------------------------> Collapsed req %d -------------------------", r.collapse.Counter(inLock.Key))
 				defer r.collapse.Release(inLock.Key)
 				for i := 0; i < r.collapse.Counter(inLock.Key); i++ {
-					resCp, err := resCpy.Copy()
+					resCp, err := resC.Copy()
 					if err != nil {
 						inLock.ResponseChan <- resCp
 					}
@@ -124,8 +128,8 @@ func (r *RequestProcessor) collapseGET(req *http.Request, obj *object.FileObject
 	for {
 
 		select {
-		//case <-ctx.Done():
-		//	return response.NewBuf(504, "timeout")
+		case <-ctx.Done():
+			return response.NewNoContent(499)
 		case res, ok := <-l.ResponseChan:
 			if ok {
 				return res
@@ -153,6 +157,7 @@ func (r *RequestProcessor) hanldeGET(req *http.Request, obj *object.FileObject) 
 	var transforms []transforms.Transforms
 	var res        *response.Response
 	var parentRes  *response.Response
+	ctx := req.Context()
 
 	// search for last parent
 	for currObj.HasParent() {
@@ -183,6 +188,8 @@ func (r *RequestProcessor) hanldeGET(req *http.Request, obj *object.FileObject) 
 resLoop:
 	for {
 		select {
+		case <-ctx.Done():
+			return response.NewNoContent(499)
 		case res = <-resChan:
 			if obj.CheckParent && parentObj != nil && (parentRes == nil || parentRes.StatusCode == 0) {
 				go func () {
@@ -235,7 +242,7 @@ resLoop:
 			}
 
 			log.Log().Infow("Performing transforms", "obj.Bucket", obj.Bucket, "obj.Key", obj.Key, "transformsLen", len(transforms))
-			return updateHeaders(r.processImage(obj, parentRes, transforms))
+			return updateHeaders(r.processImage(ctx, obj, parentRes, transforms))
 		}
 	}
 
@@ -275,8 +282,8 @@ func handleS3Get(req *http.Request, obj *object.FileObject) *response.Response {
 
 }
 
-func (r *RequestProcessor) processImage(obj *object.FileObject, parent *response.Response, transforms []transforms.Transforms) *response.Response {
-	taked := r.throttler.Take()
+func (r *RequestProcessor) processImage(ctx context.Context, obj *object.FileObject, parent *response.Response, transforms []transforms.Transforms) *response.Response {
+	taked := r.throttler.Take(ctx)
 	if !taked {
 		log.Log().Warnw("Processor/processImage", "obj.Key", obj.Key, "error", "throttled")
 		return response.NewNoContent(503)

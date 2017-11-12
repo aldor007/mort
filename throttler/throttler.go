@@ -2,6 +2,7 @@ package throttler
 
 import (
 	"time"
+	"context"
 )
 
 var defaultBacklogTimeout = time.Second * 60
@@ -35,8 +36,10 @@ func NewBacklog(limit int, backlog int, timeout time.Duration) *Throttler {
 	return t
 }
 
-func (t *Throttler) Take()  bool {
+func (t *Throttler) Take(ctx context.Context)  bool {
 	select {
+	case <- ctx.Done():
+		return false
 	case btok := <-t.backlogTokens:
 		timer := time.NewTimer(t.backlogTimeout)
 
