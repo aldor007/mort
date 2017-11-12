@@ -26,6 +26,12 @@
   version = "v1.1.0"
 
 [[projects]]
+  name = "github.com/go-chi/chi"
+  packages = [".","middleware"]
+  revision = "f7c66f685bcab06bcce78ac212c5f3553c063d19"
+  version = "v3.3.0"
+
+[[projects]]
   name = "github.com/go-ini/ini"
   packages = ["."]
   revision = "f280b3ba517bf5fc98922624f21fb0e7a92adaec"
@@ -41,30 +47,6 @@
   name = "github.com/jmespath/go-jmespath"
   packages = ["."]
   revision = "0b12d6b5"
-
-[[projects]]
-  name = "github.com/labstack/echo"
-  packages = ["."]
-  revision = "b28538b2e3f5446fe6e0e47ee34cd74b662ca2ab"
-  version = "3.2.4"
-
-[[projects]]
-  name = "github.com/labstack/gommon"
-  packages = ["color","log"]
-  revision = "57409ada9da0f2afad6664c49502f8c50fbd8476"
-  version = "0.2.3"
-
-[[projects]]
-  name = "github.com/mattn/go-colorable"
-  packages = ["."]
-  revision = "167de6bfdfba052fa6b2d3664c8f5272e23c9072"
-  version = "v0.0.9"
-
-[[projects]]
-  name = "github.com/mattn/go-isatty"
-  packages = ["."]
-  revision = "0360b2af4f38e8d38c7fce2a9f4e702702d73a39"
-  version = "v0.0.3"
 
 [[projects]]
   name = "github.com/pkg/errors"
@@ -96,18 +78,6 @@
   version = "v2.0.0"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/valyala/bytebufferpool"
-  packages = ["."]
-  revision = "e746df99fe4a3986f4d4f79e13c1e0117ce9c2f7"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/valyala/fasttemplate"
-  packages = ["."]
-  revision = "dcecefd839c4193db0d35b88ec65b4c12d360ab0"
-
-[[projects]]
   name = "github.com/vmihailenco/msgpack"
   packages = [".","codes"]
   revision = "df5e5d20905d833657b92cafe6f6341ca1378083"
@@ -133,21 +103,9 @@
 
 [[projects]]
   branch = "master"
-  name = "golang.org/x/crypto"
-  packages = ["acme","acme/autocert"]
-  revision = "6a293f2d4b14b8e6d3f0539e383f6d0d30fce3fd"
-
-[[projects]]
-  branch = "master"
   name = "golang.org/x/net"
   packages = ["context"]
   revision = "a337091b0525af65de94df2eb7e98bd9962dcbe2"
-
-[[projects]]
-  branch = "master"
-  name = "golang.org/x/sys"
-  packages = ["unix"]
-  revision = "4b45465282a4624cf39876842a017334f13b8aff"
 
 [[projects]]
   name = "google.golang.org/appengine"
@@ -170,6 +128,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "32df22caf712e59409082e955c73e56050dd03ee4adf4cf26fec4d260149cb14"
+  inputs-digest = "e32ebf6323b1a63d5400061d01ffb4a542b21897329c31828454f2a77dfc0e30"
   solver-name = "gps-cdcl"
   solver-version = 1
