@@ -137,13 +137,16 @@ func (r * Response) Copy() (*Response, error) {
 		c.Headers[k] = v
 	}
 
-	buf, err := r.CopyBody()
-	if err != nil {
-		return nil, err
-	}
+	if r.Stream != nil {
+		buf, err := r.CopyBody()
+		if err != nil {
+			return nil, err
+		}
 
-	c.Stream =  ioutil.NopCloser(bytes.NewReader(buf))
-	c.ContentLength = int64(len(buf))
+		c.Stream =  ioutil.NopCloser(bytes.NewReader(buf))
+		c.ContentLength = int64(len(buf))
+
+	}
 
 	return &c, nil
 
