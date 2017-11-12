@@ -57,11 +57,11 @@ func (r *RequestProcessor) Process(req *http.Request, obj *object.FileObject)  *
 		case res := <-msg.responseChan:
 			return res
 		case <-time.After(time.Second * 60):
-			return response.NewBuf(504, []byte("timeout"))
+			return response.NewString(504, "timeout")
 		default:
 		}
 	}
-	return response.NewBuf(502,[]byte("ups"))
+	return response.NewString(502, "ups")
 
 }
 
@@ -87,7 +87,7 @@ func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *r
 		return response.NewError(405, errors.New("method not allowed"))
 	}
 
-	return response.NewBuf(503, []byte("ups"))
+	return response.NewString(503, "ups")
 }
 
 func handlePUT(req *http.Request, obj *object.FileObject) *response.Response {
@@ -130,13 +130,13 @@ func (r *RequestProcessor) collapseGET(req *http.Request, obj *object.FileObject
 
 			return r.hanldeGET(req, obj)
 		case <-time.After(time.Second * 10):
-			return response.NewBuf(504, []byte("timeout"))
+			return response.NewString(504, "timeout")
 		default:
 
 		}
 	}
 
-	return response.NewBuf(500,[]byte("ups"))
+	return response.NewString(500,"ups")
 
 }
 

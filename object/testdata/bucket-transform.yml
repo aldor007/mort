@@ -1,31 +1,21 @@
 buckets:
     bucket:
         transform:
-            path: "\\/([a-z0-9_]+)\\/(.*)"
+            path: "\\/(?P<presetName>[a-z0-9_]+)\\/(?P<parent>.*)"
             kind: "presets"
-            order:
-              presetName: 0
-              parent: 1
-
             presets:
                 blog_small:
                     quality: 75
                     filters:
                         thumbnail: { size: [100, 100], mode: outbound }
-                        interlace:
-                            mode: line
                 width:
                     quality: 75
                     filters:
                         thumbnail: { size: [100], mode: outbound }
-                        interlace:
-                            mode: line
                 height:
                     quality: 75
                     filters:
                         thumbnail: { size: [0, 100], mode: outbound }
-                        interlace:
-                            mode: line
         storages:
             basic:
                 kind: "local"

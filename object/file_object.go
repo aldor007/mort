@@ -131,12 +131,21 @@ func (self *FileObject) decodeKey(bucket config.Bucket, mortConfig *config.Confi
 	matches := trans.PathRegexp.FindStringSubmatch(self.Key)
 	if len(matches) < 3 {
 		return nil
-	}
 
-	presetName := string(matches[trans.Order.PresetName+1])
-	parent := "/" + string(matches[trans.Order.Parent+1])
+		}
+
+	subMatchMap := make(map[string]string, 2)
+
+	for i, name := range trans.PathRegexp.SubexpNames() {
+		if i != 0 && name != "" {
+			subMatchMap[name] = matches[i]
+		}
+	}
+	presetName := subMatchMap["presetName"] //string(matches[trans.Order.PresetName+1])
+	parent := "/" + subMatchMap["parent"] // "/" + string(matches[trans.Order.Parent+1])
 
 	if _, ok := bucket.Transform.Presets[presetName]; !ok {
+		log.Log().Warnw("FileObject decodeKey unknown preset", "obj.Key", self.Key, "parent", parent, "presetName", presetName, "regexp", trans.Path)
 		return errors.New("Unknown preset " + presetName)
 	}
 
@@ -155,7 +164,7 @@ func (self *FileObject) decodeKey(bucket config.Bucket, mortConfig *config.Confi
 	parentObj.Storage = bucket.Storages.Get(bucket.Transform.ParentStorage)
 
 	if parentObj != nil && bucket.Transform.ResultKey == "hash" {
-		self.Key = "/" + strings.Join([]string{strconv.FormatUint(uint64(self.Transforms.Hash().Sum64()), 16), string(matches[trans.Order.Parent + 1])}, "-")
+		self.Key = "/" + strings.Join([]string{strconv.FormatUint(uint64(self.Transforms.Hash().Sum64()), 16), subMatchMap["parent"]}, "-")
 	}
 
 	self.Parent = parentObj

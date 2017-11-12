@@ -15,7 +15,7 @@ buckets:
           - accessKey: "acc"
             secretAccessKey: "sec"
         transform:
-            path: "\\/+(?:cache|resolve)\\/([a-z0-9_]+)\\/+[a-z]+\\/[a-zA-Z0-9]+\\/+(.*)"
+            path: "\\/+(?:cache|resolve)\\/(?P<presetName>[a-z0-9_]+)\\/+[a-z]+\\/[a-zA-Z0-9]+\\/+(?P<parent>.*)"
             kind: "presets"
             order:
               presetName: 0
@@ -48,7 +48,7 @@ buckets:
           - accessKey: "acc"
             secretAccessKey: "sec"
         transform:
-            path: "\\/([a-zA-Z0-9-\\.]+)\\/([a-z0-9_]+).*"
+            path: "\\/(?P<parent>[a-zA-Z0-9-\\.]+)\\/(?P<presetName>[a-z0-9_]+).*"
             kind: "presets"
             order:
               parent: 0
@@ -58,12 +58,13 @@ buckets:
             presets:
                 default_small:
                     quality: 95
+                    format: webp
                     filters:
                         thumbnail: {size: [150, 200]}
         storages:
             api:
                 kind: "http"
-                url: "https://i.imgur.com/<item>" # ChzUb.jpg
+                url: "https://i.redd.it<item>" # Cnxpvwo7qqfwz.jpg
             transform:
                 kind: "local-meta"
                 rootPath: "/tmp/mort-tests/"

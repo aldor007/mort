@@ -6,9 +6,8 @@ import (
 	"io/ioutil"
 	"mort/config"
 	"mort/object"
-	"mort/log"
+	"mort/lock"
 	"bytes"
-	"go.uber.org/zap"
 )
 
 func BenchmarkNewRequestProcessor(b *testing.B) {
@@ -36,7 +35,7 @@ func BenchmarkNewRequestProcessor(b *testing.B) {
 		}
 
 		obj, _ := object.NewFileObject(req.URL.Path, &config)
-		rp := NewRequestProcessor(3)
+		rp := NewRequestProcessor(3, lock.NewMemoryLock())
 		b.Run(bm.name, func(b *testing.B) {
 			b.ReportAllocs()
 			b.ResetTimer()

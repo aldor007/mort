@@ -97,7 +97,7 @@ func Set(obj *object.FileObject, headers http.Header, contentLen int64, body io.
 		return response.NewError(500, err)
 	}
 
-	res := response.NewBuf(200, []byte(""))
+	res := response.NewNoContent(200)
 	res.SetContentType(mime.TypeByExtension(path.Ext(obj.Key)))
 	return res
 }

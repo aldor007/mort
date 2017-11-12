@@ -1,19 +1,15 @@
 buckets:
     local:
         transform:
-            path: "\\/([a-zA-Z0-9\\.\\/]+)\\-([a-z]+)"
+            path: "\\/(?P<parent>[a-zA-Z0-9\\.\\/]+)\\-(?P<presetName>[a-z]+)"
             kind: "presets"
             parentBucket: "local"
-            order:
-              presetName: 1
-              parent: 0
             presets:
                 small:
                     quality: 75
                     filters:
                         thumbnail: { size: [100, 70], mode: outbound }
-                        interlace:
-                            mode: line
+                        interlace: true
         storages:
             basic:
                 kind: "local-meta"

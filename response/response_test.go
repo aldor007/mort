@@ -19,5 +19,5 @@ func TestResponse_Copy(t *testing.T) {
 	buf2, err := resCpy.ReadBody()
 	assert.Nil(t, err, "Should not return error when reading body")
 	assert.Equal(t, len(buf1), len(buf2), "buffors from response should have equal length")
-	assert.Equal(t, len(buf1), 10000, "buffors from response should have equal length")
+	assert.Equal(t, len(buf1), 1000, "buffors from response should have equal length")
 }

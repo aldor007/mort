@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"sync"
 	"fmt"
+	"strings"
 	"github.com/pkg/errors"
 
 	"mort/log"
@@ -52,11 +53,6 @@ func (self *Config) load(data []byte) error {
 		if bucket.Transform != nil {
 			if bucket.Transform.Path != "" {
 				bucket.Transform.PathRegexp = regexp.MustCompile(bucket.Transform.Path)
-			}
-
-			if bucket.Transform.Order.PresetName == bucket.Transform.Order.Parent {
-				bucket.Transform.Order.Parent = 0
-				bucket.Transform.Order.PresetName = 1
 			}
 
 			if bucket.Transform.ParentStorage == "" {
@@ -154,6 +150,14 @@ func (c *Config) validateTransform(bucketName string, bucket Bucket) error {
 		if _, ok := c.Buckets[transform.ParentBucket]; !ok {
 			err = configInvalidError(fmt.Sprintf("%s - parentBucket %s doesn't exist", errorMsgPrefix, transform.ParentBucket))
 		}
+	}
+
+	if strings.Index(transform.Path, "(?P<presetName>") == -1 {
+		err = configInvalidError(fmt.Sprintf("%s invalid transform regexp it should have capturing group for presetName `(?P<presetName>``", errorMsgPrefix))
+	}
+
+	if strings.Index(transform.Path, "(?P<parent>") == -1 {
+		err = configInvalidError(fmt.Sprintf("%s invalid transform regexp it should have capturing group for parent `(?P<parent>``", errorMsgPrefix))
 	}
 
 	return err

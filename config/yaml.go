@@ -42,10 +42,6 @@ type TransformYaml struct {
 	PathRegexp    *regexp.Regexp
 	Kind          string                 `yaml:"kind"`
 	Presets       map[string]PresetsYaml `yaml:"presets"`
-	Order         struct {
-		PresetName int `yaml:"presetName"`
-		Parent     int `yaml:"parent"`
-	} `yaml:"order"`
 	CheckParent bool `yaml:"checkParent"`
 	ResultKey  string `yaml:"resultKey"`
 }

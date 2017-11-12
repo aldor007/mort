@@ -15,11 +15,8 @@ buckets:
           - accessKey: "acc"
             secretAccessKey: "sec"
         transform:
-            path: "\\/([a-z0-9_]+)\\/(.*)"
+            path: "\\/(?P<presetName>[a-z0-9_]+)\\/(?P<parent>.*)"
             kind: "presets"
-            order:
-              parent: 1
-              presetName: 0
             parentBucket: "media"
             resultKey: "hash"
             presets:

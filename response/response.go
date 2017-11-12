@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"sync"
-	"github.com/labstack/echo"
+	"strings"
 )
 
 const (
@@ -28,14 +28,27 @@ type Response struct {
 func New(statusCode int, body io.ReadCloser) *Response {
 	res := Response{StatusCode: statusCode, Stream: body}
 	res.Headers = make(http.Header)
-	res.ContentLength = -1
 	if body == nil {
 		res.SetContentType("application/octet-stream")
 	} else {
 		res.SetContentType("application/json")
+		res.ContentLength = -1
 	}
 	return &res
 }
+
+func NewNoContent(statusCode int) *Response {
+	res := New(statusCode, nil)
+	res.ContentLength = 0
+	return res
+}
+
+func NewString(statusCode int, body string) *Response {
+	r := New(statusCode, ioutil.NopCloser(strings.NewReader(body)))
+	r.SetContentType("text/plain")
+	return r
+}
+
 func NewBuf(statusCode int, body []byte) *Response {
 	res := Response{StatusCode: statusCode, Stream: ioutil.NopCloser(bytes.NewReader(body))}
 	res.ContentLength = int64(len(body))
@@ -65,14 +78,7 @@ func (r *Response) Set(headerName string, headerValue string) {
 	r.Headers.Set(headerName, headerValue)
 }
 
-func (r *Response) WriteHeaders(writer http.ResponseWriter) {
-	r.writeDebug()
-
-	for headerName, headerValue := range r.Headers {
-		writer.Header().Set(headerName, headerValue[0])
-	}
-
-	writer.Header().Set(ContentType, r.ContentType)
+func (r *Response) writeHeaders(writer http.ResponseWriter) {
 }
 
 func (r *Response) ReadBody() ([]byte, error) {
@@ -96,14 +102,15 @@ func (r *Response) Close() {
 	}
 }
 
-func (r *Response) SetDebug(debug string)  {
+func (r *Response) SetDebug(debug string) (*Response) {
 	if debug == "1" {
 		r.debug = true
 		r.Set("Cache-Control",  "no-cache")
-		return
+		return r
 	}
 
 	r.debug = false
+	return r
 }
 
 func (r *Response) HasError()  bool {
@@ -111,20 +118,29 @@ func (r *Response) HasError()  bool {
 }
 
 func (r *Response) Error()  error {
-	r.lock.RLock()
-	defer r.lock.RUnlock()
 	return r.errorValue
 }
 
-func (r *Response) Write(ctx echo.Context) error {
+func (r *Response) Send(w http.ResponseWriter) error {
+	r.writeDebug()
+
+	for headerName, headerValue := range r.Headers {
+		w.Header().Set(headerName, headerValue[0])
+	}
+
+	w.Header().Set(ContentType, r.ContentType)
+	w.WriteHeader(r.StatusCode)
+
 	if r.ContentLength != 0 {
 
 		defer r.Close()
-		return ctx.Stream(r.StatusCode, r.ContentType, r.Stream)
+		_, err := io.Copy(w, r.Stream)
+		return err
 	}
 
-	return ctx.NoContent(r.StatusCode)
+	return nil
 }
+
 
 func (r * Response) Copy() (*Response, error) {
 	if r == nil {

@@ -9,7 +9,10 @@ import (
 
 	"mort/config"
 	"mort/log"
+	"mort/transforms"
 )
+
+var imageInfo = transforms.ImageInfo{}
 
 func TestMain(m *testing.M) {
 	logger, _ := zap.NewDevelopment()
@@ -61,7 +64,9 @@ func TestNewFileObjectTransform(t *testing.T) {
 
 	assert.True(t, obj.HasTransform(), "obj should have transform")
 
-	transCfg := obj.Transforms.BimgOptions()
+	transCfg, err := obj.Transforms.BimgOptions(imageInfo)
+
+	assert.Nil(t, err, "Unexpected to have error when getting transforms")
 
 	assert.Equal(t, 100, transCfg.Width, "invalid width for transform")
 
@@ -89,7 +94,9 @@ func TestNewFileObjectTransformParentBucket(t *testing.T) {
 
 	assert.True(t, obj.HasTransform(), "obj should have transform")
 
-	transCfg := obj.Transforms.BimgOptions()
+	transCfg, err := obj.Transforms.BimgOptions(imageInfo)
+
+	assert.Nil(t, err, "Unexpected to have error when getting transforms")
 
 	assert.Equal(t, 100, transCfg.Width, "invalid width for transform")
 
@@ -133,7 +140,9 @@ func TestNewFileObjectTransformOnlyWitdh(t *testing.T) {
 
 	assert.True(t, obj.HasTransform(), "obj should have transform")
 
-	transCfg := obj.Transforms.BimgOptions()
+	transCfg, err := obj.Transforms.BimgOptions(imageInfo)
+
+	assert.Nil(t, err, "Unexpected to have error when getting transforms")
 
 	assert.Equal(t, 100, transCfg.Width, "invalid width for transform")
 

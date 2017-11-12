@@ -7,23 +7,40 @@ const request = supertest(`http://${host}`);
 
 describe('Image processing', function () {
     it('should create thumbnails with format default_small from external source', function (done) {
-       request.get('/remote/ChzUb.jpg/default_small')
-           .expect('Content-Type', 'image/jpeg')
+        this.timeout(5000);
+        const reqPath = '/remote/nxpvwo7qqfwz.jpg/default_small';
+        request.get(reqPath)
+           .expect('Content-Type', 'image/webp')
            .expect(200)
            .end(function(err, res) {
-               expect(res.headers['x-amz-public-width']).to.eql('150');
-               expect(res.headers['x-amz-public-height']).to.eql('200');
-               request.get('/remote/ChzUb.jpg/default_small')
+               if (err) {
+                   return done(err);
+               }
+
+               const body = res.body;
+               expect(body.length).to.be.within(9300, 9600);
+               
+               expect(res.headers['x-amz-meta-public-width']).to.eql('150');
+               expect(res.headers['x-amz-meta-public-height']).to.eql('200');
+               request.get(reqPath)
+                   .expect(200)
                    .end(function (err2, res2) {
-                       expect(res2.headers['x-amz-public-width']).to.eql('150');
-                       expect(res2.headers['x-amz-public-height']).to.eql('200');
+                       if (err2) {
+                           return done(err2);
+                       }
+
+                       const body2 = res2.body;
+                       expect(body2.length).to.eql(body.length);
+
+                       expect(res2.headers['x-amz-meta-public-width']).to.eql('150');
+                       expect(res2.headers['x-amz-meta-public-height']).to.eql('200');
                        done(err2)
                    });
            });
     });
 
     it('should return 400 when invalid preset given', function (done) {
-        request.get('/remote/ChzUb.jpg/default_smalaaal')
+        request.get('/remote/nxpvwo7qqfwz.jpg/default_smalaaal')
             .expect(400)
             .end(function(err) {
                 done(err)
@@ -31,7 +48,7 @@ describe('Image processing', function () {
     });
 
     it('should return 404 when parent not found', function (done) {
-        request.get('/remote/ChzUbk.jpg/default_small')
+        request.get('/remote/nie.ma/default_small')
             .expect(404)
             .end(function(err) {
                 done(err)
