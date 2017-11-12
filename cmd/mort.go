@@ -11,6 +11,7 @@ import (
 	"mort/config"
 	"mort/object"
 	"mort/log"
+	"mort/lock"
 
 	"go.uber.org/zap"
 )
@@ -21,9 +22,10 @@ func main() {
 	flag.Parse()
 	fmt.Println(*configPath, *listenAddr)
 	logger, _ := zap.NewProduction()
+	//logger, _ := zap.NewDevelopment()
 	zap.ReplaceGlobals(logger)
 	log.RegisterLogger(logger.Sugar())
-	rp := mort.NewRequestProcessor(5)
+	rp := mort.NewRequestProcessor(5, lock.NewMemoryLock())
 
 	imgConfig := config.GetInstance()
 	imgConfig.Load(*configPath)
@@ -43,6 +45,11 @@ func main() {
 		}
 
 		res := rp.Process(ctx.Request(), obj)
+		if res == nil {
+			logger.Sugar().Error("WTF response nil")
+			return ctx.NoContent(500)
+
+		}
 		res.SetDebug(ctx.Request().Header.Get("X-Mort-Debug"))
 		// FIXME
 		res.Set("Access-Control-Allow-Headers", "Content-Type, X-Amz-Public-Width, X-Amz-Public-Height")

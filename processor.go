@@ -3,8 +3,6 @@ package mort
 import (
 	"errors"
 	"strings"
-	"io/ioutil"
-	"bytes"
 
 	"mort/config"
 	"mort/engine"
@@ -13,6 +11,7 @@ import (
 	"mort/storage"
 	"mort/transforms"
 	"mort/log"
+	"mort/lock"
 	"strconv"
 	"time"
 	"net/http"
@@ -20,9 +19,9 @@ import (
 
 const S3_LOCATION_STR = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><LocationConstraint xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">EU</LocationConstraint>"
 
-func NewRequestProcessor(max int) RequestProcessor{
+func NewRequestProcessor(max int, l lock.Lock) RequestProcessor{
 	rp := RequestProcessor{}
-	rp.Init(max)
+	rp.Init(max, l)
 	return rp
 }
 
@@ -34,10 +33,12 @@ type requestMessage struct {
 
 type RequestProcessor struct {
 	queue chan requestMessage
+	collapse lock.Lock
 }
 
-func (r *RequestProcessor) Init(max int)  {
+func (r *RequestProcessor) Init(max int, l lock.Lock)  {
 	r.queue = make(chan requestMessage, max)
+	r.collapse = l
 }
 
 func (r *RequestProcessor) Process(req *http.Request, obj *object.FileObject)  *response.Response{
@@ -49,14 +50,19 @@ func (r *RequestProcessor) Process(req *http.Request, obj *object.FileObject)  *
 	go r.processChan()
 	r.queue <- msg
 
-	select {
-	//case <-ctx.Done():
-	//	return response.NewBuf(504, "timeout")
-	case res := <-msg.responseChan:
-		return res
-	case <-time.After(time.Second * 60):
-		return response.NewBuf(504, []byte("timeout"))
+	for {
+		select {
+		//case <-ctx.Done():
+		//	return response.NewBuf(504, "timeout")
+		case res := <-msg.responseChan:
+			return res
+		case <-time.After(time.Second * 60):
+			return response.NewBuf(504, []byte("timeout"))
+		default:
+		}
 	}
+	return response.NewBuf(502,[]byte("ups"))
+
 }
 
 func (r *RequestProcessor) processChan()  {
@@ -69,20 +75,72 @@ func (r *RequestProcessor) processChan()  {
 func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *response.Response {
 	switch req.Method {
 		case "GET", "HEAD":
-			return hanldeGET(req, obj)
+			if obj.HasTransform() {
+				return r.collapseGET(req, obj)
+			}
+
+			return r.hanldeGET(req, obj)
 		case "PUT":
 			return handlePUT(req, obj)
 
 	default:
 		return response.NewError(405, errors.New("method not allowed"))
 	}
+
+	return response.NewBuf(503, []byte("ups"))
 }
 
 func handlePUT(req *http.Request, obj *object.FileObject) *response.Response {
 	return storage.Set(obj, req.Header, req.ContentLength, req.Body)
 }
 
-func hanldeGET(req *http.Request, obj *object.FileObject) *response.Response {
+func (r *RequestProcessor) collapseGET(req *http.Request, obj *object.FileObject) *response.Response {
+	l, locked := r.collapse.Lock(req.URL.Path)
+	if locked {
+		log.Log().Infow("Lock acquired", "obj.Key", obj.Key)
+		res := r.hanldeGET(req, obj)
+		resCpy, err := res.Copy()
+		if err != nil {
+			go func(resC *response.Response, inLock lock.LockData) {
+				defer r.collapse.Release(inLock.Key)
+				for i := 0; i < r.collapse.Counter(inLock.Key); i++ {
+					resCp, err := resCpy.Copy()
+					if err != nil {
+						inLock.ResponseChan <- resCp
+					}
+				}
+			}(resCpy, l)
+		} else {
+			defer r.collapse.Release(l.Key)
+		}
+
+		return res
+	}
+
+	log.Log().Infow("Lock not acquired", "obj.Key", obj.Key)
+	for {
+
+		select {
+		//case <-ctx.Done():
+		//	return response.NewBuf(504, "timeout")
+		case res, ok := <-l.ResponseChan:
+			if ok {
+				return res
+			}
+
+			return r.hanldeGET(req, obj)
+		case <-time.After(time.Second * 10):
+			return response.NewBuf(504, []byte("timeout"))
+		default:
+
+		}
+	}
+
+	return response.NewBuf(500,[]byte("ups"))
+
+}
+
+func (r *RequestProcessor) hanldeGET(req *http.Request, obj *object.FileObject) *response.Response {
 	if obj.Key == "" {
 		return handleS3Get(req, obj)
 	}
@@ -221,11 +279,16 @@ func processImage(obj *object.FileObject, parent *response.Response, transforms 
 		return response.NewError(400, err)
 	}
 
-	body, _ := res.CopyBody()
-	go func(objS object.FileObject, resS response.Response, buf []byte) {
-		storage.Set(&objS, resS.Headers, resS.ContentLength, ioutil.NopCloser(bytes.NewReader(buf)))
+	resCpy, err := res.Copy()
+	if err == nil {
+		go func(objS object.FileObject, resS *response.Response) {
+			storage.Set(obj, resS.Headers, resS.ContentLength, resS.Stream)
 
-	}(*obj, *res, body)
+		}(*obj, resCpy)
+	} else {
+		log.Log().Warnw("Processor/processImage", "obj.Key", obj.Key, "error", err)
+	}
+
 	return res
 
 }

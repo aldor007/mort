@@ -81,9 +81,13 @@ func Set(obj *object.FileObject, headers http.Header, contentLen int64, body io.
 		return response.NewError(503, err)
 	}
 
-	metadata := make(map[string]interface{})
+	metadata := make(map[string]interface{}, len(headers))
 	for k, v := range headers {
-		metadata[k] = v[0]
+		if len(v) == 1 {
+			metadata[k] = v[0]
+		} else {
+			log.Log().Errorf("WTF ---------------- %s %s %s", headers, k, v)
+		}
 	}
 
 	_, err = client.Put(getKey(obj), body, contentLen, metadata)
@@ -288,8 +292,14 @@ func prepareResponse(obj *object.FileObject, stream io.ReadCloser, item stow.Ite
 		return response.NewError(500, err)
 	}
 
+	size, err := item.Size()
+	if err != nil {
+		return response.NewError(500, err)
+	}
+
 	res.Set("ETag", etag)
 	res.Set("Last-Modified", lastMod.Format(http.TimeFormat))
+	res.ContentLength = size
 
 	if contentType, ok := metadata["Content-Type"]; ok {
 		res.SetContentType(contentType.(string))

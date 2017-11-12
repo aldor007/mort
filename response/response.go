@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"sync"
 	"github.com/labstack/echo"
 )
 
@@ -21,11 +22,13 @@ type Response struct {
 	ContentType   string
 	debug 		  bool
 	errorValue    error
+	lock          sync.RWMutex
 }
 
 func New(statusCode int, body io.ReadCloser) *Response {
 	res := Response{StatusCode: statusCode, Stream: body}
 	res.Headers = make(http.Header)
+	res.ContentLength = -1
 	if body == nil {
 		res.SetContentType("application/octet-stream")
 	} else {
@@ -88,7 +91,7 @@ func (r *Response) CopyBody() ([]byte, error) {
 }
 
 func (r *Response) Close() {
-	if r != nil &&& r.Stream != nil {
+	if r.Stream != nil {
 		r.Stream.Close()
 	}
 }
@@ -108,16 +111,42 @@ func (r *Response) HasError()  bool {
 }
 
 func (r *Response) Error()  error {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	return r.errorValue
 }
 
 func (r *Response) Write(ctx echo.Context) error {
-	if r.Stream != nil {
+	if r.ContentLength != 0 {
+
 		defer r.Close()
 		return ctx.Stream(r.StatusCode, r.ContentType, r.Stream)
 	}
 
 	return ctx.NoContent(r.StatusCode)
+}
+
+func (r * Response) Copy() (*Response, error) {
+	if r == nil {
+		return nil, nil
+	}
+
+	c := Response{StatusCode:r.StatusCode, ContentType:r.ContentType,ContentLength: r.ContentLength, debug: r.debug, errorValue:r.errorValue}
+	c.Headers = make(http.Header)
+	for k, v := range r.Headers {
+		c.Headers[k] = v
+	}
+
+	buf, err := r.CopyBody()
+	if err != nil {
+		return nil, err
+	}
+
+	c.Stream =  ioutil.NopCloser(bytes.NewReader(buf))
+	c.ContentLength = int64(len(buf))
+
+	return &c, nil
+
 }
 
 func (r *Response) writeDebug() {
@@ -126,6 +155,7 @@ func (r *Response) writeDebug() {
 	}
 
 	if r.errorValue != nil {
+
 		body := map[string]string{"message": r.errorValue.Error()}
 		jsonBody, err := json.Marshal(body)
 		if err != nil {
