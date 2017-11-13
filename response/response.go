@@ -6,8 +6,8 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"sync"
 	"strings"
+	"errors"
 )
 
 const (
@@ -22,7 +22,7 @@ type Response struct {
 	ContentType   string
 	debug 		  bool
 	errorValue    error
-	lock          sync.RWMutex
+	errorWritten  bool
 }
 
 func New(statusCode int, body io.ReadCloser) *Response {
@@ -82,6 +82,10 @@ func (r *Response) writeHeaders(writer http.ResponseWriter) {
 }
 
 func (r *Response) ReadBody() ([]byte, error) {
+	if r.Stream == nil {
+		return nil, errors.New("empty body")
+	}
+
 	return ioutil.ReadAll(r.Stream)
 }
 
@@ -102,10 +106,11 @@ func (r *Response) Close() {
 	}
 }
 
-func (r *Response) SetDebug(debug string) (*Response) {
-	if debug == "1" {
+func (r *Response) SetDebug(debug bool) (*Response) {
+	if debug == true {
 		r.debug = true
 		r.Set("Cache-Control",  "no-cache")
+		r.writeDebug()
 		return r
 	}
 
@@ -122,8 +127,6 @@ func (r *Response) Error()  error {
 }
 
 func (r *Response) Send(w http.ResponseWriter) error {
-	r.writeDebug()
-
 	for headerName, headerValue := range r.Headers {
 		w.Header().Set(headerName, headerValue[0])
 	}
@@ -139,6 +142,20 @@ func (r *Response) Send(w http.ResponseWriter) error {
 	}
 
 	return nil
+}
+
+
+func (r * Response) CopyHeadersFrom(src *Response)  {
+	r.Headers = make(http.Header, len(src.Headers))
+	for k, v := range src.Headers {
+		r.Headers[k] = v
+	}
+
+	r.StatusCode = src.StatusCode
+	r.ContentType = src.ContentType
+	r.ContentLength = src.ContentLength
+	r.debug = src.debug
+	r.errorValue = src.errorValue
 }
 
 
@@ -173,7 +190,7 @@ func (r *Response) writeDebug() {
 		return
 	}
 
-	if r.errorValue != nil {
+	if r.errorValue != nil  {
 
 		body := map[string]string{"message": r.errorValue.Error()}
 		jsonBody, err := json.Marshal(body)

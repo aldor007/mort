@@ -52,6 +52,12 @@ func (s * s3Auth) Handler(next http.Handler) http.Handler {
 	mortConfig := s.mortConfig
 	fn := func(resWriter http.ResponseWriter, req *http.Request)  {
 		path := req.URL.Path
+		auth := req.Header.Get("Authorization")
+		if !isAuthRequired(req.Method, auth, path) {
+			next.ServeHTTP(resWriter, req)
+			return
+		}
+
 		pathSlice := strings.Split(path, "/")
 		pathSliceLen := len(pathSlice)
 		if pathSliceLen < 2 {
@@ -62,11 +68,6 @@ func (s * s3Auth) Handler(next http.Handler) http.Handler {
 
 		bucketName := pathSlice[1]
 
-		auth := req.Header.Get("Authorization")
-		if !isAuthRequired(req.Method, auth, path) {
-			next.ServeHTTP(resWriter, req)
-			return
-		}
 
 		var accessKey string
 		var signedHeaders []string

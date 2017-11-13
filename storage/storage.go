@@ -22,6 +22,7 @@ import (
 )
 
 const notFound = "{\"error\":\"item not found\"}"
+var storageCache = make(map[string]stow.Container)
 
 func Get(obj *object.FileObject) *response.Response {
 	key := getKey(obj)
@@ -35,7 +36,7 @@ func Get(obj *object.FileObject) *response.Response {
 	if err != nil {
 		if err == stow.ErrNotFound {
 			log.Log().Infow("Storage/Get item response", "obj.Key", obj.Key, "sc", 404)
-			return response.NewBuf(404, []byte(notFound))
+			return response.NewString(404, notFound)
 		}
 
 		log.Log().Infow("Storage/Get item response", "obj.Key", obj.Key, "error", err)
@@ -63,7 +64,7 @@ func Head(obj *object.FileObject) *response.Response {
 	if err != nil {
 		if err == stow.ErrNotFound {
 			log.Log().Infow("Storage/Get item response", "obj.Key", obj.Key, "sc", 404)
-			return response.NewBuf(404, []byte(notFound))
+			return response.NewString(404, notFound)
 		}
 
 		log.Log().Infow("Storage/Get item response", "obj.Key", obj.Key, "error", err)
@@ -196,6 +197,10 @@ func List(obj *object.FileObject, maxKeys int, delimeter string, prefix string, 
 
 func getClient(obj *object.FileObject) (stow.Container, error) {
 	storageCfg := obj.Storage
+	if c, ok := storageCache[storageCfg.Hash]; ok {
+		return c, nil
+	}
+
 	var config stow.Config
 	var client stow.Location
 
@@ -247,13 +252,14 @@ func getClient(obj *object.FileObject) (stow.Container, error) {
 			if err != nil {
 				return nil, err
 			}
-
+			storageCache[storageCfg.Hash] = container
 			return container, nil
 		}
 
 		return nil, err
 	}
 
+	storageCache[storageCfg.Hash] = container
 	return container, nil
 }
 

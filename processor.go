@@ -27,65 +27,26 @@ func NewRequestProcessor(max int, l lock.Lock) RequestProcessor{
 	return rp
 }
 
-type requestMessage struct {
-	responseChan chan *response.Response
-	obj *object.FileObject
-	request *http.Request
-}
-
 type RequestProcessor struct {
-	queue chan requestMessage
 	collapse lock.Lock
 	throttler *throttler.Throttler
 }
 
 func (r *RequestProcessor) Init(max int, l lock.Lock)  {
-	r.queue = make(chan requestMessage, max)
 	r.collapse = l
 	r.throttler = throttler.New(max)
 }
 
 func (r *RequestProcessor) Process(req *http.Request, obj *object.FileObject)  *response.Response{
-	msg := requestMessage{}
-	msg.request = req
-	msg.obj = obj
-	msg.responseChan = make(chan *response.Response)
-	ctx := req.Context()
-	go r.processChan()
-	r.queue <- msg
-
-	for {
-		select {
-		case <-ctx.Done():
-			return response.NewNoContent(499)
-		case res := <-msg.responseChan:
-			return res
-		case <-time.After(time.Second * 60):
-			return response.NewString(504, "timeout")
-		default:
-		}
-	}
-	return response.NewString(502, "ups")
-
-}
-
-func (r *RequestProcessor) processChan()  {
-	msg := <- r.queue
-	res := r.process(msg.request, msg.obj)
-	msg.responseChan <- res
-}
-
-
-func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *response.Response {
 	switch req.Method {
-		case "GET", "HEAD":
-			if obj.HasTransform() {
-				return r.collapseGET(req, obj)
-			}
+	case "GET", "HEAD":
+		if obj.HasTransform() {
+			return r.collapseGET(req, obj)
+		}
 
-			return r.hanldeGET(req, obj)
-		case "PUT":
-			return handlePUT(req, obj)
+		return r.hanldeGET(req, obj)
+	case "PUT":
+		return handlePUT(req, obj)
 
 	default:
 		return response.NewError(405, errors.New("method not allowed"))
@@ -100,27 +61,12 @@ func handlePUT(req *http.Request, obj *object.FileObject) *response.Response {
 
 func (r *RequestProcessor) collapseGET(req *http.Request, obj *object.FileObject) *response.Response {
 	ctx := req.Context()
-	l, locked := r.collapse.Lock(req.URL.Path)
+	resChan, locked := r.collapse.Lock(req.URL.Path)
 	if locked {
 		log.Log().Infow("Lock acquired", "obj.Key", obj.Key)
 		res := r.hanldeGET(req, obj)
-		resCpy, err := res.Copy()
-		if err != nil {
-			go func(resC *response.Response, inLock lock.LockData) {
-
-				log.Log().Infof("---------------------------------------------> Collapsed req %d -------------------------", r.collapse.Counter(inLock.Key))
-				defer r.collapse.Release(inLock.Key)
-				for i := 0; i < r.collapse.Counter(inLock.Key); i++ {
-					resCp, err := resC.Copy()
-					if err != nil {
-						inLock.ResponseChan <- resCp
-					}
-				}
-			}(resCpy, l)
-		} else {
-			defer r.collapse.Release(l.Key)
-		}
-
+		resCpy, _ := res.Copy()
+		go r.collapse.NotifyAndRelease(req.URL.Path, resCpy)
 		return res
 	}
 
@@ -130,13 +76,13 @@ func (r *RequestProcessor) collapseGET(req *http.Request, obj *object.FileObject
 		select {
 		case <-ctx.Done():
 			return response.NewNoContent(499)
-		case res, ok := <-l.ResponseChan:
+		case res, ok := <- resChan:
 			if ok {
 				return res
 			}
 
 			return r.hanldeGET(req, obj)
-		case <-time.After(time.Second * 10):
+		case <-time.After(time.Second * 60):
 			return response.NewString(504, "timeout")
 		default:
 
@@ -288,6 +234,7 @@ func (r *RequestProcessor) processImage(ctx context.Context, obj *object.FileObj
 		log.Log().Warnw("Processor/processImage", "obj.Key", obj.Key, "error", "throttled")
 		return response.NewNoContent(503)
 	}
+	defer r.throttler.Release()
 
 	engine := engine.NewImageEngine(parent)
 	res, err := engine.Process(obj, transforms)
@@ -305,7 +252,6 @@ func (r *RequestProcessor) processImage(ctx context.Context, obj *object.FileObj
 		log.Log().Warnw("Processor/processImage", "obj.Key", obj.Key, "error", err)
 	}
 
-	defer r.throttler.Release()
 
 	return res
 

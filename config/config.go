@@ -60,6 +60,11 @@ func (self *Config) load(data []byte) error {
 			}
 		}
 
+		for sName, storage := range self.Buckets[name].Storages {
+			storage.Hash = name + sName + storage.Kind
+			bucket.Storages[sName] = storage
+		}
+
 		bucket.Name = name
 		self.Buckets[name] = bucket
 		for _, key := range bucket.Keys {

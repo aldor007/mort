@@ -57,6 +57,7 @@ type Storage struct {
 	Endpoint        string            `yaml:"endpoint",omitempty`
 	PathPrefix      string            `yaml:"pathPrefix",omitempty"`
 	AllowMetadata   bool              `yaml:"allowMetadata",omitempty"`
+	Hash            string
 }
 
 type StorageTypes map[string]Storage

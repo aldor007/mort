@@ -54,7 +54,7 @@ func main() {
 
 	router.Use(func (_ http.Handler) http.Handler {
 		return http.HandlerFunc(func(resWriter http.ResponseWriter, req *http.Request) {
-			debug := req.Header.Get("X-Mort-Debug")
+			debug := req.Header.Get("X-Mort-Debug") != ""
 			obj, err := object.NewFileObject(req.URL.Path, imgConfig)
 			if err != nil {
 				logger.Sugar().Errorf("Unable to create file object err = %s", err)
@@ -63,12 +63,6 @@ func main() {
 			}
 
 			res := rp.Process(req,obj)
-			if res == nil {
-				logger.Sugar().Error("WTF response nil")
-				resWriter.WriteHeader(500)
-				return
-			}
-
 			res.SetDebug(debug)
 			// FIXME
 			res.Set("Access-Control-Allow-Headers", "Content-Type, X-Amz-Public-Width, X-Amz-Public-Height")
