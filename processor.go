@@ -42,7 +42,7 @@ type RequestProcessor struct {
 func (r *RequestProcessor) Init(max int, l lock.Lock)  {
 	r.queue = make(chan requestMessage, max)
 	r.collapse = l
-	r.throttler = throttler.New(10)
+	r.throttler = throttler.New(max)
 }
 
 func (r *RequestProcessor) Process(req *http.Request, obj *object.FileObject)  *response.Response{

@@ -1,27 +1,15 @@
 package object
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"go.uber.org/zap"
 
 	"mort/config"
-	"mort/log"
 	"mort/transforms"
 )
 
 var imageInfo = transforms.ImageInfo{}
-
-func TestMain(m *testing.M) {
-	logger, _ := zap.NewDevelopment()
-	zap.ReplaceGlobals(logger)
-	log.RegisterLogger(logger.Sugar())
-	code := m.Run()
-	defer logger.Sync()
-	os.Exit(code)
-}
 
 func TestNewFileObjectWhenUnknowBucket(t *testing.T) {
 	mortConfig := config.GetInstance()
@@ -165,4 +153,31 @@ func TestNewFileObjecWithNestedParent(t *testing.T) {
 	assert.True(t, parent.HasParent(), "parent should have parent")
 
 	assert.Equal(t, "/parent.jpg", parent.Parent.Key, "parent of parent should have correct path")
+}
+
+func BenchmarkNewFileObject(b *testing.B) {
+
+	benchmarks := []struct{
+		path string
+		configPath string
+	} {
+		{"/bucket/width/thumb_121332.jpg", "testdata/bucket-transform-parent-storage.yml"},
+		{"/bucket/parent.jpg", "testdata/bucket-transform.yml"},
+	}
+
+	b.ReportAllocs()
+	for _, bm := range benchmarks {
+		config := config.Config{}
+		err := config.Load(bm.configPath)
+		if err != nil {
+			panic(err)
+		}
+
+		b.Run(bm.path, func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				NewFileObject(bm.path, &config)
+			}
+		})
+	}
+
 }

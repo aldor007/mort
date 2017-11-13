@@ -90,6 +90,7 @@ type FileObject struct {
 func NewFileObject(uri string, mortConfig *config.Config) (*FileObject, error) {
 	obj := FileObject{}
 	obj.Uri = uri
+	//obj.uriBytes = []byte(uri)
 	obj.CheckParent = false
 
 	err := obj.decode(mortConfig)
@@ -99,16 +100,17 @@ func NewFileObject(uri string, mortConfig *config.Config) (*FileObject, error) {
 }
 
 func (self *FileObject) decode(mortConfig *config.Config) error {
-	elements := strings.Split(self.Uri, "/")
+	elements := strings.SplitN(self.Uri, "/", 3)
 
 	self.Bucket = elements[1]
 	if len(elements) > 2 {
-		self.Key = "/" + strings.Join(elements[2:], "/")
+		self.Key = "/" + elements[2]
 	}
+
 
 	if bucket, ok := mortConfig.Buckets[self.Bucket]; ok {
 		err := self.decodeKey(bucket, mortConfig)
-		if self.HasTransform() {
+		if self.Transforms.NotEmpty {
 			self.Storage = bucket.Storages.Transform()
 		} else {
 			self.Storage = bucket.Storages.Basic()
@@ -129,10 +131,9 @@ func (self *FileObject) decodeKey(bucket config.Bucket, mortConfig *config.Confi
 
 	trans := bucket.Transform
 	matches := trans.PathRegexp.FindStringSubmatch(self.Key)
-	if len(matches) < 3 {
+	if matches == nil {
 		return nil
-
-		}
+	}
 
 	subMatchMap := make(map[string]string, 2)
 
@@ -142,7 +143,7 @@ func (self *FileObject) decodeKey(bucket config.Bucket, mortConfig *config.Confi
 		}
 	}
 	presetName := subMatchMap["presetName"] //string(matches[trans.Order.PresetName+1])
-	parent := "/" + subMatchMap["parent"] // "/" + string(matches[trans.Order.Parent+1])
+	parent := subMatchMap["parent"] // "/" + string(matches[trans.Order.Parent+1])
 
 	if _, ok := bucket.Transform.Presets[presetName]; !ok {
 		log.Log().Warnw("FileObject decodeKey unknown preset", "obj.Key", self.Key, "parent", parent, "presetName", presetName, "regexp", trans.Path)
@@ -156,9 +157,7 @@ func (self *FileObject) decodeKey(bucket config.Bucket, mortConfig *config.Confi
 	}
 
 
-	if bucket.Transform.ParentBucket != "" {
-		parent = "/" + path.Join(bucket.Transform.ParentBucket, parent)
-	}
+	parent =  "/" + path.Join(bucket.Transform.ParentBucket, parent)
 
 	parentObj, err := NewFileObject(parent, mortConfig)
 	parentObj.Storage = bucket.Storages.Get(bucket.Transform.ParentStorage)

@@ -5,6 +5,7 @@ buckets:
             kind: "presets"
             parentStorage: "other"
             parentBucket: "bucket"
+            resultKey: "hash"
             presets:
                 blog_small:
                     quality: 75
