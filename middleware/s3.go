@@ -42,12 +42,13 @@ type s3Auth struct {
 	mortConfig *config.Config
 }
 
+
+// NewS3AuthDiddleware returns S3 compatible authorization handler
+// Correctly it can handle AWS v2 (S3 mode) and AWS v4 (only header mode without streaming)
 func NewS3AuthMiddleware(mortConfig *config.Config) *s3Auth  {
 	return &s3Auth{mortConfig:mortConfig}
 }
 
-// BasicAuthWithConfig returns an BasicAuth middleware with config.
-// See `BasicAuth()`.
 func (s * s3Auth) Handler(next http.Handler) http.Handler {
 	mortConfig := s.mortConfig
 	fn := func(resWriter http.ResponseWriter, req *http.Request)  {
@@ -200,7 +201,7 @@ func (s *s3Auth) listAllMyBuckets(resWriter http.ResponseWriter, accessKey strin
 	listAllBucketsXML := listAllBucketsResult{}
 	listAllBucketsXML.Owner.DisplayName = accessKey
 	listAllBucketsXML.Owner.ID = accessKey
-	//listAllBucketsXML.Buckets = make([]bucketXml, len(buckets))
+	
 	for _, bucket := range buckets {
 		b := bucketXml{}
 		b.Name = bucket.Name
@@ -218,5 +219,4 @@ func (s *s3Auth) listAllMyBuckets(resWriter http.ResponseWriter, accessKey strin
 	res := response.NewBuf(200, b)
 	res.SetContentType("application/xml")
 	res.Send(resWriter)
-
 }

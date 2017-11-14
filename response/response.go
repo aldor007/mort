@@ -11,76 +11,72 @@ import (
 )
 
 const (
-	ContentType = "content-type"
+	HeaderContentType = "content-type"
 )
 
+// Response is helper struct for wrapping diffrent storage response
 type Response struct {
 	StatusCode    int
 	Stream        io.ReadCloser
 	Headers       http.Header
 	ContentLength int64
-	ContentType   string
 	debug 		  bool
 	errorValue    error
 	errorWritten  bool
 }
 
+// New create response object with io.ReadCloser
 func New(statusCode int, body io.ReadCloser) *Response {
 	res := Response{StatusCode: statusCode, Stream: body}
 	res.Headers = make(http.Header)
-	if body == nil {
-		res.SetContentType("application/octet-stream")
-	} else {
-		res.SetContentType("application/json")
-		res.ContentLength = -1
-	}
+	res.ContentLength = -1
 	return &res
 }
 
+// NewNoContent create response object without content
 func NewNoContent(statusCode int) *Response {
 	res := New(statusCode, nil)
 	res.ContentLength = 0
 	return res
 }
 
+// NewString create response object from string
 func NewString(statusCode int, body string) *Response {
 	r := New(statusCode, ioutil.NopCloser(strings.NewReader(body)))
-	r.SetContentType("text/plain")
+	r.Headers.Set(HeaderContentType, "text/plain")
 	return r
 }
 
+// NewString create response object from []byte
 func NewBuf(statusCode int, body []byte) *Response {
 	res := Response{StatusCode: statusCode, Stream: ioutil.NopCloser(bytes.NewReader(body))}
 	res.ContentLength = int64(len(body))
 	res.Headers = make(http.Header)
-	if body == nil {
-		res.SetContentType("application/octet-stream")
-	} else {
-		res.SetContentType("application/json")
-	}
 	return &res
 }
 
+// NewError create response object from error
 func NewError(statusCode int, err error) *Response {
 	res := Response{StatusCode: statusCode, errorValue: err}
 	res.Headers = make(http.Header)
-	res.SetContentType("application/json")
+	res.Headers.Set(HeaderContentType, "application/json")
 	return &res
 }
 
+// SetContentType update content type header of response
 func (r *Response) SetContentType(contentType string) *Response {
-	r.Headers.Set(ContentType, contentType)
-	r.ContentType = contentType
+	r.Headers.Set(HeaderContentType, contentType)
 	return r
 }
 
-func (r *Response) Set(headerName string, headerValue string) {
+// Set update response headers
+func (r *Response) Set(headerName string, headerValue string)  {
 	r.Headers.Set(headerName, headerValue)
 }
 
-func (r *Response) writeHeaders(writer http.ResponseWriter) {
-}
-
+// ReadBody reads all content of response and returns []byte
+// Content of the response is changed
+// Such response shouldn't be Send to client
 func (r *Response) ReadBody() ([]byte, error) {
 	if r.Stream == nil {
 		return nil, errors.New("empty body")
@@ -89,7 +85,13 @@ func (r *Response) ReadBody() ([]byte, error) {
 	return ioutil.ReadAll(r.Stream)
 }
 
+// CopyBody read all content of response and returns it in []byte
+// but doesn't change response object body
 func (r *Response) CopyBody() ([]byte, error) {
+	if r.Stream == nil {
+		return nil, errors.New("empty body")
+	}
+
 	buf, err := ioutil.ReadAll(r.Stream)
 	if err != nil {
 		return nil, err
@@ -100,16 +102,18 @@ func (r *Response) CopyBody() ([]byte, error) {
 	return buf, nil
 }
 
+// Close response reader
 func (r *Response) Close() {
 	if r.Stream != nil {
 		r.Stream.Close()
 	}
 }
 
+// SetDebug set flag indicating that response can including debug information
 func (r *Response) SetDebug(debug bool) (*Response) {
 	if debug == true {
 		r.debug = true
-		r.Set("Cache-Control",  "no-cache")
+		r.Headers.Set("Cache-Control", "no-cache")
 		r.writeDebug()
 		return r
 	}
@@ -118,20 +122,22 @@ func (r *Response) SetDebug(debug bool) (*Response) {
 	return r
 }
 
+// HasError check if response contains error
 func (r *Response) HasError()  bool {
 	return r.errorValue != nil
 }
 
+// Error returns error instance
 func (r *Response) Error()  error {
 	return r.errorValue
 }
 
+// Send write response to client
 func (r *Response) Send(w http.ResponseWriter) error {
 	for headerName, headerValue := range r.Headers {
 		w.Header().Set(headerName, headerValue[0])
 	}
 
-	w.Header().Set(ContentType, r.ContentType)
 	w.WriteHeader(r.StatusCode)
 
 	if r.ContentLength != 0 {
@@ -144,7 +150,7 @@ func (r *Response) Send(w http.ResponseWriter) error {
 	return nil
 }
 
-
+// CopyHeadersFrom copy all headers from src response but body is omitted
 func (r * Response) CopyHeadersFrom(src *Response)  {
 	r.Headers = make(http.Header, len(src.Headers))
 	for k, v := range src.Headers {
@@ -152,19 +158,18 @@ func (r * Response) CopyHeadersFrom(src *Response)  {
 	}
 
 	r.StatusCode = src.StatusCode
-	r.ContentType = src.ContentType
 	r.ContentLength = src.ContentLength
 	r.debug = src.debug
 	r.errorValue = src.errorValue
 }
 
-
+// Copy create copmlete response copy with headers and body
 func (r * Response) Copy() (*Response, error) {
 	if r == nil {
 		return nil, nil
 	}
 
-	c := Response{StatusCode:r.StatusCode, ContentType:r.ContentType,ContentLength: r.ContentLength, debug: r.debug, errorValue:r.errorValue}
+	c := Response{StatusCode:r.StatusCode, ContentLength: r.ContentLength, debug: r.debug, errorValue:r.errorValue}
 	c.Headers = make(http.Header)
 	for k, v := range r.Headers {
 		c.Headers[k] = v

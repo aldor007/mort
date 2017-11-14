@@ -5,15 +5,17 @@ import (
 	"mort/response"
 )
 
+// MemoryLock is in memory lock for single mort instance
 type MemoryLock struct {
     lock    sync.RWMutex
-	internal map[string]LockData
+	internal map[string]lockData
 
 }
 
+// NewMemoryLock create a new empty instance of MemoryLock
 func NewMemoryLock() *MemoryLock  {
 	m := &MemoryLock{}
-	m.internal = make(map[string]LockData)
+	m.internal = make(map[string]lockData)
 	return m
 }
 
@@ -52,8 +54,8 @@ func (m *MemoryLock) Lock(key string) (chan *response.Response, bool) {
 		return c, !ok
 	}
 
-	data := LockData{}
-	data.responseChans = make([]chan *response.Response, 0, 4)
+	data := lockData{}
+	data.responseChans = make([]chan *response.Response, 0, 6)
 	m.internal[key] = data
 	return nil, !ok
 }

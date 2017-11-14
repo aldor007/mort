@@ -12,6 +12,9 @@ import (
 	"mort/log"
 )
 
+// Config contains configuration for buckets etc
+//
+// Config should be singletn
 type Config struct {
 	Buckets map[string]Bucket `yaml:"buckets"`
 	Headers []HeaderYaml      `yaml:"headers"`
@@ -22,6 +25,8 @@ var instance *Config
 var once sync.Once
 var storageKinds []string = []string{"local", "local-meta", "s3", "http", "noop"}
 
+
+// GetInstance return single instance of Config object
 func GetInstance() *Config {
 	once.Do(func() {
 		instance = &Config{}
@@ -29,6 +34,8 @@ func GetInstance() *Config {
 	return instance
 }
 
+// Load reads config data from file
+// How configuration file should be formated see README.md
 func (self *Config) Load(filePath string) error {
 	data, err := ioutil.ReadFile(filePath)
 	if err != nil {
@@ -38,6 +45,7 @@ func (self *Config) Load(filePath string) error {
 	return self.load(data)
 }
 
+// LoadFromString parse configuration form string
 func (self *Config) LoadFromString(data string) error {
 	return self.load([]byte(data))
 }

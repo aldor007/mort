@@ -15,14 +15,17 @@ import (
 	"mort/log"
 )
 
+// ImageEngine is main struct that is responding for image processing
 type ImageEngine struct {
-	parent *response.Response
+	parent *response.Response // source file
 }
 
+// NewImageEngine create instance of ImageEngine with source file that should be processed
 func NewImageEngine(res *response.Response) *ImageEngine {
 	return &ImageEngine{parent: res}
 }
 
+// Process main ImageEngine function that create new image (stored in response object)
 func (self *ImageEngine) Process(obj *object.FileObject, trans []transforms.Transforms) (*response.Response, error) {
 	buf, err := self.parent.ReadBody()
 	if err != nil {

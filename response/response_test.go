@@ -6,6 +6,7 @@ import (
 	"testing"
 	"errors"
 	"github.com/stretchr/testify/assert"
+	"net/http/httptest"
 )
 
 func TestResponse_Copy(t *testing.T) {
@@ -30,11 +31,11 @@ func TestNew(t *testing.T) {
 	reader := ioutil.NopCloser(bytes.NewReader(buf))
 
 	res := New(200, reader)
-	res.Set("x-header", "1")
+	res.Headers.Set("x-header", "1")
 	res.SetContentType("text/plain")
 
 	assert.Equal(t, res.StatusCode, 200)
-	assert.Equal(t, res.ContentType, "text/plain")
+	assert.Equal(t, res.Headers.Get(HeaderContentType), "text/plain")
 	assert.Equal(t, res.Headers["X-Header"][0], "1")
 
 	buf2, err := res.ReadBody()
@@ -45,11 +46,11 @@ func TestNew(t *testing.T) {
 
 func TestNewString(t *testing.T) {
 	res := NewString(200, "12345")
-	res.Set("x-header", "1")
+	res.Headers.Set("x-header", "1")
 	res.SetContentType("text/plain")
 
 	assert.Equal(t, res.StatusCode, 200)
-	assert.Equal(t, res.ContentType, "text/plain")
+	assert.Equal(t, res.Headers.Get(HeaderContentType), "text/plain")
 	assert.Equal(t, res.Headers["X-Header"][0], "1")
 
 	buf2, err := res.ReadBody()
@@ -60,11 +61,11 @@ func TestNewString(t *testing.T) {
 
 func TestNewNoContent(t *testing.T) {
 	res := NewNoContent(400)
-	res.Set("x-header", "1")
+	res.Headers.Set("x-header", "1")
 	res.SetContentType("text/plain")
 
 	assert.Equal(t, res.StatusCode, 400)
-	assert.Equal(t, res.ContentType, "text/plain")
+	assert.Equal(t, res.Headers.Get(HeaderContentType), "text/plain")
 	assert.Equal(t, res.Headers["X-Header"][0], "1")
 
 	buf2, err := res.ReadBody()
@@ -74,11 +75,11 @@ func TestNewNoContent(t *testing.T) {
 
 func TestNewError(t *testing.T) {
 	res := NewError(500, errors.New("costam"))
-	res.Set("x-header", "1")
+	res.Headers.Set("x-header", "1")
 	res.SetContentType("text/plain")
 
 	assert.Equal(t, res.StatusCode, 500)
-	assert.Equal(t, res.ContentType, "text/plain")
+	assert.Equal(t, res.Headers.Get(HeaderContentType), "text/plain")
 	assert.Equal(t, res.Headers["X-Header"][0], "1")
 
 	buf, err := res.ReadBody()
@@ -90,4 +91,41 @@ func TestNewError(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, buf, "Should return error when reading body")
 
+}
+
+func TestResponse_CopyHeadersFrom(t *testing.T) {
+	buf := make([]byte, 1000)
+	src := NewBuf(200, buf)
+	src.Headers.Set("X-Header", "1")
+	src.SetContentType("text/html")
+
+	res := NewBuf(200, buf)
+	res.CopyHeadersFrom(src)
+
+	assert.Equal(t, res.Headers["X-Header"][0], "1")
+	assert.Equal(t, res.Headers.Get(HeaderContentType), "text/html")
+}
+
+func TestResponse_Send(t *testing.T) {
+	buf := make([]byte, 1000)
+	res := NewBuf(200, buf)
+	res.Headers.Set("X-Header", "1")
+	res.SetContentType("text/html")
+
+	recorder := httptest.NewRecorder()
+	res.Send(recorder)
+
+	result := recorder.Result()
+	assert.Equal(t, result.StatusCode, 200)
+	assert.Equal(t, result.Header.Get("X-Header"), "1")
+	assert.Equal(t, result.Header.Get("Content-Type"), "text/html")
+}
+
+func BenchmarkNewBuf(b *testing.B) {
+	buf := make([]byte, 1000)
+	for i := 0; i < b.N; i++  {
+		res := NewBuf(200, buf)
+		res.Headers.Set("X-Header", "1")
+		res.SetContentType("text/html")
+	}
 }

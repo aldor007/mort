@@ -77,16 +77,21 @@ func presetToTransform(preset config.PresetsYaml) (transforms.Transforms, error)
 	return trans, nil
 }
 
+// FileObject is representing parsed request for image or file
+//
 type FileObject struct {
-	Uri        string                `json:"uri"`
-	Bucket     string                `json:"bucket"`
-	Key        string                `json:"key"`
-	Transforms transforms.Transforms `json:"transforms"`
-	Storage    config.Storage        `json:"storage"`
-	Parent     *FileObject
-	CheckParent bool
+	Uri        string                `json:"uri"` // original request path
+	Bucket     string                `json:"bucket"` // request matched bucket
+	Key        string                `json:"key"`    // storage path for file
+	Transforms transforms.Transforms `json:"transforms"` // list of transform that should be performed
+	Storage    config.Storage        `json:"storage"` // selected storage that should be used
+	Parent     *FileObject                            // original image for transformed image
+	CheckParent bool                                 // boolen if we should always check if parent exists
 }
 
+// NewFileObject create new instance of FileObject
+// uri should be request path
+// mortConfig should be pointer to current buckets config
 func NewFileObject(uri string, mortConfig *config.Config) (*FileObject, error) {
 	obj := FileObject{}
 	obj.Uri = uri
@@ -171,10 +176,12 @@ func (self *FileObject) decodeKey(bucket config.Bucket, mortConfig *config.Confi
 	return err
 }
 
+// HasParent inform if object has parent
 func (self *FileObject) HasParent() bool {
 	return self.Parent != nil
 }
 
+// HasTransform inform if object has transform
 func (self *FileObject) HasTransform() bool {
 	return self.Transforms.NotEmpty == true
 }

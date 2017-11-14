@@ -22,52 +22,56 @@ import (
 )
 
 const notFound = "{\"error\":\"item not found\"}"
+
+// map for used storage client instances
 var storageCache = make(map[string]stow.Container)
 
+// Get retrieve obj from given storage and returns its wrapped in response
 func Get(obj *object.FileObject) *response.Response {
 	key := getKey(obj)
 	client, err := getClient(obj)
 	if err != nil {
-		log.Log().Infow("Storage/Get get client", "obj.Key", obj.Key, "error", err)
+		log.Log().Infow("Storage/Get get client", "obj.Key", obj.Key,  "obj.Bucket", obj.Bucket,  "error", err)
 		return response.NewError(503, err)
 	}
 
 	item, err := client.Item(key)
 	if err != nil {
 		if err == stow.ErrNotFound {
-			log.Log().Infow("Storage/Get item response", "obj.Key", obj.Key, "sc", 404)
+			log.Log().Infow("Storage/Get item response", "obj.Key", obj.Key,  "obj.Bucket", obj.Bucket, "sc", 404)
 			return response.NewString(404, notFound)
 		}
 
-		log.Log().Infow("Storage/Get item response", "obj.Key", obj.Key, "error", err)
+		log.Log().Infow("Storage/Get item response", "obj.Key", obj.Key,  "obj.Bucket", obj.Bucket, "error", err)
 		return response.NewError(500, err)
 	}
 
 	reader, err := item.Open()
 	if err != nil {
-		log.Log().Warnw("Storage/Get open item", "obj.Key", obj.Key, "sc", 500, "error", err)
+		log.Log().Warnw("Storage/Get open item", "obj.Key", obj.Key,  "obj.Bucket", obj.Bucket, "sc", 500, "error", err)
 		return response.NewError(500, err)
 	}
 
 	return prepareResponse(obj, reader, item)
 }
 
+// Head retrieve obj from given storage and returns its wrapped in response (but only headers, content of object is omitted)
 func Head(obj *object.FileObject) *response.Response {
 	key := getKey(obj)
 	client, err := getClient(obj)
 	if err != nil {
-		log.Log().Infow("Storage/Get get client", "obj.Key", obj.Key, "error", err)
+		log.Log().Infow("Storage/Head get client", "obj.Key", obj.Key,  "obj.Bucket", obj.Bucket, "error", err)
 		return response.NewError(503, err)
 	}
 
 	item, err := client.Item(key)
 	if err != nil {
 		if err == stow.ErrNotFound {
-			log.Log().Infow("Storage/Get item response", "obj.Key", obj.Key, "sc", 404)
+			log.Log().Infow("Storage/Head item response", "obj.Key", obj.Key,  "obj.Bucket", obj.Bucket, "sc", 404)
 			return response.NewString(404, notFound)
 		}
 
-		log.Log().Infow("Storage/Get item response", "obj.Key", obj.Key, "error", err)
+		log.Log().Infow("Storage/Head item response", "obj.Key", obj.Key,  "obj.Bucket", obj.Bucket, "error", err)
 		return response.NewError(500, err)
 	}
 
@@ -75,26 +79,23 @@ func Head(obj *object.FileObject) *response.Response {
 	return prepareResponse(obj, nil, item)
 }
 
-func Set(obj *object.FileObject, headers http.Header, contentLen int64, body io.ReadCloser) *response.Response {
+// Set create object on storage wit givent body and headers
+func Set(obj *object.FileObject, metaHeaders http.Header, contentLen int64, body io.ReadCloser) *response.Response {
 	client, err := getClient(obj)
 	if err != nil {
-		log.Log().Warnw("Storage/Set create client", "obj.Key", obj.Key, "sc", 503, "error", err)
+		log.Log().Warnw("Storage/Set create client", "obj.Key", obj.Key,  "obj.Bucket", obj.Bucket, "sc", 503, "error", err)
 		return response.NewError(503, err)
 	}
 
-	metadata := make(map[string]interface{}, len(headers))
-	for k, v := range headers {
-		if len(v) == 1 {
-			metadata[k] = v[0]
-		} else {
-			log.Log().Errorf("WTF ---------------- %s %s %s", headers, k, v)
-		}
+	metadata := make(map[string]interface{}, len(metaHeaders))
+	for k, v := range metaHeaders {
+		metadata[k] = v[0]
 	}
 
 	_, err = client.Put(getKey(obj), body, contentLen, metadata)
 
 	if err != nil {
-		log.Log().Warnw("Storage/Set cannot set", "obj.Key", obj.Key, "sc", 500, "error", err)
+		log.Log().Warnw("Storage/Set cannot set", "obj.Key", obj.Key,  "obj.Bucket", obj.Bucket, "sc", 500, "error", err)
 		return response.NewError(500, err)
 	}
 
@@ -103,10 +104,11 @@ func Set(obj *object.FileObject, headers http.Header, contentLen int64, body io.
 	return res
 }
 
+// List returns list of object in given path in S3 format
 func List(obj *object.FileObject, maxKeys int, delimeter string, prefix string, marker string) *response.Response {
 	client, err := getClient(obj)
 	if err != nil {
-		log.Log().Warnw("Storage/Set create client", "obj.Key", obj.Key, "sc", 503, "error", err)
+		log.Log().Warnw("Storage/Set create client", "obj.Key", obj.Key,  "obj.Bucket", obj.Bucket, "sc", 503, "error", err)
 		return response.NewError(503, err)
 	}
 
@@ -241,7 +243,7 @@ func getClient(obj *object.FileObject) (stow.Container, error) {
 	}
 
 	// XXX: check if it is ok
-	defer client.Close()
+	//defer client.Close()
 
 	container, err := client.Container(obj.Bucket)
 
@@ -271,8 +273,9 @@ func prepareResponse(obj *object.FileObject, stream io.ReadCloser, item stow.Ite
 	res := response.New(200, stream)
 
 	metadata, err := item.Metadata()
+
 	if err != nil {
-		log.Log().Warnw("Storage/prepareResponse read metadata", "obj.Key", obj.Key, "sc", 500, "error", err)
+		log.Log().Warnw("Storage/prepareResponse read metadata", "obj.Key", obj.Key,  "obj.Bucket", obj.Bucket, "sc", 500, "error", err)
 		return response.NewError(500, err)
 	}
 
@@ -283,7 +286,7 @@ func prepareResponse(obj *object.FileObject, stream io.ReadCloser, item stow.Ite
 
 		}
 
-		if strings.HasPrefix(strings.ToLower(k), "x-") {
+		if strings.HasPrefix(k, "X-") {
 			res.Set(k, v.(string))
 		}
 	}

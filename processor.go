@@ -171,7 +171,7 @@ resLoop:
 			parentRes = storage.Head(parentObj)
 		}
 
-		if obj.HasTransform() && strings.Contains(parentRes.ContentType, "image/") {
+		if obj.HasTransform() && strings.Contains(parentRes.Headers.Get(response.HeaderContentType), "image/") {
 			defer res.Close()
 			parentRes = updateHeaders(storage.Get(parentObj))
 
