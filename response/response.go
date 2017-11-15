@@ -18,6 +18,7 @@ const (
 type Response struct {
 	StatusCode    int
 	Stream        io.ReadCloser
+	body          []byte
 	Headers       http.Header
 	ContentLength int64
 	debug 		  bool
@@ -51,6 +52,7 @@ func NewString(statusCode int, body string) *Response {
 func NewBuf(statusCode int, body []byte) *Response {
 	res := Response{StatusCode: statusCode, Stream: ioutil.NopCloser(bytes.NewReader(body))}
 	res.ContentLength = int64(len(body))
+	res.body = body
 	res.Headers = make(http.Header)
 	return &res
 }
@@ -78,11 +80,17 @@ func (r *Response) Set(headerName string, headerValue string)  {
 // Content of the response is changed
 // Such response shouldn't be Send to client
 func (r *Response) ReadBody() ([]byte, error) {
+	if r.body != nil {
+		return r.body, nil
+	}
+
 	if r.Stream == nil {
 		return nil, errors.New("empty body")
 	}
 
-	return ioutil.ReadAll(r.Stream)
+	var err error
+	r.body, err = ioutil.ReadAll(r.Stream)
+	return r.body, err
 }
 
 // CopyBody read all content of response and returns it in []byte
@@ -92,13 +100,19 @@ func (r *Response) CopyBody() ([]byte, error) {
 		return nil, errors.New("empty body")
 	}
 
-	buf, err := ioutil.ReadAll(r.Stream)
-	if err != nil {
-		return nil, err
+	var buf []byte
+	if r.body != nil {
+		buf = r.body
+	} else {
+		buf, err := ioutil.ReadAll(r.Stream)
+		if err != nil {
+			return nil, err
+		}
+		r.Stream.Close()
+		r.body = buf
+		r.Stream = ioutil.NopCloser(bytes.NewReader(buf))
 	}
 
-	r.Stream.Close()
-	r.Stream = ioutil.NopCloser(bytes.NewReader(buf))
 	return buf, nil
 }
 
@@ -183,6 +197,7 @@ func (r * Response) Copy() (*Response, error) {
 
 		c.Stream =  ioutil.NopCloser(bytes.NewReader(buf))
 		c.ContentLength = int64(len(buf))
+		c.body = buf
 
 	}
 
@@ -203,6 +218,7 @@ func (r *Response) writeDebug() {
 			panic(err)
 		}
 		r.Stream = ioutil.NopCloser(bytes.NewReader(jsonBody))
+		r.body = jsonBody
 		r.ContentLength = int64(len(jsonBody))
 		r.SetContentType("application/json")
 	}

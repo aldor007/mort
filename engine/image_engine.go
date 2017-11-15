@@ -8,6 +8,7 @@ import (
 
 	"gopkg.in/h2non/bimg.v1"
 	"github.com/spaolacci/murmur3"
+	"go.uber.org/zap"
 
 	"mort/transforms"
 	"mort/response"
@@ -70,7 +71,7 @@ func (self *ImageEngine) Process(obj *object.FileObject, trans []transforms.Tran
 		res.Set("x-amz-meta-public-height", strconv.Itoa(meta.Size.Height))
 
 	} else {
-		log.Log().Warnw("ImageEngine/process unable to get metadata", "obj.key", obj.Key, "err", err)
+		log.Log().Warn("ImageEngine/process unable to get metadata", zap.String("obj.key", obj.Key), zap.Error(err))
 	}
 
 	return res, nil

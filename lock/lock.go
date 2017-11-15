@@ -24,3 +24,23 @@ func (l *lockData) AddWatcher() chan*response.Response {
 	return w
 }
 
+func NewNopLock() *NopLock  {
+	return &NopLock{}
+}
+
+// NopLock will never  collapse any request
+type NopLock struct {
+	
+}
+
+func (l *NopLock) Lock(_ string)  (chan *response.Response, bool) {
+	return nil, true
+}
+
+func (l *NopLock) Release(_ string)  {
+
+}
+
+func (l *NopLock) NotifyAndRelease(_ string, _ *response.Response)  {
+
+}

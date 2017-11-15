@@ -41,7 +41,7 @@ func main() {
 	logger, _ := zap.NewProduction()
 	//logger, _ := zap.NewDevelopment()
 	zap.ReplaceGlobals(logger)
-	log.RegisterLogger(logger.Sugar())
+	log.RegisterLogger(logger)
 	router := chi.NewRouter()
 	rp := mort.NewRequestProcessor(5, lock.NewMemoryLock())
 
@@ -70,7 +70,7 @@ func main() {
 			res.Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, HEAD")
 			defer logger.Sync() // flushes buffer, if any
 			if res.HasError() {
-				log.Log().Warnw("Mort process error", "obj.Key", obj.Key, "error", res.Error())
+				log.Log().Warn("Mort process error", zap.String("obj.Key", obj.Key), zap.Error(res.Error()))
 			}
 
 			res.Send(resWriter)

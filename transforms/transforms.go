@@ -89,16 +89,19 @@ func (w watermark) calculatePostion(width, height int) (top int, left int) {
 	return
 }
 
+// ImageInfo holds informaation about image
 type ImageInfo struct {
-	width  int
-	height int
-	format string
+	width  int // width of image in px
+	height int // height of image in px
+	format string // format of image in string e.x. "jpg"
 }
 
+// NewImageInfo create new ImageInfo object from bimg metadata
 func NewImageInfo(metadata bimg.ImageMetadata, format string) ImageInfo {
 	return ImageInfo{width: metadata.Size.Width, height: metadata.Size.Height, format: format}
 }
 
+// Transform struct hold information about what operations should be performed on image
 type Transforms struct {
 	height        int
 	width         int
@@ -132,6 +135,7 @@ type Transforms struct {
 	transHash uint64
 }
 
+// Resize change image width and height
 func (t *Transforms) Resize(size []int, enlarge bool) error {
 	t.width = size[0]
 	if len(size) == 2 {
@@ -149,6 +153,7 @@ func (t *Transforms) Resize(size []int, enlarge bool) error {
 	return nil
 }
 
+// Crop extract part of image
 func (t *Transforms) Crop(size []int, enlarge bool) error {
 	t.width = size[0]
 	t.height = size[1]
@@ -160,6 +165,7 @@ func (t *Transforms) Crop(size []int, enlarge bool) error {
 	return nil
 }
 
+// Interlace enable image interlace
 func (t *Transforms) Interlace() error {
 	t.interlace = true
 	t.NotEmpty = true
@@ -167,6 +173,7 @@ func (t *Transforms) Interlace() error {
 	return nil
 }
 
+// Quality change image quality
 func (t *Transforms) Quality(quality int)  error {
 	t.quality = quality
 	t.NotEmpty = true
@@ -174,6 +181,7 @@ func (t *Transforms) Quality(quality int)  error {
 	return nil
 }
 
+// StripMetadata remove EXIF from image
 func (t *Transforms) StripMetadata() (error) {
 	t.stripMetadata = true
 	t.NotEmpty = true
@@ -181,6 +189,7 @@ func (t *Transforms) StripMetadata() (error) {
 	return nil
 }
 
+// Blur blur whole image
 func (t *Transforms) Blur(sigma, minAmpl float64)  error {
 	t.NotEmpty = true
 	t.blur.sigma = sigma
@@ -189,6 +198,7 @@ func (t *Transforms) Blur(sigma, minAmpl float64)  error {
 	return nil
 }
 
+// Hash return unique transform identifier
 func (t * Transforms) Hash() hash.Hash64 {
 	hash := murmur3.New64WithSeed(20171108)
 	transHashB := make([]byte, 8)
@@ -197,6 +207,7 @@ func (t * Transforms) Hash() hash.Hash64 {
 	return hash
 }
 
+// Format change image format
 func (t *Transforms) Format(format string)  error {
 	t.NotEmpty = true
 	t.transHash = 1700 + t.transHash + 11
@@ -208,6 +219,7 @@ func (t *Transforms) Format(format string)  error {
 	return nil
 }
 
+// Watermark merge two image in one
 func (t *Transforms) Watermark(image string, position string, opacity float32) error {
 	if image == "" || position == "" {
 		return errors.New("Missing required params")
@@ -250,6 +262,7 @@ func imageFormat(format string) (bimg.ImageType, error){
 	}
 }
 
+// BigmOptions return complete options for bimg lib
 func (t *Transforms) BimgOptions(imageInfo ImageInfo) (bimg.Options, error) {
 	b := bimg.Options{
 		Width:   t.width,

@@ -5,61 +5,30 @@ import (
 	"context"
 )
 
+
+// defaultBacklogTimeout set to 60s
 var defaultBacklogTimeout = time.Second * 60
 
-
-type Throttler struct {
-	tokens chan bool 
-	backlogTokens chan bool 
-	backlogTimeout time.Duration
+// Throttler is rate limiter
+type Throttler interface {
+	Take(ctx context.Context) (taken bool) // Take tries acquire token when its true its mean you can process when false have been throttled
+	Release() // Release returns token to pool
 }
 
+// NopThrottler is always return that you can perform given operation
+type NopThrottler struct {
 
-func New(limit int) *Throttler {
-	return NewBacklog(limit, 0, defaultBacklogTimeout)
 }
 
-func NewBacklog(limit int, backlog int, timeout time.Duration) *Throttler {
-	max := limit + backlog
-	t := &Throttler{
-		tokens: make(chan bool, limit),
-		backlogTokens: make(chan bool, max),
-		backlogTimeout: timeout,
-	}
-	
-	for i:= 0; i < max; i++ {
-		if i < limit {
-			t.tokens <- true 
-		}
-		t.backlogTokens <- true
-
-	}
-	return t
+// NewNopThrottler create instance of NopThrottler
+func NewNopThrottler(_ ...interface{}) *NopThrottler {
+	return &NopThrottler{}
 }
 
-func (t *Throttler) Take(ctx context.Context)  bool {
-	select {
-	case <- ctx.Done():
-		return false
-	case btok := <-t.backlogTokens:
-		timer := time.NewTimer(t.backlogTimeout)
-
-		defer func() {
-			t.backlogTokens <- btok
-		}()
-
-		select {
-		case <-timer.C:
-			return false
-		case <-t.tokens:
-			return true
-		}
-		return false
-	default:
-		return false
-	}
+func (*NopThrottler) Take(_ context.Context) bool {
+	return true;
 }
 
-func (t *Throttler) Release()  {
-	t.tokens <- true
+func (*NopThrottler) Release() {
+
 }

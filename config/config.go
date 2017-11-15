@@ -89,12 +89,11 @@ func (c *Config) BucketsByAccessKey(accessKey string) []Bucket {
 	for i, name := range list {
 		buckets[i] = c.Buckets[name]
 	}
-
 	return buckets
 }
 
 func configInvalidError(msg string) error {
-	log.Log().Warnw(msg)
+	log.Logs().Warnw(msg)
 	return errors.New(msg)
 }
 

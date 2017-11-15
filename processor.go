@@ -17,27 +17,63 @@ import (
 	"mort/log"
 	"mort/lock"
 	"mort/throttler"
+	"go.uber.org/zap"
 )
 
 const S3_LOCATION_STR = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><LocationConstraint xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">EU</LocationConstraint>"
+var defaultLockTimeout = time.Second * 60;
+var defaultProcessTimeout = time.Second * 70
 
 func NewRequestProcessor(max int, l lock.Lock) RequestProcessor{
 	rp := RequestProcessor{}
-	rp.Init(max, l)
+	rp.collapse = l
+	rp.throttler = throttler.NewBucketThrottler(10)
+	rp.queue = make(chan requestMessage, max)
+
 	return rp
 }
 
 type RequestProcessor struct {
 	collapse lock.Lock
-	throttler *throttler.Throttler
+	throttler throttler.Throttler
+	queue chan requestMessage
+
+}
+type requestMessage struct {
+	responseChan chan *response.Response
+	obj *object.FileObject
+	request *http.Request
 }
 
-func (r *RequestProcessor) Init(max int, l lock.Lock)  {
-	r.collapse = l
-	r.throttler = throttler.New(max)
-}
 
 func (r *RequestProcessor) Process(req *http.Request, obj *object.FileObject)  *response.Response{
+	msg := requestMessage{}
+	msg.request = req
+	msg.obj = obj
+	msg.responseChan = make(chan *response.Response)
+	ctx := req.Context()
+	go r.processChan()
+	r.queue <- msg
+
+
+	timer := time.NewTimer(defaultProcessTimeout)
+	select {
+	case <-ctx.Done():
+		return response.NewString(504, "timeout")
+	case res := <-msg.responseChan:
+		return res
+	case <-timer.C:
+		return response.NewString(504, "timeout")
+	}
+
+}
+func (r *RequestProcessor) processChan()  {
+	msg := <- r.queue
+	res := r.process(msg.request, msg.obj)
+	msg.responseChan <- res
+}
+
+func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *response.Response  {
 	switch req.Method {
 	case "GET", "HEAD":
 		if obj.HasTransform() {
@@ -63,14 +99,16 @@ func (r *RequestProcessor) collapseGET(req *http.Request, obj *object.FileObject
 	ctx := req.Context()
 	resChan, locked := r.collapse.Lock(req.URL.Path)
 	if locked {
-		log.Log().Infow("Lock acquired", "obj.Key", obj.Key)
+		log.Log().Info("Lock acquired", zap.String("obj.Key", obj.Key))
 		res := r.hanldeGET(req, obj)
 		resCpy, _ := res.Copy()
 		go r.collapse.NotifyAndRelease(req.URL.Path, resCpy)
 		return res
 	}
 
-	log.Log().Infow("Lock not acquired", "obj.Key", obj.Key)
+	log.Log().Info("Lock not acquired", zap.String("obj.Key", obj.Key))
+	timer := time.NewTimer(defaultLockTimeout)
+
 	for {
 
 		select {
@@ -82,7 +120,7 @@ func (r *RequestProcessor) collapseGET(req *http.Request, obj *object.FileObject
 			}
 
 			return r.hanldeGET(req, obj)
-		case <-time.After(time.Second * 60):
+		case <-timer.C:
 			return response.NewString(504, "timeout")
 		default:
 
@@ -187,7 +225,7 @@ resLoop:
 				transforms[i], transforms[j] = transforms[j], transforms[i]
 			}
 
-			log.Log().Infow("Performing transforms", "obj.Bucket", obj.Bucket, "obj.Key", obj.Key, "transformsLen", len(transforms))
+			log.Log().Info("Performing transforms",  zap.String("obj.Bucket", obj.Bucket), zap.String("obj.Key", obj.Key), zap.Int("transformsLen", len(transforms)))
 			return updateHeaders(r.processImage(ctx, obj, parentRes, transforms))
 		}
 	}
@@ -231,7 +269,7 @@ func handleS3Get(req *http.Request, obj *object.FileObject) *response.Response {
 func (r *RequestProcessor) processImage(ctx context.Context, obj *object.FileObject, parent *response.Response, transforms []transforms.Transforms) *response.Response {
 	taked := r.throttler.Take(ctx)
 	if !taked {
-		log.Log().Warnw("Processor/processImage", "obj.Key", obj.Key, "error", "throttled")
+		log.Log().Warn("Processor/processImage", zap.String("obj.Key", obj.Key), zap.String("error", "throttled"))
 		return response.NewNoContent(503)
 	}
 	defer r.throttler.Release()
@@ -249,7 +287,7 @@ func (r *RequestProcessor) processImage(ctx context.Context, obj *object.FileObj
 
 		}(*obj, resCpy)
 	} else {
-		log.Log().Warnw("Processor/processImage", "obj.Key", obj.Key, "error", err)
+		log.Log().Warn("Processor/processImage", zap.String("obj.Key", obj.Key), zap.Error(err))
 	}
 
 

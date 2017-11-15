@@ -47,16 +47,16 @@ type TransformYaml struct {
 }
 
 type Storage struct {
-	RootPath        string            `yaml:"rootPath", omitempty`
+	RootPath        string            `yaml:"rootPath,omitempty"`
 	Kind            string            `yaml:"kind"`
-	Url             string            `yaml:"url",omitempty`
-	Headers         map[string]string `yaml:"headers",omitempty`
-	AccessKey       string            `yaml:"accessKey",omitempty`
-	SecretAccessKey string            `yaml:"secretAccessKey",omitempty`
-	Region          string            `yaml:"region",omitempty`
-	Endpoint        string            `yaml:"endpoint",omitempty`
-	PathPrefix      string            `yaml:"pathPrefix",omitempty"`
-	AllowMetadata   bool              `yaml:"allowMetadata",omitempty"`
+	Url             string            `yaml:"url,omitempty"`
+	Headers         map[string]string `yaml:"headers,omitempty"`
+	AccessKey       string            `yaml:"accessKey,omitempty"`
+	SecretAccessKey string            `yaml:"secretAccessKey,omitempty"`
+	Region          string            `yaml:"region,omitempty"`
+	Endpoint        string            `yaml:"endpoint,omitempty"`
+	PathPrefix      string            `yaml:"pathPrefix,omitempty"`
+	AllowMetadata   bool              `yaml:"allowMetadata,omitempty"`
 	Hash            string
 }
 
@@ -80,13 +80,13 @@ type S3Key struct {
 }
 
 type Bucket struct {
-	Transform *TransformYaml `yaml:"transform",omitempty`
+	Transform *TransformYaml `yaml:"transform,omitempty"`
 	Storages  StorageTypes   `yaml:"storages"`
 	Keys      []S3Key        `yaml:"keys"`
 	Name      string
 }
 
 type HeaderYaml struct {
-	StatusCodes []int             `yaml:"statusCodes""`
+	StatusCodes []int             `yaml:"statusCodes"`
 	Values      map[string]string `yaml:"values"`
 }

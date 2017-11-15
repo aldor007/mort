@@ -9,6 +9,7 @@ import (
 	"mort/config"
 	"mort/transforms"
 	"strconv"
+	"go.uber.org/zap"
 )
 
 
@@ -99,8 +100,8 @@ func NewFileObject(uri string, mortConfig *config.Config) (*FileObject, error) {
 	obj.CheckParent = false
 
 	err := obj.decode(mortConfig)
-	log.Log().Infow("FileObject", "path", uri,  "key", obj.Key, "bucket", obj.Bucket, "storage", obj.Storage.Kind,
-		"hasTransforms", obj.HasTransform(), "hasParent" , obj.HasParent())
+	log.Log().Info("FileObject", zap.String("path", uri),  zap.String("key", obj.Key), zap.String("bucket", obj.Bucket), zap.String("storage", obj.Storage.Kind),
+		zap.Bool("hasTransforms", !obj.Transforms.NotEmpty), zap.Bool("hasParent" , obj.HasParent()))
 	return &obj, err
 }
 
@@ -122,11 +123,9 @@ func (self *FileObject) decode(mortConfig *config.Config) error {
 		}
 		return err
 
-	} else {
-		return errors.New("Unknown bucket")
 	}
 
-	return nil
+	return errors.New("Unknown bucket")
 }
 
 func (self *FileObject) decodeKey(bucket config.Bucket, mortConfig *config.Config) error {
@@ -151,7 +150,8 @@ func (self *FileObject) decodeKey(bucket config.Bucket, mortConfig *config.Confi
 	parent := subMatchMap["parent"] // "/" + string(matches[trans.Order.Parent+1])
 
 	if _, ok := bucket.Transform.Presets[presetName]; !ok {
-		log.Log().Warnw("FileObject decodeKey unknown preset", "obj.Key", self.Key, "parent", parent, "presetName", presetName, "regexp", trans.Path)
+		log.Log().Warn("FileObject decodeKey unknown preset", zap.String("obj.Key", self.Key), zap.String( "parent", parent), zap.String("presetName", presetName),
+			zap.String("regexp", trans.Path))
 		return errors.New("Unknown preset " + presetName)
 	}
 
@@ -160,7 +160,6 @@ func (self *FileObject) decodeKey(bucket config.Bucket, mortConfig *config.Confi
 	if err != nil {
 		return err
 	}
-
 
 	parent =  "/" + path.Join(bucket.Transform.ParentBucket, parent)
 
