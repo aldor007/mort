@@ -101,8 +101,7 @@ func (r *RequestProcessor) collapseGET(req *http.Request, obj *object.FileObject
 	if locked {
 		log.Log().Info("Lock acquired", zap.String("obj.Key", obj.Key))
 		res := r.hanldeGET(req, obj)
-		resCpy, _ := res.Copy()
-		go r.collapse.NotifyAndRelease(req.URL.Path, resCpy)
+		go r.collapse.NotifyAndRelease(req.URL.Path, res)
 		return res
 	}
 
@@ -283,8 +282,8 @@ func (r *RequestProcessor) processImage(ctx context.Context, obj *object.FileObj
 	resCpy, err := res.Copy()
 	if err == nil {
 		go func(objS object.FileObject, resS *response.Response) {
-			storage.Set(obj, resS.Headers, resS.ContentLength, resS.Stream)
-
+			storage.Set(obj, resS.Headers, resS.ContentLength, resS.Stream())
+			resS.Close()
 		}(*obj, resCpy)
 	} else {
 		log.Log().Warn("Processor/processImage", zap.String("obj.Key", obj.Key), zap.Error(err))
