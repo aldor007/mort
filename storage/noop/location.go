@@ -9,7 +9,7 @@ import (
 
 // A location contains a client + the configurations used to create the client.
 type location struct {
-	config         stow.Config
+	config stow.Config
 }
 
 func (l *location) CreateContainer(containerName string) (stow.Container, error) {
@@ -31,8 +31,7 @@ func (l *location) Close() error {
 // Container retrieves a stow.Container based on its name which must be
 // exact.
 func (l *location) Container(id string) (stow.Container, error) {
-	return &container{
-	}, nil
+	return &container{}, nil
 
 }
 

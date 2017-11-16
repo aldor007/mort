@@ -1,23 +1,23 @@
 package mort
 
 import (
-	"testing"
-	"net/http"
+	"bytes"
 	"io/ioutil"
 	"mort/config"
-	"mort/object"
 	"mort/lock"
+	"mort/object"
 	"mort/throttler"
-	"bytes"
+	"net/http"
+	"testing"
 )
 
 func BenchmarkNewRequestProcessorMemoryLock(b *testing.B) {
-	benchmarks := []struct{
-		name string
-		url string
-		filePath string
+	benchmarks := []struct {
+		name       string
+		url        string
+		filePath   string
 		configPath string
-	} {
+	}{
 		{"Process small image, small result", "http://mort/local/small.jpg-small", "./tests/benchmark/local/small.jpg", "./tests/benchmark/small.yml"},
 		{"Process large image, small result", "http://mort/local/large.jpeg-small", "./tests/benchmark/local/large.jpeg", "./tests/benchmark/small.yml"},
 	}
@@ -52,12 +52,12 @@ func BenchmarkNewRequestProcessorMemoryLock(b *testing.B) {
 }
 
 func BenchmarkNewRequestProcessorNopLock(b *testing.B) {
-	benchmarks := []struct{
-		name string
-		url string
-		filePath string
+	benchmarks := []struct {
+		name       string
+		url        string
+		filePath   string
 		configPath string
-	} {
+	}{
 		{"Process small image, small result", "http://mort/local/small.jpg-small", "./tests/benchmark/local/small.jpg", "./tests/benchmark/small.yml"},
 		{"Process large image, small result", "http://mort/local/large.jpeg-small", "./tests/benchmark/local/large.jpeg", "./tests/benchmark/small.yml"},
 	}

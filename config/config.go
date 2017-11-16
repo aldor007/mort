@@ -1,13 +1,13 @@
 package config
 
 import (
+	"fmt"
+	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"regexp"
-	"sync"
-	"fmt"
 	"strings"
-	"github.com/pkg/errors"
+	"sync"
 
 	"mort/log"
 )
@@ -16,15 +16,14 @@ import (
 //
 // Config should be singletn
 type Config struct {
-	Buckets map[string]Bucket `yaml:"buckets"`
-	Headers []HeaderYaml      `yaml:"headers"`
-	accessKeyBucket map[string][] string
+	Buckets         map[string]Bucket `yaml:"buckets"`
+	Headers         []HeaderYaml      `yaml:"headers"`
+	accessKeyBucket map[string][]string
 }
 
 var instance *Config
 var once sync.Once
 var storageKinds []string = []string{"local", "local-meta", "s3", "http", "noop"}
-
 
 // GetInstance return single instance of Config object
 func GetInstance() *Config {

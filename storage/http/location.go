@@ -1,9 +1,9 @@
 package http
 
 import (
+	"net/http"
 	"net/url"
 	"strings"
-	"net/http"
 
 	"github.com/aldor007/stow"
 	"github.com/pkg/errors"
@@ -11,10 +11,10 @@ import (
 
 // A location contains a client + the configurations used to create the client.
 type location struct {
-	config         stow.Config
-	endpoint       string
-	client 			*http.Client
-	headers        map[string]string
+	config   stow.Config
+	endpoint string
+	client   *http.Client
+	headers  map[string]string
 }
 
 func (l *location) CreateContainer(containerName string) (stow.Container, error) {
@@ -38,9 +38,9 @@ func (l *location) Close() error {
 func (l *location) Container(id string) (stow.Container, error) {
 	endpoint := strings.Replace(l.endpoint, "<container>", id, 1)
 	return &container{
-		client: l.client,
+		client:   l.client,
 		endpoint: endpoint,
-		headers: l.headers,
+		headers:  l.headers,
 	}, nil
 
 }

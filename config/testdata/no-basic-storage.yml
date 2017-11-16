@@ -11,8 +11,6 @@ buckets:
                     quality: 75
                     filters:
                         thumbnail: { size: [100, 100], mode: outbound }
-                        interlace:
-                            mode: line
         storages:
             basicss:
                 kind: "local"

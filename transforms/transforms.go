@@ -1,42 +1,42 @@
 package transforms
 
 import (
-	"os"
-	"net/http"
-	"io/ioutil"
 	"encoding/binary"
-    "hash"
-	"strings"
-	"net"
-	"time"
 	"errors"
+	"hash"
+	"io/ioutil"
+	"net"
+	"net/http"
+	"os"
+	"strings"
+	"time"
 
-	"gopkg.in/h2non/bimg.v1"
 	"github.com/spaolacci/murmur3"
+	"gopkg.in/h2non/bimg.v1"
 )
 
 var watermarkPosX = map[string]float32{
-	 "top": 0,
-	 "center": 1. / 3.,
-	 "bottom": 2. / 3.,
+	"top":    0,
+	"center": 1. / 3.,
+	"bottom": 2. / 3.,
 }
 
 var watermarkPosY = map[string]float32{
-	"left": 0,
+	"left":   0,
 	"center": 1. / 3.,
-	"right": 2. / 3.,
+	"right":  2. / 3.,
 }
 
 type blur struct {
-	sigma         float64
-	minAmpl       float64
+	sigma   float64
+	minAmpl float64
 }
 
 type watermark struct {
-	image string
+	image   string
 	opacity float32
-    xPos string
-	yPos string
+	xPos    string
+	yPos    string
 }
 
 func (w watermark) fetchImage() ([]byte, error) {
@@ -72,7 +72,6 @@ func (w watermark) fetchImage() ([]byte, error) {
 		return buf, nil
 	}
 
-
 	f, err := os.Open(w.image)
 	if err != nil {
 		return nil, err
@@ -84,15 +83,15 @@ func (w watermark) fetchImage() ([]byte, error) {
 }
 
 func (w watermark) calculatePostion(width, height int) (top int, left int) {
-	top = int(watermarkPosY[w.yPos] * float32(height)) + 1
-	left = int(watermarkPosX[w.yPos] * float32(width)) + 1
+	top = int(watermarkPosY[w.yPos]*float32(height)) + 1
+	left = int(watermarkPosX[w.yPos]*float32(width)) + 1
 	return
 }
 
 // ImageInfo holds informaation about image
 type ImageInfo struct {
-	width  int // width of image in px
-	height int // height of image in px
+	width  int    // width of image in px
+	height int    // height of image in px
 	format string // format of image in string e.x. "jpg"
 }
 
@@ -124,11 +123,11 @@ type Transforms struct {
 	stripMetadata bool
 	trim          bool
 
-	blur          blur
+	blur blur
 
-	format        bimg.ImageType
+	format bimg.ImageType
 
-	watermark     watermark
+	watermark watermark
 
 	NotEmpty bool
 
@@ -174,7 +173,7 @@ func (t *Transforms) Interlace() error {
 }
 
 // Quality change image quality
-func (t *Transforms) Quality(quality int)  error {
+func (t *Transforms) Quality(quality int) error {
 	t.quality = quality
 	t.NotEmpty = true
 	t.transHash = 1400 + t.transHash + uint64(t.quality)
@@ -182,7 +181,7 @@ func (t *Transforms) Quality(quality int)  error {
 }
 
 // StripMetadata remove EXIF from image
-func (t *Transforms) StripMetadata() (error) {
+func (t *Transforms) StripMetadata() error {
 	t.stripMetadata = true
 	t.NotEmpty = true
 	t.transHash = 1500 + t.transHash + 85
@@ -190,7 +189,7 @@ func (t *Transforms) StripMetadata() (error) {
 }
 
 // Blur blur whole image
-func (t *Transforms) Blur(sigma, minAmpl float64)  error {
+func (t *Transforms) Blur(sigma, minAmpl float64) error {
 	t.NotEmpty = true
 	t.blur.sigma = sigma
 	t.blur.minAmpl = minAmpl
@@ -199,7 +198,7 @@ func (t *Transforms) Blur(sigma, minAmpl float64)  error {
 }
 
 // Hash return unique transform identifier
-func (t * Transforms) Hash() hash.Hash64 {
+func (t *Transforms) Hash() hash.Hash64 {
 	hash := murmur3.New64WithSeed(20171108)
 	transHashB := make([]byte, 8)
 	binary.LittleEndian.PutUint64(transHashB, t.transHash)
@@ -208,7 +207,7 @@ func (t * Transforms) Hash() hash.Hash64 {
 }
 
 // Format change image format
-func (t *Transforms) Format(format string)  error {
+func (t *Transforms) Format(format string) error {
 	t.NotEmpty = true
 	t.transHash = 1700 + t.transHash + 11
 	f, err := imageFormat(format)
@@ -238,11 +237,11 @@ func (t *Transforms) Watermark(image string, position string, opacity float32) e
 
 	t.NotEmpty = true
 	t.transHash = 1700 + t.transHash + uint64(len(image)) + uint64(len(position))
-	t.watermark = watermark{image:image, xPos: p[1], yPos: p[0] , opacity:opacity}
+	t.watermark = watermark{image: image, xPos: p[1], yPos: p[0], opacity: opacity}
 	return nil
 }
 
-func imageFormat(format string) (bimg.ImageType, error){
+func imageFormat(format string) (bimg.ImageType, error) {
 
 	switch format {
 	case "jpeg", "jpg":
@@ -250,7 +249,7 @@ func imageFormat(format string) (bimg.ImageType, error){
 	case "webp":
 		return bimg.WEBP, nil
 	case "png":
-		return  bimg.PNG, nil
+		return bimg.PNG, nil
 	case "gif":
 		return bimg.GIF, nil
 	case "svg":
@@ -265,20 +264,20 @@ func imageFormat(format string) (bimg.ImageType, error){
 // BigmOptions return complete options for bimg lib
 func (t *Transforms) BimgOptions(imageInfo ImageInfo) (bimg.Options, error) {
 	b := bimg.Options{
-		Width:   t.width,
-		Height:  t.height,
-		Enlarge: t.enlarge,
-		Crop:    t.crop,
-		Interlace: t.interlace,
-		Quality: t.quality,
+		Width:         t.width,
+		Height:        t.height,
+		Enlarge:       t.enlarge,
+		Crop:          t.crop,
+		Interlace:     t.interlace,
+		Quality:       t.quality,
 		StripMetadata: t.stripMetadata,
 		GaussianBlur: bimg.GaussianBlur{
-			Sigma: t.blur.sigma,
+			Sigma:   t.blur.sigma,
 			MinAmpl: t.blur.minAmpl,
 		},
 	}
 
-	if t.format != bimg.UNKNOWN || t.format != 0 {
+	if t.format != 0 {
 		b.Type = t.format
 	}
 
@@ -292,9 +291,9 @@ func (t *Transforms) BimgOptions(imageInfo ImageInfo) (bimg.Options, error) {
 		top, left := t.watermark.calculatePostion(imageInfo.width, imageInfo.height)
 
 		b.WatermarkImage = bimg.WatermarkImage{
-			Left: left,
-			Top:  top,
-			Buf: buf,
+			Left:    left,
+			Top:     top,
+			Buf:     buf,
 			Opacity: t.watermark.opacity,
 		}
 	}

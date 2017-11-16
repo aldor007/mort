@@ -1,36 +1,35 @@
 package mort
 
 import (
-	"errors"
-	"strings"
-	"strconv"
-	"time"
-	"net/http"
 	"context"
+	"errors"
+	"net/http"
+	"strconv"
+	"strings"
+	"time"
 
+	"go.uber.org/zap"
 	"mort/config"
 	"mort/engine"
+	"mort/lock"
+	"mort/log"
 	"mort/object"
 	"mort/response"
 	"mort/storage"
-	"mort/transforms"
-	"mort/log"
-	"mort/lock"
 	"mort/throttler"
-	"go.uber.org/zap"
+	"mort/transforms"
 )
 
 const S3_LOCATION_STR = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><LocationConstraint xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">EU</LocationConstraint>"
 
 // timeout for collapse request
-var defaultLockTimeout = time.Second * 60;
+var defaultLockTimeout = time.Second * 60
 
 // default requst timeout
 var defaultProcessTimeout = time.Second * 70
 
-
 // NewRequestProcessor create instance of request processor
-func NewRequestProcessor(queueLen int, l lock.Lock, throttler_ throttler.Throttler) RequestProcessor{
+func NewRequestProcessor(queueLen int, l lock.Lock, throttler_ throttler.Throttler) RequestProcessor {
 	rp := RequestProcessor{}
 	rp.collapse = l
 	rp.throttler = throttler_
@@ -40,19 +39,18 @@ func NewRequestProcessor(queueLen int, l lock.Lock, throttler_ throttler.Throttl
 }
 
 type RequestProcessor struct {
-	collapse lock.Lock
+	collapse  lock.Lock
 	throttler throttler.Throttler
-	queue chan requestMessage
-
+	queue     chan requestMessage
 }
 type requestMessage struct {
 	responseChan chan *response.Response
-	obj *object.FileObject
-	request *http.Request
+	obj          *object.FileObject
+	request      *http.Request
 }
 
 // Proecess handle incoming request and create response
-func (r *RequestProcessor) Process(req *http.Request, obj *object.FileObject)  *response.Response{
+func (r *RequestProcessor) Process(req *http.Request, obj *object.FileObject) *response.Response {
 	msg := requestMessage{}
 	msg.request = req
 	msg.obj = obj
@@ -60,7 +58,6 @@ func (r *RequestProcessor) Process(req *http.Request, obj *object.FileObject)  *
 	ctx := req.Context()
 	go r.processChan()
 	r.queue <- msg
-
 
 	timer := time.NewTimer(defaultProcessTimeout)
 	select {
@@ -75,13 +72,13 @@ func (r *RequestProcessor) Process(req *http.Request, obj *object.FileObject)  *
 	}
 
 }
-func (r *RequestProcessor) processChan()  {
-	msg := <- r.queue
+func (r *RequestProcessor) processChan() {
+	msg := <-r.queue
 	res := r.process(msg.request, msg.obj)
 	msg.responseChan <- res
 }
 
-func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *response.Response  {
+func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *response.Response {
 	switch req.Method {
 	case "GET", "HEAD":
 		if obj.HasTransform() {
@@ -96,7 +93,6 @@ func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *r
 		return response.NewError(405, errors.New("method not allowed"))
 	}
 
-	return response.NewString(503, "ups")
 }
 
 func handlePUT(req *http.Request, obj *object.FileObject) *response.Response {
@@ -122,7 +118,7 @@ func (r *RequestProcessor) collapseGET(req *http.Request, obj *object.FileObject
 		case <-ctx.Done():
 			defer close(resChan)
 			return response.NewNoContent(499)
-		case res, ok := <- resChan:
+		case res, ok := <-resChan:
 			if ok {
 				return res
 			}
@@ -136,8 +132,6 @@ func (r *RequestProcessor) collapseGET(req *http.Request, obj *object.FileObject
 		}
 	}
 
-	return response.NewString(500,"ups")
-
 }
 
 func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) *response.Response {
@@ -148,8 +142,8 @@ func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) 
 	var currObj *object.FileObject = obj
 	var parentObj *object.FileObject = nil
 	var transforms []transforms.Transforms
-	var res        *response.Response
-	var parentRes  *response.Response
+	var res *response.Response
+	var parentRes *response.Response
 	ctx := req.Context()
 
 	// search for last parent
@@ -185,7 +179,7 @@ resLoop:
 			return response.NewNoContent(499)
 		case res = <-resChan:
 			if obj.CheckParent && parentObj != nil && (parentRes == nil || parentRes.StatusCode == 0) {
-				go func () {
+				go func() {
 					resChan <- res
 				}()
 
@@ -234,11 +228,10 @@ resLoop:
 				transforms[i], transforms[j] = transforms[j], transforms[i]
 			}
 
-			log.Log().Info("Performing transforms",  zap.String("obj.Bucket", obj.Bucket), zap.String("obj.Key", obj.Key), zap.Int("transformsLen", len(transforms)))
+			log.Log().Info("Performing transforms", zap.String("obj.Bucket", obj.Bucket), zap.String("obj.Key", obj.Key), zap.Int("transformsLen", len(transforms)))
 			return updateHeaders(r.processImage(ctx, obj, parentRes, transforms))
 		}
 	}
-
 
 	return updateHeaders(res)
 }
@@ -298,7 +291,6 @@ func (r *RequestProcessor) processImage(ctx context.Context, obj *object.FileObj
 	} else {
 		log.Log().Warn("Processor/processImage", zap.String("obj.Key", obj.Key), zap.Error(err))
 	}
-
 
 	return res
 

@@ -1,13 +1,13 @@
 package noop
 
 import (
-	"io"
 	"github.com/aldor007/stow"
 	"github.com/pkg/errors"
+	"io"
 )
 
 type container struct {
-	name          string
+	name string
 }
 
 // ID returns a string value which represents the name of the container.
@@ -23,7 +23,7 @@ func (c *container) Name() string {
 // Item returns a stow.Item instance of a container based on the
 // name of the container and the key representing
 func (c *container) Item(id string) (stow.Item, error) {
-	return &item{name:id}, stow.ErrNotFound
+	return &item{name: id}, stow.ErrNotFound
 }
 
 // Items sends a request to retrieve a list of items that are prepended with
@@ -37,6 +37,5 @@ func (c *container) RemoveItem(id string) error {
 }
 
 func (c *container) Put(name string, r io.Reader, size int64, metadata map[string]interface{}) (stow.Item, error) {
-	return  &item{name:name}, nil
+	return &item{name: name}, nil
 }
-

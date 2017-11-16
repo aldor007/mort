@@ -4,11 +4,11 @@ import (
 	"net/http"
 	//"github.com/crunchytom/go-aws-auth"
 	//awsv4 "githubBucketcom/aws/aws-sdk-go/aws/signer/v4"
+	"encoding/xml"
+	"fmt"
 	"regexp"
 	"strings"
-	"encoding/xml"
 	"time"
-	"fmt"
 
 	"mort/config"
 	"mort/response"
@@ -42,16 +42,15 @@ type s3Auth struct {
 	mortConfig *config.Config
 }
 
-
 // NewS3AuthDiddleware returns S3 compatible authorization handler
 // Correctly it can handle AWS v2 (S3 mode) and AWS v4 (only header mode without streaming)
-func NewS3AuthMiddleware(mortConfig *config.Config) *s3Auth  {
-	return &s3Auth{mortConfig:mortConfig}
+func NewS3AuthMiddleware(mortConfig *config.Config) *s3Auth {
+	return &s3Auth{mortConfig: mortConfig}
 }
 
-func (s * s3Auth) Handler(next http.Handler) http.Handler {
+func (s *s3Auth) Handler(next http.Handler) http.Handler {
 	mortConfig := s.mortConfig
-	fn := func(resWriter http.ResponseWriter, req *http.Request)  {
+	fn := func(resWriter http.ResponseWriter, req *http.Request) {
 		path := req.URL.Path
 		auth := req.Header.Get("Authorization")
 		if !isAuthRequired(req.Method, auth, path) {
@@ -68,7 +67,6 @@ func (s * s3Auth) Handler(next http.Handler) http.Handler {
 		}
 
 		bucketName := pathSlice[1]
-
 
 		var accessKey string
 		var signedHeaders []string
@@ -132,7 +130,7 @@ func (s * s3Auth) Handler(next http.Handler) http.Handler {
 		}
 
 		for h, v := range req.Header {
-			if strings.HasPrefix(strings.ToLower(h),"x-amz")  {
+			if strings.HasPrefix(strings.ToLower(h), "x-amz") {
 				validiatonReq.Header.Set(h, v[0])
 			}
 
@@ -153,16 +151,15 @@ func (s * s3Auth) Handler(next http.Handler) http.Handler {
 		validiatonReq.Host = req.Host
 
 		if authAlg == "s3" {
-			awsauth.SignS3(validiatonReq,  credential)
+			awsauth.SignS3(validiatonReq, credential)
 		} else {
 			awsauth.Sign4ForRegion(validiatonReq, "mort", "s3", credential)
 		}
 
-
 		if auth == validiatonReq.Header.Get("Authorization") {
 			req.Body = validiatonReq.Body
 			//c.Set("accessKey", accessKey)
-			if path == "/"  {
+			if path == "/" {
 				s.listAllMyBuckets(resWriter, accessKey)
 				return
 			}
@@ -179,19 +176,17 @@ func (s * s3Auth) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
-
-func (s *s3Auth) listAllMyBuckets(resWriter http.ResponseWriter, accessKey string)  {
+func (s *s3Auth) listAllMyBuckets(resWriter http.ResponseWriter, accessKey string) {
 	type bucketXml struct {
-		XMLName     xml.Name `xml:"Bucket"`
-		Name string `xml:"Name"`
-		CreationDate string `xml:"CreationDate"`
-
+		XMLName      xml.Name `xml:"Bucket"`
+		Name         string   `xml:"Name"`
+		CreationDate string   `xml:"CreationDate"`
 	}
 
 	type listAllBucketsResult struct {
-		XMLName     xml.Name `xml:"ListAllMyBucketsResult"`
-		Owner      struct {
-			ID     string `xml:"ID"`
+		XMLName xml.Name `xml:"ListAllMyBucketsResult"`
+		Owner   struct {
+			ID          string `xml:"ID"`
 			DisplayName string `xml:"DisplayName"`
 		} `xml:"owner"`
 		Buckets []bucketXml `xml:"Buckets>Bucket"`
@@ -201,7 +196,7 @@ func (s *s3Auth) listAllMyBuckets(resWriter http.ResponseWriter, accessKey strin
 	listAllBucketsXML := listAllBucketsResult{}
 	listAllBucketsXML.Owner.DisplayName = accessKey
 	listAllBucketsXML.Owner.ID = accessKey
-	
+
 	for _, bucket := range buckets {
 		b := bucketXml{}
 		b.Name = bucket.Name

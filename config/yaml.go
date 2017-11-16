@@ -3,15 +3,15 @@ package config
 import "regexp"
 
 type PresetsYaml struct {
-	Quality int `yaml:"quality"`
-	Format     string `yaml:"format"`
+	Quality int    `yaml:"quality"`
+	Format  string `yaml:"format"`
 	Filters struct {
 		Thumbnail struct {
 			Size []int  `yaml:"size"`
 			Mode string `yaml:"mode"`
 		} `yaml:"thumbnail"`
-		Interlace bool  `yaml:"interlace"`
-		Crop struct {
+		Interlace bool `yaml:"interlace"`
+		Crop      struct {
 			Size  []int  `yaml:"size"`
 			Start []int  `yaml:"start"`
 			Mode  string `yaml:"mode"`
@@ -20,17 +20,16 @@ type PresetsYaml struct {
 			Size []int  `yaml:"size"`
 			Mode string `yaml:"mode"`
 		} `yaml:"entropy_crop"`
-		AutoRotate  bool `yaml:"auto_rtate"`
+		AutoRotate bool `yaml:"auto_rtate"`
 		Strip      bool `yaml:"strip"`
-		Blur   struct {
+		Blur       struct {
 			Sigma   float64 `yaml:"sigma"`
 			MinAmpl float64 `yaml:"minAmpl"`
 		} `yaml:"blur"`
 		Watermark struct {
-			Image    string `yaml:"image"`
-			Position string `yaml:"position"`
+			Image    string  `yaml:"image"`
+			Position string  `yaml:"position"`
 			Opacity  float32 `yaml:"opacity"`
-
 		}
 	} `yaml:"filters"`
 }
@@ -42,8 +41,8 @@ type TransformYaml struct {
 	PathRegexp    *regexp.Regexp
 	Kind          string                 `yaml:"kind"`
 	Presets       map[string]PresetsYaml `yaml:"presets"`
-	CheckParent bool `yaml:"checkParent"`
-	ResultKey  string `yaml:"resultKey"`
+	CheckParent   bool                   `yaml:"checkParent"`
+	ResultKey     string                 `yaml:"resultKey"`
 }
 
 type Storage struct {

@@ -2,24 +2,24 @@ package storage
 
 import (
 	"encoding/json"
-	"io"
-	"mime"
-	"net/http"
-	"path"
 	"github.com/aldor007/stow"
 	fileStorage "github.com/aldor007/stow/local"
 	metaStorage "github.com/aldor007/stow/local-meta"
 	s3Storage "github.com/aldor007/stow/s3"
+	"io"
+	"mime"
 	httpStorage "mort/storage/http"
 	_ "mort/storage/noop"
+	"net/http"
+	"path"
 
 	"encoding/xml"
+	"go.uber.org/zap"
 	"mort/log"
 	"mort/object"
 	"mort/response"
 	"strings"
 	"time"
-	"go.uber.org/zap"
 )
 
 const notFound = "{\"error\":\"item not found\"}"
@@ -43,7 +43,7 @@ func Get(obj *object.FileObject) *response.Response {
 			return response.NewString(404, notFound)
 		}
 
-		log.Log().Info("Storage/Get item response", zap.String("obj.Key", obj.Key),  zap.String("obj.Bucket", obj.Bucket), zap.Error(err))
+		log.Log().Info("Storage/Get item response", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Error(err))
 		return response.NewError(500, err)
 	}
 
@@ -61,7 +61,7 @@ func Head(obj *object.FileObject) *response.Response {
 	key := getKey(obj)
 	client, err := getClient(obj)
 	if err != nil {
-		log.Logs().Infow("Storage/Head get client", zap.String("obj.Key", obj.Key),  zap.String("obj.Bucket", obj.Bucket), zap.Error(err))
+		log.Logs().Infow("Storage/Head get client", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Error(err))
 		return response.NewError(503, err)
 	}
 
@@ -75,7 +75,6 @@ func Head(obj *object.FileObject) *response.Response {
 		log.Logs().Infow("Storage/Head item response", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Error(err))
 		return response.NewError(500, err)
 	}
-
 
 	return prepareResponse(obj, nil, item)
 }
@@ -153,7 +152,6 @@ func List(obj *object.FileObject, maxKeys int, delimeter string, prefix string, 
 		var commonPrefix string
 		var key string
 
-
 		if len(filePath) > len(prefixPath) {
 			key = strings.Join(filePath[0:len(prefixPath)], "/")
 
@@ -170,7 +168,7 @@ func List(obj *object.FileObject, maxKeys int, delimeter string, prefix string, 
 			// FIXME: add is dir for others adapters
 			itemMeta, _ := item.Metadata()
 			_, ok := commonPrefixes[key]
-			if itemMeta["is_dir"].(bool)  && !ok{
+			if itemMeta["is_dir"].(bool) && !ok {
 				commonPrefix = key
 				commonPrefixes[key] = true
 				key = ""
@@ -181,8 +179,7 @@ func List(obj *object.FileObject, maxKeys int, delimeter string, prefix string, 
 			result.Contents = append(result.Contents, contentXml{Key: key, LastModified: lastMod, Size: size, ETag: etag, StorageClass: "STANDARD"})
 		}
 
-
-		if commonPrefix != ""  {
+		if commonPrefix != "" {
 			result.CommonPrefixes = append(result.CommonPrefixes, commonPrefixXml{commonPrefix + "/"})
 		}
 
@@ -214,7 +211,7 @@ func getClient(obj *object.FileObject) (stow.Container, error) {
 			allowMetadata = "true"
 		}
 		config = stow.ConfigMap{
-			fileStorage.ConfigKeyPath: storageCfg.RootPath,
+			fileStorage.ConfigKeyPath:      storageCfg.RootPath,
 			fileStorage.ConfigKeyMetaAllow: allowMetadata,
 		}
 	case "http":
@@ -250,7 +247,7 @@ func getClient(obj *object.FileObject) (stow.Container, error) {
 
 	if err != nil {
 		log.Log().Info("Storage/getClient error", zap.String("kind", storageCfg.Kind), zap.String("bucket", obj.Bucket), zap.Error(err))
-		if err == stow.ErrNotFound && strings.HasPrefix(storageCfg.Kind, "local")  {
+		if err == stow.ErrNotFound && strings.HasPrefix(storageCfg.Kind, "local") {
 			container, err = client.CreateContainer(obj.Bucket)
 			if err != nil {
 				return nil, err
@@ -276,7 +273,7 @@ func prepareResponse(obj *object.FileObject, stream io.ReadCloser, item stow.Ite
 	metadata, err := item.Metadata()
 
 	if err != nil {
-		log.Logs().Warnw("Storage/prepareResponse read metadata", zap.String("obj.Key", obj.Key),  zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 500), zap.Error(err))
+		log.Logs().Warnw("Storage/prepareResponse read metadata", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 500), zap.Error(err))
 		return response.NewError(500, err)
 	}
 

@@ -1,11 +1,10 @@
 package noop
 
-
 import (
+	"bytes"
 	"io"
 	"net/url"
 	"time"
-	"bytes"
 
 	"io/ioutil"
 )
@@ -18,8 +17,8 @@ import (
 // for more info.
 // All fields are unexported because methods exist to facilitate retrieval.
 type item struct {
-	url        string
-	name       string
+	url  string
+	name string
 }
 
 // ID returns a string value that represents the name of a file.
@@ -68,4 +67,3 @@ func (i *item) ETag() (string, error) {
 func (i *item) Metadata() (map[string]interface{}, error) {
 	return make(map[string]interface{}), nil
 }
-

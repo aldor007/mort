@@ -3,12 +3,12 @@ package response
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
+	"github.com/djherbis/stream"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
-	"errors"
-	"github.com/djherbis/stream"
 )
 
 const (
@@ -20,15 +20,15 @@ type Response struct {
 	StatusCode    int
 	Headers       http.Header
 	ContentLength int64
-	debug 		  bool
+	debug         bool
 	errorValue    error
 	errorWritten  bool
 
-	reader        io.ReadCloser
-	body          []byte
-	bodyReader     io.ReadCloser
-	resStream     *stream.Stream
-	parent        *Response
+	reader     io.ReadCloser
+	body       []byte
+	bodyReader io.ReadCloser
+	resStream  *stream.Stream
+	parent     *Response
 }
 
 // New create response object with io.ReadCloser
@@ -77,7 +77,7 @@ func (r *Response) SetContentType(contentType string) *Response {
 }
 
 // Set update response headers
-func (r *Response) Set(headerName string, headerValue string)  {
+func (r *Response) Set(headerName string, headerValue string) {
 	r.Headers.Set(headerName, headerValue)
 }
 
@@ -139,7 +139,7 @@ func (r *Response) Close() {
 }
 
 // SetDebug set flag indicating that response can including debug information
-func (r *Response) SetDebug(debug bool) (*Response) {
+func (r *Response) SetDebug(debug bool) *Response {
 	if debug == true {
 		r.debug = true
 		r.Headers.Set("Cache-Control", "no-cache")
@@ -152,12 +152,12 @@ func (r *Response) SetDebug(debug bool) (*Response) {
 }
 
 // HasError check if response contains error
-func (r *Response) HasError()  bool {
+func (r *Response) HasError() bool {
 	return r.errorValue != nil
 }
 
 // Error returns error instance
-func (r *Response) Error()  error {
+func (r *Response) Error() error {
 	return r.errorValue
 }
 
@@ -184,12 +184,11 @@ func (r *Response) Send(w http.ResponseWriter) error {
 		io.Copy(w, resStream)
 	}
 
-
 	return nil
 }
 
 // CopyHeadersFrom copy all headers from src response but body is omitted
-func (r * Response) CopyHeadersFrom(src *Response)  {
+func (r *Response) CopyHeadersFrom(src *Response) {
 	r.Headers = make(http.Header, len(src.Headers))
 	for k, v := range src.Headers {
 		r.Headers[k] = v
@@ -202,18 +201,18 @@ func (r * Response) CopyHeadersFrom(src *Response)  {
 }
 
 // Copy create copmlete response copy with headers and body
-func (r * Response) Copy() (*Response, error) {
+func (r *Response) Copy() (*Response, error) {
 	if r == nil {
 		return nil, nil
 	}
 
-	c := Response{StatusCode:r.StatusCode, ContentLength: r.ContentLength, debug: r.debug, errorValue:r.errorValue}
+	c := Response{StatusCode: r.StatusCode, ContentLength: r.ContentLength, debug: r.debug, errorValue: r.errorValue}
 	c.Headers = make(http.Header)
 	for k, v := range r.Headers {
 		c.Headers[k] = v
 	}
 
-	if (r.body != nil) {
+	if r.body != nil {
 		c.ContentLength = int64(len(r.body))
 		c.body = r.body
 	} else if r.reader != nil {
@@ -222,7 +221,7 @@ func (r * Response) Copy() (*Response, error) {
 			return nil, err
 		}
 
-		c.reader =  ioutil.NopCloser(bytes.NewReader(buf))
+		c.reader = ioutil.NopCloser(bytes.NewReader(buf))
 		c.ContentLength = int64(len(buf))
 		c.body = buf
 
@@ -234,12 +233,12 @@ func (r * Response) Copy() (*Response, error) {
 
 // CopyWithStream should be used with not buffered response that contain stream
 // it try duplicate response stream for multiple readers
-func (r *Response) CopyWithStream() (*Response, error)  {
+func (r *Response) CopyWithStream() (*Response, error) {
 	if r.body != nil {
 		return r.Copy()
 	}
 
-	c := Response{StatusCode:r.StatusCode, ContentLength: r.ContentLength, debug: r.debug, errorValue:r.errorValue}
+	c := Response{StatusCode: r.StatusCode, ContentLength: r.ContentLength, debug: r.debug, errorValue: r.errorValue}
 	c.Headers = make(http.Header)
 	for k, v := range r.Headers {
 		c.Headers[k] = v
@@ -258,7 +257,6 @@ func (r *Response) CopyWithStream() (*Response, error)  {
 	c.parent = r
 	r.reader = ioutil.NopCloser(io.TeeReader(r.bodyReader, r.resStream))
 
-
 	return &c, nil
 
 }
@@ -266,7 +264,7 @@ func (r *Response) CopyWithStream() (*Response, error)  {
 // Stream return io.Reader interferace from correct response content
 func (r *Response) Stream() io.Reader {
 	if r.parent != nil && r.resStream != nil {
-		r, _  := r.resStream.NextReader()
+		r, _ := r.resStream.NextReader()
 		return r
 	}
 
@@ -286,13 +284,12 @@ func (r *Response) IsBuffered() bool {
 	return r.body != nil
 }
 
-
 func (r *Response) writeDebug() {
 	if !r.debug {
 		return
 	}
 
-	if r.errorValue != nil  {
+	if r.errorValue != nil {
 
 		body := map[string]string{"message": r.errorValue.Error()}
 		jsonBody, err := json.Marshal(body)
@@ -305,5 +302,3 @@ func (r *Response) writeDebug() {
 		r.SetContentType("application/json")
 	}
 }
-
-

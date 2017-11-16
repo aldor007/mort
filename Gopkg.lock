@@ -11,13 +11,13 @@
   branch = "develop"
   name = "github.com/aldor007/stow"
   packages = [".","local","local-meta","s3"]
-  revision = "4dbdd645dbc548677032dfd85ec16d758b5830da"
+  revision = "cdf14051f5ac67332f8c52dd6ae68476d617546b"
 
 [[projects]]
   name = "github.com/aws/aws-sdk-go"
   packages = ["aws","aws/awserr","aws/awsutil","aws/client","aws/client/metadata","aws/corehandlers","aws/credentials","aws/credentials/ec2rolecreds","aws/credentials/endpointcreds","aws/credentials/stscreds","aws/defaults","aws/ec2metadata","aws/endpoints","aws/request","aws/session","aws/signer/v4","internal/shareddefaults","private/protocol","private/protocol/query","private/protocol/query/queryutil","private/protocol/rest","private/protocol/restxml","private/protocol/xml/xmlutil","service/s3","service/sts"]
-  revision = "e6c5e190452424b404ecdb81d6e3991d46b18e9d"
-  version = "v1.12.26"
+  revision = "a532359524fb25c60b6c938ec321b571adc857de"
+  version = "v1.12.28"
 
 [[projects]]
   name = "github.com/davecgh/go-spew"
@@ -26,10 +26,10 @@
   version = "v1.1.0"
 
 [[projects]]
+  branch = "master"
   name = "github.com/djherbis/stream"
   packages = ["."]
-  revision = "26b9a1fb834dbe1e5782c5c87f119338d0de7af3"
-  version = "v1.2.0"
+  revision = "5cf27428a0140c094dfac111446cce6706c22b68"
 
 [[projects]]
   name = "github.com/go-chi/chi"
@@ -40,14 +40,14 @@
 [[projects]]
   name = "github.com/go-ini/ini"
   packages = ["."]
-  revision = "f280b3ba517bf5fc98922624f21fb0e7a92adaec"
-  version = "v1.30.3"
+  revision = "7e7da451323b6766da368f8a1e8ec9a88a16b4a0"
+  version = "v1.31.1"
 
 [[projects]]
   branch = "master"
   name = "github.com/golang/protobuf"
   packages = ["proto"]
-  revision = "1643683e1b54a9e88ad26d98f81400c8c9d9f4f9"
+  revision = "1e59b77b52bf8e4b449a57e6f79f21226d571845"
 
 [[projects]]
   name = "github.com/jmespath/go-jmespath"
@@ -67,6 +67,7 @@
   version = "v1.0.0"
 
 [[projects]]
+  branch = "master"
   name = "github.com/spaolacci/murmur3"
   packages = ["."]
   revision = "9f5d223c60793748f04a9d5b4b4eacddfc1f755d"
@@ -92,8 +93,8 @@
 [[projects]]
   name = "go.uber.org/atomic"
   packages = ["."]
-  revision = "4e336646b2ef9fc6e47be8e21594178f98e5ebcf"
-  version = "v1.2.0"
+  revision = "8474b86a5a6f79c443ce4b2992817ff32cf208b8"
+  version = "v1.3.1"
 
 [[projects]]
   name = "go.uber.org/multierr"
@@ -111,7 +112,7 @@
   branch = "master"
   name = "golang.org/x/net"
   packages = ["context"]
-  revision = "a337091b0525af65de94df2eb7e98bd9962dcbe2"
+  revision = "9dfe39835686865bff950a07b394c12a98ddc811"
 
 [[projects]]
   name = "google.golang.org/appengine"
@@ -122,18 +123,18 @@
 [[projects]]
   name = "gopkg.in/h2non/bimg.v1"
   packages = ["."]
-  revision = "1a5477aae5b261f4f8efb40cdeba8198b75c2238"
-  version = "v1.0.16"
+  revision = "8aff78e4ec8e8b66c753bafb27374488009cfb36"
+  version = "v1.0.17"
 
 [[projects]]
   branch = "v2"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
-  revision = "eb3733d160e74a9c7e442f435eb3bea458e1d19f"
+  revision = "287cf08546ab5e7e37d55a84f7ed3fd1db036de5"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "8de3daaa8fcfa67f7d520e99641056fe16e9d999a5135b13f91e71dc69a7150b"
+  inputs-digest = "41a3780ae0551d16025bc9fdfe605c59f751edc5151bd343801bd368445bdc73"
   solver-name = "gps-cdcl"
   solver-version = 1

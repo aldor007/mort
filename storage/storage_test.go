@@ -1,17 +1,17 @@
 package storage
 
 import (
-	"testing"
-	"io/ioutil"
 	"bytes"
+	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
-	"fmt"
+	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"mort/config"
 	"mort/object"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestMain(m *testing.M) {
@@ -70,12 +70,12 @@ func TestSet(t *testing.T) {
 
 	assert.Equal(t, res.StatusCode, 200)
 
-	resGet :=  Get(obj)
+	resGet := Get(obj)
 
 	assert.Equal(t, resGet.Headers.Get("X-Header"), "val")
 	assert.Equal(t, resGet.StatusCode, 200)
 
-	resHead :=  Head(obj)
+	resHead := Head(obj)
 
 	assert.Equal(t, resHead.StatusCode, 200)
 	assert.Equal(t, resHead.Headers.Get("X-Header"), "val")
@@ -85,7 +85,7 @@ func BenchmarkGet(b *testing.B) {
 	mortConfig := config.Config{}
 	mortConfig.Load("testdata/config.yml")
 	obj, _ := object.NewFileObject("/bucket/file", &mortConfig)
-	for i := 0; i < b.N; i++  {
+	for i := 0; i < b.N; i++ {
 		Get(obj)
 	}
 }
@@ -94,7 +94,7 @@ func BenchmarkHead(b *testing.B) {
 	mortConfig := config.Config{}
 	mortConfig.Load("testdata/config.yml")
 	obj, _ := object.NewFileObject("/bucket/file", &mortConfig)
-	for i := 0; i < b.N; i++  {
+	for i := 0; i < b.N; i++ {
 		Head(obj)
 	}
 }

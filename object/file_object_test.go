@@ -157,10 +157,10 @@ func TestNewFileObjecWithNestedParent(t *testing.T) {
 
 func BenchmarkNewFileObject(b *testing.B) {
 
-	benchmarks := []struct{
-		path string
+	benchmarks := []struct {
+		path       string
 		configPath string
-	} {
+	}{
 		{"/bucket/width/thumb_121332.jpg", "testdata/bucket-transform-parent-storage.yml"},
 		{"/bucket/parent.jpg", "testdata/bucket-transform.yml"},
 	}

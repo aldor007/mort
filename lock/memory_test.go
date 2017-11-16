@@ -1,11 +1,11 @@
 package lock
 
 import (
-	"time"
-	"testing"
 	"errors"
-	"mort/response"
 	"github.com/stretchr/testify/assert"
+	"mort/response"
+	"testing"
+	"time"
 )
 
 func TestNewMemoryLock(t *testing.T) {
@@ -52,16 +52,16 @@ func TestMemoryLock_NotifyAndReleaseWhenError(t *testing.T) {
 
 	timer := time.NewTimer(time.Second * 2)
 	select {
-		case <-timer.C:
-			t.Fatalf("timeout waitgin for lock")
-			return
-		case res := <- resChan:
-			assert.NotNil(t, res, "Response shound't be nil")
-			if res != nil {
-				assert.Equal(t, res.StatusCode, 400)
-			}
-
+	case <-timer.C:
+		t.Fatalf("timeout waitgin for lock")
+		return
+	case res := <-resChan:
+		assert.NotNil(t, res, "Response shound't be nil")
+		if res != nil {
+			assert.Equal(t, res.StatusCode, 400)
 		}
+
+	}
 }
 
 func TestMemoryLock_NotifyAndRelease(t *testing.T) {
@@ -85,7 +85,7 @@ func TestMemoryLock_NotifyAndRelease(t *testing.T) {
 	case <-timer.C:
 		t.Fatalf("timeout waitgin for lock")
 		return
-	case res := <- resChan:
+	case res := <-resChan:
 		assert.NotNil(t, res, "Response should't be nil")
 		if res != nil {
 			assert.Equal(t, res.StatusCode, 200, "Response should have sc = 200")
@@ -104,9 +104,9 @@ func BenchmarkMemoryLock_NotifyAndRelease(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		resChan, acquired := l.Lock(key)
-		multi := 800 % (i+1)
+		multi := 800 % (i + 1)
 		if acquired {
-			go time.AfterFunc(time.Millisecond * time.Duration(multi), func() {
+			go time.AfterFunc(time.Millisecond*time.Duration(multi), func() {
 				go l.NotifyAndRelease(key, response.NewBuf(200, buf))
 			})
 		} else {
@@ -114,17 +114,16 @@ func BenchmarkMemoryLock_NotifyAndRelease(b *testing.B) {
 			timer := time.NewTimer(time.Second * 4)
 		forLoop:
 			for {
-			select {
-			case <- resChan:
-				break forLoop
-		case <-timer.C:
-				b.Fatalf("timeout waitgin for lock")
-				return
-			default:
+				select {
+				case <-resChan:
+					break forLoop
+				case <-timer.C:
+					b.Fatalf("timeout waitgin for lock")
+					return
+				default:
 
-
-			}
 				}
+			}
 		}
 
 	}

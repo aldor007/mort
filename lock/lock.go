@@ -14,33 +14,32 @@ type Lock interface {
 }
 
 type lockData struct {
-	Key string
+	Key           string
 	responseChans []chan *response.Response
 }
 
-func (l *lockData) AddWatcher() chan*response.Response {
+func (l *lockData) AddWatcher() chan *response.Response {
 	w := make(chan *response.Response, 1)
 	l.responseChans = append(l.responseChans, w)
 	return w
 }
 
-func NewNopLock() *NopLock  {
+func NewNopLock() *NopLock {
 	return &NopLock{}
 }
 
 // NopLock will never  collapse any request
 type NopLock struct {
-	
 }
 
-func (l *NopLock) Lock(_ string)  (chan *response.Response, bool) {
+func (l *NopLock) Lock(_ string) (chan *response.Response, bool) {
 	return nil, true
 }
 
-func (l *NopLock) Release(_ string)  {
+func (l *NopLock) Release(_ string) {
 
 }
 
-func (l *NopLock) NotifyAndRelease(_ string, _ *response.Response)  {
+func (l *NopLock) NotifyAndRelease(_ string, _ *response.Response) {
 
 }

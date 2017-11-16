@@ -1,10 +1,9 @@
 package http
 
-
 import (
 	"io"
-	"net/url"
 	"net/http"
+	"net/url"
 	"sync"
 	"time"
 
@@ -20,7 +19,7 @@ import (
 // for more info.
 // All fields are unexported because methods exist to facilitate retrieval.
 type item struct {
-	container *container
+	container  *container
 	url        string
 	name       string
 	client     *http.Client

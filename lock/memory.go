@@ -1,24 +1,22 @@
 package lock
 
 import (
-	"sync"
 	"mort/response"
+	"sync"
 )
 
 // MemoryLock is in memory lock for single mort instance
 type MemoryLock struct {
-    lock    sync.RWMutex
+	lock     sync.RWMutex
 	internal map[string]lockData
-
 }
 
 // NewMemoryLock create a new empty instance of MemoryLock
-func NewMemoryLock() *MemoryLock  {
+func NewMemoryLock() *MemoryLock {
 	m := &MemoryLock{}
 	m.internal = make(map[string]lockData)
 	return m
 }
-
 
 // NotifyAndRelease tries notify all waiting goroutines about response
 func (m *MemoryLock) NotifyAndRelease(key string, res *response.Response) {
@@ -32,7 +30,7 @@ func (m *MemoryLock) NotifyAndRelease(key string, res *response.Response) {
 	if res.IsBuffered() {
 		resCopy, err := res.Copy()
 		if err != nil {
-			for _, c := range  result.responseChans {
+			for _, c := range result.responseChans {
 				close(c)
 			}
 
@@ -54,7 +52,7 @@ func (m *MemoryLock) NotifyAndRelease(key string, res *response.Response) {
 		}
 	} else {
 		resCopy, _ := res.CopyWithStream()
-		for _, c := range  result.responseChans {
+		for _, c := range result.responseChans {
 			if c != nil {
 				c <- resCopy
 				resCopy, _ = resCopy.CopyWithStream()
@@ -83,7 +81,6 @@ func (m *MemoryLock) Lock(key string) (chan *response.Response, bool) {
 	m.internal[key] = data
 	return nil, !ok
 }
-
 
 // Release remove entry from memory map
 func (m *MemoryLock) Release(key string) {

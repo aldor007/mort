@@ -2,16 +2,15 @@ package object
 
 import (
 	"errors"
-	"strings"
 	"path"
+	"strings"
 
-	"mort/log"
+	"go.uber.org/zap"
 	"mort/config"
+	"mort/log"
 	"mort/transforms"
 	"strconv"
-	"go.uber.org/zap"
 )
-
 
 func presetToTransform(preset config.PresetsYaml) (transforms.Transforms, error) {
 	var trans transforms.Transforms
@@ -47,7 +46,7 @@ func presetToTransform(preset config.PresetsYaml) (transforms.Transforms, error)
 		}
 	}
 
-	if filters.Strip == true{
+	if filters.Strip == true {
 		err := trans.StripMetadata()
 		if err != nil {
 			return trans, err
@@ -81,13 +80,13 @@ func presetToTransform(preset config.PresetsYaml) (transforms.Transforms, error)
 // FileObject is representing parsed request for image or file
 //
 type FileObject struct {
-	Uri        string                `json:"uri"` // original request path
-	Bucket     string                `json:"bucket"` // request matched bucket
-	Key        string                `json:"key"`    // storage path for file
-	Transforms transforms.Transforms `json:"transforms"` // list of transform that should be performed
-	Storage    config.Storage        `json:"storage"` // selected storage that should be used
-	Parent     *FileObject                            // original image for transformed image
-	CheckParent bool                                 // boolen if we should always check if parent exists
+	Uri         string                `json:"uri"`        // original request path
+	Bucket      string                `json:"bucket"`     // request matched bucket
+	Key         string                `json:"key"`        // storage path for file
+	Transforms  transforms.Transforms `json:"transforms"` // list of transform that should be performed
+	Storage     config.Storage        `json:"storage"`    // selected storage that should be used
+	Parent      *FileObject           // original image for transformed image
+	CheckParent bool                  // boolen if we should always check if parent exists
 }
 
 // NewFileObject create new instance of FileObject
@@ -100,8 +99,8 @@ func NewFileObject(uri string, mortConfig *config.Config) (*FileObject, error) {
 	obj.CheckParent = false
 
 	err := obj.decode(mortConfig)
-	log.Log().Info("FileObject", zap.String("path", uri),  zap.String("key", obj.Key), zap.String("bucket", obj.Bucket), zap.String("storage", obj.Storage.Kind),
-		zap.Bool("hasTransforms", !obj.Transforms.NotEmpty), zap.Bool("hasParent" , obj.HasParent()))
+	log.Log().Info("FileObject", zap.String("path", uri), zap.String("key", obj.Key), zap.String("bucket", obj.Bucket), zap.String("storage", obj.Storage.Kind),
+		zap.Bool("hasTransforms", !obj.Transforms.NotEmpty), zap.Bool("hasParent", obj.HasParent()))
 	return &obj, err
 }
 
@@ -112,7 +111,6 @@ func (self *FileObject) decode(mortConfig *config.Config) error {
 	if len(elements) > 2 {
 		self.Key = "/" + elements[2]
 	}
-
 
 	if bucket, ok := mortConfig.Buckets[self.Bucket]; ok {
 		err := self.decodeKey(bucket, mortConfig)
@@ -147,10 +145,10 @@ func (self *FileObject) decodeKey(bucket config.Bucket, mortConfig *config.Confi
 		}
 	}
 	presetName := subMatchMap["presetName"] //string(matches[trans.Order.PresetName+1])
-	parent := subMatchMap["parent"] // "/" + string(matches[trans.Order.Parent+1])
+	parent := subMatchMap["parent"]         // "/" + string(matches[trans.Order.Parent+1])
 
 	if _, ok := bucket.Transform.Presets[presetName]; !ok {
-		log.Log().Warn("FileObject decodeKey unknown preset", zap.String("obj.Key", self.Key), zap.String( "parent", parent), zap.String("presetName", presetName),
+		log.Log().Warn("FileObject decodeKey unknown preset", zap.String("obj.Key", self.Key), zap.String("parent", parent), zap.String("presetName", presetName),
 			zap.String("regexp", trans.Path))
 		return errors.New("Unknown preset " + presetName)
 	}
@@ -161,7 +159,7 @@ func (self *FileObject) decodeKey(bucket config.Bucket, mortConfig *config.Confi
 		return err
 	}
 
-	parent =  "/" + path.Join(bucket.Transform.ParentBucket, parent)
+	parent = "/" + path.Join(bucket.Transform.ParentBucket, parent)
 
 	parentObj, err := NewFileObject(parent, mortConfig)
 	parentObj.Storage = bucket.Storages.Get(bucket.Transform.ParentStorage)

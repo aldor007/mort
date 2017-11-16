@@ -1,19 +1,19 @@
 package http
 
 import (
-	"io"
-	"strings"
-	"time"
-	"net/http"
 	"github.com/aldor007/stow"
 	"github.com/pkg/errors"
+	"io"
+	"net/http"
+	"strings"
+	"time"
 )
 
 type container struct {
-	name          string
-	endpoint       string
-	client 			*http.Client
-	headers        map[string]string
+	name     string
+	endpoint string
+	client   *http.Client
+	headers  map[string]string
 }
 
 // ID returns a string value which represents the name of the container.
@@ -45,7 +45,6 @@ func (c *container) RemoveItem(id string) error {
 func (c *container) Put(name string, r io.Reader, size int64, metadata map[string]interface{}) (stow.Item, error) {
 	return nil, errors.New("not implemented")
 }
-
 
 // A request to retrieve a single item includes information that is more specific than
 // a PUT. Instead of doing a request within the PUT, make this method available so that the
@@ -103,13 +102,13 @@ func (c *container) getItem(id string) (*item, error) {
 	i := &item{
 		container: c,
 		client:    c.client,
-		name: id,
-		url: endpoint,
+		name:      id,
+		url:       endpoint,
 		properties: properties{
 			Key:          &id,
 			Size:         &res.ContentLength,
-			Metadata: md,
-			ETag: &etag,
+			Metadata:     md,
+			ETag:         &etag,
 			LastModified: &lastMod,
 		},
 	}
@@ -162,4 +161,3 @@ func parseMetadata(md http.Header) (map[string]interface{}, error) {
 	}
 	return m, nil
 }
-

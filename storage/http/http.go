@@ -1,16 +1,15 @@
 package http
 
 import (
+	"encoding/json"
+	"errors"
 	"net"
 	"net/http"
 	"net/url"
 	"time"
-	"errors"
-	"encoding/json"
 
 	"github.com/aldor007/stow"
 )
-
 
 // Kind represents the name of the location/storage type.
 const Kind = "http"
@@ -21,7 +20,6 @@ const (
 
 	// ConfigAccessKeyID is one key of a pair of AWS credentials.
 	ConfigHeader = "headers"
-
 )
 
 func init() {
@@ -55,10 +53,10 @@ func init() {
 
 		// Create a location with given config and client (s3 session).
 		loc := &location{
-			config:         config,
-			client:         client,
+			config:   config,
+			client:   client,
 			endpoint: url,
-			headers: headers,
+			headers:  headers,
 		}
 
 		return loc, nil
@@ -70,4 +68,3 @@ func init() {
 
 	stow.Register(Kind, makefn, kindfn)
 }
-

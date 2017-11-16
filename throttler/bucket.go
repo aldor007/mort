@@ -1,17 +1,16 @@
 package throttler
 
 import (
-	"time"
 	"context"
+	"time"
 )
 
 // BucketThrottler is implementation of token-bucket algorithm for rate-limiting
 type BucketThrottler struct {
-	tokens chan bool
-	backlogTokens chan bool
+	tokens         chan bool
+	backlogTokens  chan bool
 	backlogTimeout time.Duration
 }
-
 
 // NewBucketThrottler create a new instance of BucketThrottler which limit
 func NewBucketThrottler(limit int) *BucketThrottler {
@@ -22,12 +21,12 @@ func NewBucketThrottler(limit int) *BucketThrottler {
 func NewBucketThrottlerBacklog(limit int, backlog int, timeout time.Duration) *BucketThrottler {
 	max := limit + backlog
 	t := &BucketThrottler{
-		tokens: make(chan bool, limit),
-		backlogTokens: make(chan bool, max),
+		tokens:         make(chan bool, limit),
+		backlogTokens:  make(chan bool, max),
 		backlogTimeout: timeout,
 	}
 
-	for i:= 0; i < max; i++ {
+	for i := 0; i < max; i++ {
 		if i < limit {
 			t.tokens <- true
 		}
@@ -38,9 +37,9 @@ func NewBucketThrottlerBacklog(limit int, backlog int, timeout time.Duration) *B
 }
 
 // Take retrieve a token from bucket
-func (t *BucketThrottler) Take(ctx context.Context)  bool {
+func (t *BucketThrottler) Take(ctx context.Context) bool {
 	select {
-	case <- ctx.Done():
+	case <-ctx.Done():
 		return false
 	case btok := <-t.backlogTokens:
 		timer := time.NewTimer(t.backlogTimeout)
@@ -61,6 +60,6 @@ func (t *BucketThrottler) Take(ctx context.Context)  bool {
 }
 
 // Release return toke to bucket
-func (t *BucketThrottler) Release()  {
+func (t *BucketThrottler) Release() {
 	t.tokens <- true
 }

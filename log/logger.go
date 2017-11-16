@@ -2,7 +2,6 @@ package log
 
 import "go.uber.org/zap"
 
-
 // logger is single singleton instance of logger
 // default logger do nothing
 var logger *zap.Logger = zap.NewNop()
@@ -20,6 +19,6 @@ func Log() *zap.Logger {
 }
 
 // Logs return suggared zap logger
-func Logs() *zap.SugaredLogger  {
+func Logs() *zap.SugaredLogger {
 	return suggaredLogger
 }

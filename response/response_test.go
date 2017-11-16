@@ -1,13 +1,13 @@
 package response
 
 import (
-	"io"
-	"io/ioutil"
 	"bytes"
-	"testing"
 	"errors"
 	"github.com/stretchr/testify/assert"
+	"io"
+	"io/ioutil"
 	"net/http/httptest"
+	"testing"
 )
 
 func TestResponse_Copy(t *testing.T) {
@@ -149,7 +149,7 @@ func TestResponse_Send_and_Copy(t *testing.T) {
 
 func BenchmarkNewBuf(b *testing.B) {
 	buf := make([]byte, 1000)
-	for i := 0; i < b.N; i++  {
+	for i := 0; i < b.N; i++ {
 		res := NewBuf(200, buf)
 		res.Headers.Set("X-Header", "1")
 		res.SetContentType("text/html")
@@ -157,8 +157,8 @@ func BenchmarkNewBuf(b *testing.B) {
 }
 
 func BenchmarkNewCopy(b *testing.B) {
-	buf := make([]byte, 1024 * 1024 * 4)
-	for i := 0; i < b.N; i++  {
+	buf := make([]byte, 1024*1024*4)
+	for i := 0; i < b.N; i++ {
 		s := ioutil.NopCloser(bytes.NewReader(buf))
 		res := New(200, s)
 		res.Headers.Set("X-Header", "1")
@@ -172,19 +172,20 @@ func BenchmarkNewCopy(b *testing.B) {
 
 		if len(body) != len(buf) {
 			b.Fatalf("Inavlid body len %d != %d %d", len(body), len(buf), i)
-		}}
+		}
+	}
 }
 
 func BenchmarkNewCopyWithStream(b *testing.B) {
-	buf := make([]byte, 1024 * 1024 * 4)
-	wBuf := make([]byte, 0, 1024 * 1024 * 1)
-	for i := 0; i < b.N; i++  {
+	buf := make([]byte, 1024*1024*4)
+	wBuf := make([]byte, 0, 1024*1024*1)
+	for i := 0; i < b.N; i++ {
 		s := ioutil.NopCloser(bytes.NewReader(buf))
 		w := bytes.NewBuffer(wBuf)
 		res := New(200, s)
 		res.Headers.Set("X-Header", "1")
 		res.SetContentType("text/html")
-		resCpy, _:= res.CopyWithStream()
+		resCpy, _ := res.CopyWithStream()
 		go func() {
 			io.Copy(w, res.Stream())
 			res.Close()

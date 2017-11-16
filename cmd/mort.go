@@ -1,29 +1,28 @@
 package main
 
 import (
-	"net/http"
-	"time"
 	"flag"
 	"fmt"
+	"net/http"
+	"time"
 
 	"github.com/go-chi/chi"
 
 	"mort"
 	"mort/config"
-	"mort/object"
-	"mort/log"
 	"mort/lock"
-	"mort/throttler"
+	"mort/log"
+	mortMiddleware "mort/middleware"
+	"mort/object"
 	"mort/response"
-     mortMiddleware "mort/middleware"
-
+	"mort/throttler"
 
 	"go.uber.org/zap"
 )
 
 const (
 	Version = "0.0.1"
-	BANNER = `
+	BANNER  = `
   /\/\   ___  _ __| |_
  /    \ / _ \| '__| __|
 / /\/\ \ (_) | |  | |_
@@ -37,7 +36,7 @@ func main() {
 	listenAddr := flag.String("listen", ":8080", "Listen addr")
 	flag.Parse()
 
-	fmt.Printf(BANNER, ("v"+Version))
+	fmt.Printf(BANNER, ("v" + Version))
 	fmt.Printf("Config file %s listen addr %s\n", *configPath, *listenAddr)
 	logger, _ := zap.NewProduction()
 	//logger, _ := zap.NewDevelopment()
@@ -53,7 +52,7 @@ func main() {
 
 	router.Use(s3Auth.Handler)
 
-	router.Use(func (_ http.Handler) http.Handler {
+	router.Use(func(_ http.Handler) http.Handler {
 		return http.HandlerFunc(func(resWriter http.ResponseWriter, req *http.Request) {
 			debug := req.Header.Get("X-Mort-Debug") != ""
 			obj, err := object.NewFileObject(req.URL.Path, imgConfig)
@@ -63,7 +62,7 @@ func main() {
 				return
 			}
 
-			res := rp.Process(req,obj)
+			res := rp.Process(req, obj)
 			res.SetDebug(debug)
 			// FIXME
 			res.Set("Access-Control-Allow-Headers", "Content-Type, X-Amz-Public-Width, X-Amz-Public-Height")
@@ -84,10 +83,10 @@ func main() {
 	}))
 
 	s := &http.Server{
-		Addr:        *listenAddr,
+		Addr:         *listenAddr,
 		ReadTimeout:  2 * time.Minute,
 		WriteTimeout: 2 * time.Minute,
-		Handler: router,
+		Handler:      router,
 	}
 
 	s.ListenAndServe()

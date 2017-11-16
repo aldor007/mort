@@ -1,19 +1,19 @@
 package engine
 
 import (
-	"time"
-	"strconv"
 	"encoding/binary"
 	"net/http"
+	"strconv"
+	"time"
 
-	"gopkg.in/h2non/bimg.v1"
 	"github.com/spaolacci/murmur3"
 	"go.uber.org/zap"
+	"gopkg.in/h2non/bimg.v1"
 
-	"mort/transforms"
-	"mort/response"
-	"mort/object"
 	"mort/log"
+	"mort/object"
+	"mort/response"
+	"mort/transforms"
 )
 
 // ImageEngine is main struct that is responding for image processing
@@ -34,7 +34,7 @@ func (self *ImageEngine) Process(obj *object.FileObject, trans []transforms.Tran
 	}
 
 	var transHash uint64
-	for _, tran :=  range trans {
+	for _, tran := range trans {
 		image := bimg.NewImage(buf)
 		meta, err := bimg.Metadata(buf)
 		if err != nil {
