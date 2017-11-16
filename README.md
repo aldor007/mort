@@ -2,84 +2,188 @@
 
 S3 compatible image processing server written in Go.
 
+# Features
+
+* HTTP server
+* Resize 
+* Rotate
+* SmartCrop
+* Convert (JPEG, , PNG , BMP, TIFF, ...)
+* Multiple storage backends (disk, S3, http)
+* Fully modular
+* S3 API for listing and uploading files 
+
+# Demo
+-------
+[Original image](https://mort.mkaciuba.com/demo/cat.jpg)
+<table>
+    <thead>
+    <tr>
+        <th>Description</th>
+        <th>Result</th> 
+     </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>
+                <p>preset: small</p>
+                <p>(preserve aspect ratio) 
+                 width: 75 </p> 
+            </td>
+            <td>
+                <a href="https://mort.mkaciuba.com/demo/small/cat.jpg" target="_blank">
+                <img src="https://mort.mkaciuba.com/demo/small/cat.jpg">
+                </a>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <p>preset: blur</p>
+                <ul>
+                <li><p>resize image (preserve aspect ratio) 
+                 width: 700</p></li>
+                 <li><p>blur image with sigma 5.0</p></li>
+                 </ul>
+            </td>
+            <td>
+                <a href="https://mort.mkaciuba.com/demo/blur/cat.jpg" target="_blank">
+                <img src="https://mort.mkaciuba.com/demo/blur/cat.jpg">
+                </a>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <p>preset: webp</p>
+                <ul>
+                <li>                <p>resize image (preserve aspect ratio) 
+                 width: 1000</p></li>
+                 <li><p>and change format to webp</p></li>
+                 </ul>
+            </td>
+            <td>
+                <a href="https://mort.mkaciuba.com/demo/webp/cat.jpg" target="_blank">
+                <img src="https://mort.mkaciuba.com/demo/webp/cat.jpg">
+                </a>
+            </td>
+        </tr>
+     </tbody>
+</table>   
+    
 # Usage
 
-# Configuration
+Mort can be used direct from Internet and behind any proxy. 
 
-
-## Getting Started
-
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
-
-### Prerequisites
-
-What things you need to install the software and how to install them
-
-```
-Give examples
+## Command line help
+```bash
+$ ./mort
+Usage of  mort
+  -config string
+    	Path to configuration (default "configuration/config.yml")
+  -listen string
+    	Listen addr (default ":8080")
 ```
 
-### Installing
+## Configuration
+Example configuration used for providing demo images:
 
-A step by step series of examples that tell you have to get a development env running
+```yaml
+headers: # overwritten all response headers of given status. This field is optional
+  - statusCodes: [200]
+    values:
+      "cache-control": "max-age=84000, public"
 
-Say what the step will be
-
+buckets: # list of available buckets 
+    demo:    # bucket name 
+        keys: # list of S3 keys (optiona
+          - accessKey: "access"
+            secretAccessKey: "random"
+        transform: # config for transforms
+            path: "\\/(?P<presetName>[a-z0-9_]+)\\/(?P<parent>[a-z0-9-\\.]+)" # regexp for transform path 
+            kind: "presets" #  type of transform for now only "presets" is available 
+            presets: # list of presets
+                small:
+                    quality: 75
+                    filters:
+                        thumbnail: {size: [150]}
+                blur:
+                    quality: 80
+                    filters:
+                        thumbnail: {size: [700]}
+                        blur:
+                          sigma: 5.0
+                webp:
+                    quality: 100
+                    format: webp
+                    filters:
+                        thumbnail: {size: [1000]}
+                watermark:
+                    quality: 100
+                    filters:
+                        thumbnail: {size: [1300]}
+                        watermark:
+                            image: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Imgur_logo.svg/150px-Imgur_logo.svg.png"
+                            position: "center-center"
+                            opacity: 0.5
+        storages:
+             basic: # retrieve originals from s3
+                 kind: "s3"
+                 accessKey: "acc"
+                 secretAccessKey: "sec"
+                 region: ""
+                 endpoint: "http://localhost:8080"
+             transform: # end stroe it on disk
+                 kind: "local-meta"
+                 rootPath: "/var/www/domain/"
+                 pathPrefix: "transform"
+        
 ```
-Give the example
-```
 
-And repeat
 
-```
-until finished
-```
+## Debian and Ubuntu
 
-End with an example of getting some data out of the system or using it for a little demo
+We will provide Debian package when we will be completely stable ;)
 
-## Running the tests
-
-Explain how to run the automated tests for this system
-
-### Break down into end to end tests
-
-Explain what these tests test and why
-
-```
-Give an example
-```
-
-### And coding style tests
-
-Explain what these tests test and why
-
-```
-Give an example
-```
-
-## Deployment
+## Docker
+Pull docker image
 
 ```bash
-git clone https://github.com/aldor007/mort.git && cd mort
+docker pull aldor007/mort
+
+```
+
+Create Dockerfile
+```
+FROM aldor007/mort:latest
+ADD config.yml /go/configuration/config.yml # add you configu
+```
+
+Run docker 
+
+
+# Development
+1. Make sure you have a Go language compiler >= 1.9 (required) and git installed.
+2. Install libvips like described on [bimg page](https://github.com/h2non/bimg)
+3. Ensure your GOPATH is properly set.
+4. Download it
+```bash
 go get -d github.com/aldor007/mort
 cd $GOPATH/src/github.com/aldor007/mort
 ```
-Install dependencies:
+5, Install dependencies:
 ```bash
 dep ensure
 ```
-Run tests:
+Run end to end tests:
 ```bash
-go test ./...
+make unit
 ```
 Run integration tests:
 ```bash
-./run-int.sh
+make integrations
 ```
 
 ## Built With
 
-* [echo](https://github.com/labstack/echo) - The web framework used
 * [dep](https://github.com/golang/dep) - Dependency Management
 * [bimg](https://github.com/h2non/bimg) -  Image processing powered by libvips C library
 

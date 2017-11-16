@@ -2,10 +2,7 @@ package middleware
 
 import (
 	"net/http"
-	//"github.com/crunchytom/go-aws-auth"
-	//awsv4 "githubBucketcom/aws/aws-sdk-go/aws/signer/v4"
 	"encoding/xml"
-	"fmt"
 	"regexp"
 	"strings"
 	"time"
@@ -168,8 +165,7 @@ func (s *s3Auth) Handler(next http.Handler) http.Handler {
 
 		}
 
-		fmt.Printf("auth = %s valid = %s", auth, validiatonReq.Header.Get("Authorization"))
-		response.NewString(403, "").Send(resWriter)
+		response.NewNoContent(403).Send(resWriter)
 		return
 	}
 

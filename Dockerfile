@@ -53,9 +53,8 @@ WORKDIR $GOPATH
 RUN curl -fsSL -o /usr/local/bin/dep https://github.com/golang/dep/releases/download/$DEP_VERSION/dep-linux-amd64 && chmod +x /usr/local/bin/dep
 ADD . /go/src/mort
 
-# when dep will be ready
 RUN cd /go/src/mort &&  dep ensure -vendor-only
-# RUN goinstall
+# RUN build
 RUN cd /go/src/mort; go build cmd/mort.go; cp mort /go/mort; cp -r /go/src/mort/configuration /go/
 # clean up
 RUN rm -rf /go/src; rm -rf /go/pkg; rm -rf /usr/share/; rm -rf /usr/include/
