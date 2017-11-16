@@ -13,6 +13,7 @@ import (
 	"mort/object"
 	"mort/log"
 	"mort/lock"
+	"mort/throttler"
 	"mort/response"
      mortMiddleware "mort/middleware"
 
@@ -43,7 +44,7 @@ func main() {
 	zap.ReplaceGlobals(logger)
 	log.RegisterLogger(logger)
 	router := chi.NewRouter()
-	rp := mort.NewRequestProcessor(5, lock.NewMemoryLock())
+	rp := mort.NewRequestProcessor(5, lock.NewMemoryLock(), throttler.NewBucketThrottler(10))
 
 	imgConfig := config.GetInstance()
 	imgConfig.Load(*configPath)

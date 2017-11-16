@@ -7,6 +7,7 @@ import (
 	"mort/config"
 	"mort/object"
 	"mort/lock"
+	"mort/throttler"
 	"bytes"
 )
 
@@ -35,7 +36,7 @@ func BenchmarkNewRequestProcessorMemoryLock(b *testing.B) {
 		}
 
 		obj, _ := object.NewFileObject(req.URL.Path, &config)
-		rp := NewRequestProcessor(3, lock.NewMemoryLock())
+		rp := NewRequestProcessor(3, lock.NewMemoryLock(), throttler.NewBucketThrottler(10))
 		b.Run(bm.name, func(b *testing.B) {
 			b.ReportAllocs()
 			b.ResetTimer()
@@ -75,7 +76,7 @@ func BenchmarkNewRequestProcessorNopLock(b *testing.B) {
 		}
 
 		obj, _ := object.NewFileObject(req.URL.Path, &config)
-		rp := NewRequestProcessor(3, lock.NewNopLock())
+		rp := NewRequestProcessor(3, lock.NewNopLock(), throttler.NewBucketThrottler(10))
 		b.Run(bm.name, func(b *testing.B) {
 			b.ReportAllocs()
 			b.ResetTimer()

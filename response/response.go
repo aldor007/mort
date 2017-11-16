@@ -133,7 +133,7 @@ func (r *Response) Close() {
 	if r.resStream != nil && r.parent == nil {
 		go func() {
 			r.resStream.Close()
-			//r.resStream.Remove()
+			r.resStream.Remove()
 		}()
 	}
 }
@@ -167,14 +167,23 @@ func (r *Response) Send(w http.ResponseWriter) error {
 		w.Header().Set(headerName, headerValue[0])
 	}
 
+	var resStream io.Reader
+	if r.ContentLength != 0 {
+		resStream = r.Stream()
+		if resStream == nil {
+			r.StatusCode = 500
+		} else {
+			defer r.Close()
+		}
+
+	}
+
 	w.WriteHeader(r.StatusCode)
 
-	if r.ContentLength != 0 {
-
-		defer r.Close()
-		_, err := io.Copy(w, r.Stream())
-		return err
+	if resStream != nil {
+		io.Copy(w, resStream)
 	}
+
 
 	return nil
 }
@@ -223,6 +232,8 @@ func (r * Response) Copy() (*Response, error) {
 
 }
 
+// CopyWithStream should be used with not buffered response that contain stream
+// it try duplicate response stream for multiple readers
 func (r *Response) CopyWithStream() (*Response, error)  {
 	if r.body != nil {
 		return r.Copy()
@@ -234,7 +245,12 @@ func (r *Response) CopyWithStream() (*Response, error)  {
 		c.Headers[k] = v
 	}
 
-	//c.reader =  ioutil.NopCloser(bytes.NewReader(buf))
+	if r.resStream != nil {
+		c.resStream = r.resStream
+		c.parent = r
+		return &c, nil
+	}
+
 	r.bodyReader = r.reader
 
 	r.resStream = stream.NewMemStream()
@@ -246,6 +262,30 @@ func (r *Response) CopyWithStream() (*Response, error)  {
 	return &c, nil
 
 }
+
+// Stream return io.Reader interferace from correct response content
+func (r *Response) Stream() io.Reader {
+	if r.parent != nil && r.resStream != nil {
+		r, _  := r.resStream.NextReader()
+		return r
+	}
+
+	if r.reader != nil {
+		return r.reader
+	}
+
+	if r.body != nil {
+		return bytes.NewReader(r.body)
+	}
+
+	return nil
+}
+
+// IsBuffered check if response has access to original buffor
+func (r *Response) IsBuffered() bool {
+	return r.body != nil
+}
+
 
 func (r *Response) writeDebug() {
 	if !r.debug {
@@ -266,24 +306,4 @@ func (r *Response) writeDebug() {
 	}
 }
 
-func (r *Response) Stream() io.Reader {
-	if r.parent != nil && r.resStream != nil {
-		r, _  := r.resStream.NextReader()
-		return r
-	}
-
-	if r.reader != nil {
-		return r.reader
-	}
-
-	if r.body != nil {
-		return bytes.NewReader(r.body)
-	}
-
-	return nil
-}
-
-func (r *Response) IsBuffered() bool {
-	return r.body != nil
-}
 
