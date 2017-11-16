@@ -26,8 +26,14 @@
   version = "v1.1.0"
 
 [[projects]]
+  name = "github.com/djherbis/stream"
+  packages = ["."]
+  revision = "26b9a1fb834dbe1e5782c5c87f119338d0de7af3"
+  version = "v1.2.0"
+
+[[projects]]
   name = "github.com/go-chi/chi"
-  packages = [".","middleware"]
+  packages = ["."]
   revision = "f7c66f685bcab06bcce78ac212c5f3553c063d19"
   version = "v3.3.0"
 
@@ -128,6 +134,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "e32ebf6323b1a63d5400061d01ffb4a542b21897329c31828454f2a77dfc0e30"
+  inputs-digest = "8de3daaa8fcfa67f7d520e99641056fe16e9d999a5135b13f91e71dc69a7150b"
   solver-name = "gps-cdcl"
   solver-version = 1
