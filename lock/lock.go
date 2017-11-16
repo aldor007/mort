@@ -19,7 +19,7 @@ type lockData struct {
 }
 
 func (l *lockData) AddWatcher() chan*response.Response {
-	w := make(chan *response.Response)
+	w := make(chan *response.Response, 1)
 	l.responseChans = append(l.responseChans, w)
 	return w
 }

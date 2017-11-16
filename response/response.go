@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strings"
 	"errors"
+	"github.com/djherbis/stream"
 )
 
 const (
@@ -17,18 +18,22 @@ const (
 // Response is helper struct for wrapping diffrent storage response
 type Response struct {
 	StatusCode    int
-	Stream        io.ReadCloser
-	body          []byte
 	Headers       http.Header
 	ContentLength int64
 	debug 		  bool
 	errorValue    error
 	errorWritten  bool
+
+	reader        io.ReadCloser
+	body          []byte
+	bodyReader     io.ReadCloser
+	resStream     *stream.Stream
+	parent        *Response
 }
 
 // New create response object with io.ReadCloser
 func New(statusCode int, body io.ReadCloser) *Response {
-	res := Response{StatusCode: statusCode, Stream: body}
+	res := Response{StatusCode: statusCode, reader: body}
 	res.Headers = make(http.Header)
 	res.ContentLength = -1
 	return &res
@@ -50,7 +55,7 @@ func NewString(statusCode int, body string) *Response {
 
 // NewString create response object from []byte
 func NewBuf(statusCode int, body []byte) *Response {
-	res := Response{StatusCode: statusCode, Stream: ioutil.NopCloser(bytes.NewReader(body))}
+	res := Response{StatusCode: statusCode, reader: ioutil.NopCloser(bytes.NewReader(body))}
 	res.ContentLength = int64(len(body))
 	res.body = body
 	res.Headers = make(http.Header)
@@ -84,42 +89,52 @@ func (r *Response) ReadBody() ([]byte, error) {
 		return r.body, nil
 	}
 
-	if r.Stream == nil {
+	if r.reader == nil {
 		return nil, errors.New("empty body")
 	}
 
-	var err error
-	r.body, err = ioutil.ReadAll(r.Stream)
+	body, err := ioutil.ReadAll(r.reader)
+	r.body = body
 	return r.body, err
 }
 
 // CopyBody read all content of response and returns it in []byte
 // but doesn't change response object body
 func (r *Response) CopyBody() ([]byte, error) {
-	if r.Stream == nil {
-		return nil, errors.New("empty body")
-	}
-
 	var buf []byte
 	if r.body != nil {
 		buf = r.body
 	} else {
-		buf, err := ioutil.ReadAll(r.Stream)
+		var err error
+		buf, err = ioutil.ReadAll(r.reader)
+
 		if err != nil {
 			return nil, err
 		}
-		r.Stream.Close()
+
+		r.reader.Close()
 		r.body = buf
-		r.Stream = ioutil.NopCloser(bytes.NewReader(buf))
+		r.reader = ioutil.NopCloser(bytes.NewReader(buf))
 	}
 
-	return buf, nil
+	return r.body, nil
 }
 
 // Close response reader
 func (r *Response) Close() {
-	if r.Stream != nil {
-		r.Stream.Close()
+	if r.reader != nil {
+		r.reader.Close()
+	}
+
+	if r.bodyReader != nil {
+		r.bodyReader.Close()
+	}
+
+	if r.resStream != nil && r.parent == nil {
+		go func() {
+			r.resStream.Close()
+			r.resStream.Remove()
+		}()
 	}
 }
 
@@ -152,14 +167,23 @@ func (r *Response) Send(w http.ResponseWriter) error {
 		w.Header().Set(headerName, headerValue[0])
 	}
 
+	var resStream io.Reader
+	if r.ContentLength != 0 {
+		resStream = r.Stream()
+		if resStream == nil {
+			r.StatusCode = 500
+		} else {
+			defer r.Close()
+		}
+
+	}
+
 	w.WriteHeader(r.StatusCode)
 
-	if r.ContentLength != 0 {
-
-		defer r.Close()
-		_, err := io.Copy(w, r.Stream)
-		return err
+	if resStream != nil {
+		io.Copy(w, resStream)
 	}
+
 
 	return nil
 }
@@ -189,13 +213,16 @@ func (r * Response) Copy() (*Response, error) {
 		c.Headers[k] = v
 	}
 
-	if r.Stream != nil {
+	if (r.body != nil) {
+		c.ContentLength = int64(len(r.body))
+		c.body = r.body
+	} else if r.reader != nil {
 		buf, err := r.CopyBody()
 		if err != nil {
 			return nil, err
 		}
 
-		c.Stream =  ioutil.NopCloser(bytes.NewReader(buf))
+		c.reader =  ioutil.NopCloser(bytes.NewReader(buf))
 		c.ContentLength = int64(len(buf))
 		c.body = buf
 
@@ -204,6 +231,61 @@ func (r * Response) Copy() (*Response, error) {
 	return &c, nil
 
 }
+
+// CopyWithStream should be used with not buffered response that contain stream
+// it try duplicate response stream for multiple readers
+func (r *Response) CopyWithStream() (*Response, error)  {
+	if r.body != nil {
+		return r.Copy()
+	}
+
+	c := Response{StatusCode:r.StatusCode, ContentLength: r.ContentLength, debug: r.debug, errorValue:r.errorValue}
+	c.Headers = make(http.Header)
+	for k, v := range r.Headers {
+		c.Headers[k] = v
+	}
+
+	if r.resStream != nil {
+		c.resStream = r.resStream
+		c.parent = r
+		return &c, nil
+	}
+
+	r.bodyReader = r.reader
+
+	r.resStream = stream.NewMemStream()
+	c.resStream = r.resStream
+	c.parent = r
+	r.reader = ioutil.NopCloser(io.TeeReader(r.bodyReader, r.resStream))
+
+
+	return &c, nil
+
+}
+
+// Stream return io.Reader interferace from correct response content
+func (r *Response) Stream() io.Reader {
+	if r.parent != nil && r.resStream != nil {
+		r, _  := r.resStream.NextReader()
+		return r
+	}
+
+	if r.reader != nil {
+		return r.reader
+	}
+
+	if r.body != nil {
+		return bytes.NewReader(r.body)
+	}
+
+	return nil
+}
+
+// IsBuffered check if response has access to original buffor
+func (r *Response) IsBuffered() bool {
+	return r.body != nil
+}
+
 
 func (r *Response) writeDebug() {
 	if !r.debug {
@@ -217,9 +299,11 @@ func (r *Response) writeDebug() {
 		if err != nil {
 			panic(err)
 		}
-		r.Stream = ioutil.NopCloser(bytes.NewReader(jsonBody))
+		r.reader = ioutil.NopCloser(bytes.NewReader(jsonBody))
 		r.body = jsonBody
 		r.ContentLength = int64(len(jsonBody))
 		r.SetContentType("application/json")
 	}
 }
+
+

@@ -81,7 +81,7 @@ func Head(obj *object.FileObject) *response.Response {
 }
 
 // Set create object on storage wit givent body and headers
-func Set(obj *object.FileObject, metaHeaders http.Header, contentLen int64, body io.ReadCloser) *response.Response {
+func Set(obj *object.FileObject, metaHeaders http.Header, contentLen int64, body io.Reader) *response.Response {
 	client, err := getClient(obj)
 	if err != nil {
 		log.Logs().Warnw("Storage/Set create client", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 503), zap.Error(err))

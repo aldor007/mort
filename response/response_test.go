@@ -1,6 +1,7 @@
 package response
 
 import (
+	"io"
 	"io/ioutil"
 	"bytes"
 	"testing"
@@ -121,11 +122,81 @@ func TestResponse_Send(t *testing.T) {
 	assert.Equal(t, result.Header.Get("Content-Type"), "text/html")
 }
 
+func TestResponse_Send_and_Copy(t *testing.T) {
+	buf := make([]byte, 1000)
+	res := New(200, ioutil.NopCloser(bytes.NewReader(buf)))
+	res.Headers.Set("X-Header", "1")
+	res.SetContentType("text/html")
+
+	resCpy, err := res.Copy()
+	assert.Nil(t, err)
+	recorder := httptest.NewRecorder()
+	res.Send(recorder)
+
+	result := recorder.Result()
+	assert.Equal(t, result.StatusCode, 200)
+	assert.Equal(t, result.Header.Get("X-Header"), "1")
+	assert.Equal(t, result.Header.Get("Content-Type"), "text/html")
+
+	assert.Equal(t, resCpy.StatusCode, 200)
+	assert.Equal(t, resCpy.Headers.Get("X-Header"), "1")
+	assert.Equal(t, resCpy.Headers.Get("Content-Type"), "text/html")
+	body, err := resCpy.ReadBody()
+
+	assert.Nil(t, err, "Shouldn't return error when reading body")
+	assert.Equal(t, len(body), 1000)
+}
+
 func BenchmarkNewBuf(b *testing.B) {
 	buf := make([]byte, 1000)
 	for i := 0; i < b.N; i++  {
 		res := NewBuf(200, buf)
 		res.Headers.Set("X-Header", "1")
 		res.SetContentType("text/html")
+	}
+}
+
+func BenchmarkNewCopy(b *testing.B) {
+	buf := make([]byte, 1024 * 1024 * 4)
+	for i := 0; i < b.N; i++  {
+		s := ioutil.NopCloser(bytes.NewReader(buf))
+		res := New(200, s)
+		res.Headers.Set("X-Header", "1")
+		res.SetContentType("text/html")
+		resCpy, _ := res.Copy()
+
+		body, err := resCpy.ReadBody()
+		if err != nil {
+			b.Fatalf("Errors %s", err)
+		}
+
+		if len(body) != len(buf) {
+			b.Fatalf("Inavlid body len %d != %d %d", len(body), len(buf), i)
+		}}
+}
+
+func BenchmarkNewCopyWithStream(b *testing.B) {
+	buf := make([]byte, 1024 * 1024 * 4)
+	wBuf := make([]byte, 0, 1024 * 1024 * 1)
+	for i := 0; i < b.N; i++  {
+		s := ioutil.NopCloser(bytes.NewReader(buf))
+		w := bytes.NewBuffer(wBuf)
+		res := New(200, s)
+		res.Headers.Set("X-Header", "1")
+		res.SetContentType("text/html")
+		resCpy, _:= res.CopyWithStream()
+		go func() {
+			io.Copy(w, res.Stream())
+			res.Close()
+		}()
+
+		body, err := ioutil.ReadAll(resCpy.Stream())
+		if err != nil {
+			b.Fatalf("Errors %s", err)
+		}
+
+		if len(body) != len(buf) {
+			b.Fatalf("Inavlid body len %d != %d %d", len(body), len(buf), i)
+		}
 	}
 }

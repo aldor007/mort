@@ -21,14 +21,20 @@ import (
 )
 
 const S3_LOCATION_STR = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><LocationConstraint xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">EU</LocationConstraint>"
+
+// timeout for collapse request
 var defaultLockTimeout = time.Second * 60;
+
+// default requst timeout
 var defaultProcessTimeout = time.Second * 70
 
-func NewRequestProcessor(max int, l lock.Lock) RequestProcessor{
+
+// NewRequestProcessor create instance of request processor
+func NewRequestProcessor(queueLen int, l lock.Lock, throttler_ throttler.Throttler) RequestProcessor{
 	rp := RequestProcessor{}
 	rp.collapse = l
-	rp.throttler = throttler.NewBucketThrottler(10)
-	rp.queue = make(chan requestMessage, max)
+	rp.throttler = throttler_
+	rp.queue = make(chan requestMessage, queueLen)
 
 	return rp
 }
@@ -45,7 +51,7 @@ type requestMessage struct {
 	request *http.Request
 }
 
-
+// Proecess handle incoming request and create response
 func (r *RequestProcessor) Process(req *http.Request, obj *object.FileObject)  *response.Response{
 	msg := requestMessage{}
 	msg.request = req
@@ -59,10 +65,12 @@ func (r *RequestProcessor) Process(req *http.Request, obj *object.FileObject)  *
 	timer := time.NewTimer(defaultProcessTimeout)
 	select {
 	case <-ctx.Done():
-		return response.NewString(504, "timeout")
+		log.Log().Warn("Process timeout", zap.String("obj.Key", obj.Key), zap.String("error", "Context.timeout"))
+		return response.NewNoContent(499)
 	case res := <-msg.responseChan:
 		return res
 	case <-timer.C:
+		log.Log().Warn("Process timeout", zap.String("obj.Key", obj.Key), zap.String("error", "timeout"))
 		return response.NewString(504, "timeout")
 	}
 
@@ -80,7 +88,7 @@ func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *r
 			return r.collapseGET(req, obj)
 		}
 
-		return r.hanldeGET(req, obj)
+		return r.handleGET(req, obj)
 	case "PUT":
 		return handlePUT(req, obj)
 
@@ -100,9 +108,8 @@ func (r *RequestProcessor) collapseGET(req *http.Request, obj *object.FileObject
 	resChan, locked := r.collapse.Lock(req.URL.Path)
 	if locked {
 		log.Log().Info("Lock acquired", zap.String("obj.Key", obj.Key))
-		res := r.hanldeGET(req, obj)
-		resCpy, _ := res.Copy()
-		go r.collapse.NotifyAndRelease(req.URL.Path, resCpy)
+		res := r.handleGET(req, obj)
+		go r.collapse.NotifyAndRelease(req.URL.Path, res)
 		return res
 	}
 
@@ -113,14 +120,16 @@ func (r *RequestProcessor) collapseGET(req *http.Request, obj *object.FileObject
 
 		select {
 		case <-ctx.Done():
+			defer close(resChan)
 			return response.NewNoContent(499)
 		case res, ok := <- resChan:
 			if ok {
 				return res
 			}
 
-			return r.hanldeGET(req, obj)
+			return r.handleGET(req, obj)
 		case <-timer.C:
+			defer close(resChan)
 			return response.NewString(504, "timeout")
 		default:
 
@@ -131,7 +140,7 @@ func (r *RequestProcessor) collapseGET(req *http.Request, obj *object.FileObject
 
 }
 
-func (r *RequestProcessor) hanldeGET(req *http.Request, obj *object.FileObject) *response.Response {
+func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) *response.Response {
 	if obj.Key == "" {
 		return handleS3Get(req, obj)
 	}
@@ -283,8 +292,8 @@ func (r *RequestProcessor) processImage(ctx context.Context, obj *object.FileObj
 	resCpy, err := res.Copy()
 	if err == nil {
 		go func(objS object.FileObject, resS *response.Response) {
-			storage.Set(obj, resS.Headers, resS.ContentLength, resS.Stream)
-
+			storage.Set(obj, resS.Headers, resS.ContentLength, resS.Stream())
+			resS.Close()
 		}(*obj, resCpy)
 	} else {
 		log.Log().Warn("Processor/processImage", zap.String("obj.Key", obj.Key), zap.Error(err))
