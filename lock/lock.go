@@ -1,27 +1,37 @@
 package lock
 
-import "mort/response"
+import (
+	"mort/response"
+)
 
 // Lock is responding for collapsing request for same object
 
 type Lock interface {
 	// Lock try  get a lock for given key
-	Lock(key string) (resposeChan chan *response.Response, acquired bool)
+	Lock(key string) (observer LockResult, acquired bool)
 	// Release remove lock for given key
 	Release(key string)
 	// NotifyAndRelease remove lock for given key and notify all clients waiting for result
 	NotifyAndRelease(key string, res *response.Response)
 }
 
-type lockData struct {
-	Key           string
-	responseChans []chan *response.Response
+// LockResult contain struct
+type LockResult struct {
+	ResponseChan chan *response.Response // channel on which you get response
+	Cancel       chan bool               // channel for notify about cancel of waiting
 }
 
-func (l *lockData) AddWatcher() chan *response.Response {
-	w := make(chan *response.Response, 1)
-	l.responseChans = append(l.responseChans, w)
-	return w
+type lockData struct {
+	Key         string
+	notifyQueue []LockResult
+}
+
+func (l *lockData) AddWatcher() LockResult {
+	d := LockResult{}
+	d.ResponseChan = make(chan *response.Response)
+	d.Cancel = make(chan bool)
+	l.notifyQueue = append(l.notifyQueue, d)
+	return d
 }
 
 func NewNopLock() *NopLock {
@@ -32,8 +42,8 @@ func NewNopLock() *NopLock {
 type NopLock struct {
 }
 
-func (l *NopLock) Lock(_ string) (chan *response.Response, bool) {
-	return nil, true
+func (l *NopLock) Lock(_ string) (LockResult, bool) {
+	return LockResult{}, true
 }
 
 func (l *NopLock) Release(_ string) {

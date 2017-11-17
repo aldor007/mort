@@ -101,7 +101,7 @@ func handlePUT(req *http.Request, obj *object.FileObject) *response.Response {
 
 func (r *RequestProcessor) collapseGET(req *http.Request, obj *object.FileObject) *response.Response {
 	ctx := req.Context()
-	resChan, locked := r.collapse.Lock(req.URL.Path)
+	lockResult, locked := r.collapse.Lock(req.URL.Path)
 	if locked {
 		log.Log().Info("Lock acquired", zap.String("obj.Key", obj.Key))
 		res := r.handleGET(req, obj)
@@ -116,16 +116,16 @@ func (r *RequestProcessor) collapseGET(req *http.Request, obj *object.FileObject
 
 		select {
 		case <-ctx.Done():
-			defer close(resChan)
+			lockResult.Cancel <- true
 			return response.NewNoContent(499)
-		case res, ok := <-resChan:
+		case res, ok := <-lockResult.ResponseChan:
 			if ok {
 				return res
 			}
 
 			return r.handleGET(req, obj)
 		case <-timer.C:
-			defer close(resChan)
+			lockResult.Cancel <- true
 			return response.NewString(504, "timeout")
 		default:
 

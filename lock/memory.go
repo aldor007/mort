@@ -21,17 +21,23 @@ func NewMemoryLock() *MemoryLock {
 // NotifyAndRelease tries notify all waiting goroutines about response
 func (m *MemoryLock) NotifyAndRelease(key string, res *response.Response) {
 	m.lock.Lock()
-	defer m.lock.Unlock()
 	result, ok := m.internal[key]
 	if !ok {
+		return
+	}
+
+	delete(m.internal, key)
+	m.lock.Unlock()
+
+	if len(result.notifyQueue) == 0 {
 		return
 	}
 
 	if res.IsBuffered() {
 		resCopy, err := res.Copy()
 		if err != nil {
-			for _, c := range result.responseChans {
-				close(c)
+			for _, q := range result.notifyQueue {
+				close(q.ResponseChan)
 			}
 
 		} else {
@@ -41,45 +47,51 @@ func (m *MemoryLock) NotifyAndRelease(key string, res *response.Response) {
 				buf = []byte{}
 			}
 
-			for _, c := range result.responseChans {
-				if c != nil {
-					resCpy := response.NewBuf(res.StatusCode, buf)
+			for _, q := range result.notifyQueue {
+				select {
+				case <-q.Cancel:
+					close(q.ResponseChan)
+				default:
+					resCpy := response.NewBuf(resCopy.StatusCode, buf)
 					resCpy.CopyHeadersFrom(resCopy)
-					c <- resCpy
-					close(c)
+					q.ResponseChan <- resCpy
+					close(q.ResponseChan)
+
 				}
 			}
 		}
 	} else {
 		resCopy, _ := res.CopyWithStream()
-		for _, c := range result.responseChans {
-			if c != nil {
-				c <- resCopy
-				resCopy, _ = resCopy.CopyWithStream()
-				close(c)
+		for _, q := range result.notifyQueue {
+			select {
+			case <-q.Cancel:
+				close(q.ResponseChan)
+			default:
+				resCpy, _ := resCopy.CopyWithStream()
+				q.ResponseChan <- resCpy
+				close(q.ResponseChan)
 			}
 		}
 
 	}
 
-	delete(m.internal, key)
 }
 
 // Lock create unique entry in memory map
-func (m *MemoryLock) Lock(key string) (chan *response.Response, bool) {
+func (m *MemoryLock) Lock(key string) (LockResult, bool) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	result, ok := m.internal[key]
 	if ok {
-		c := result.AddWatcher()
+		r := result.AddWatcher()
 		m.internal[key] = result
-		return c, !ok
+		return r, !ok
 	}
 
 	data := lockData{}
-	data.responseChans = make([]chan *response.Response, 0, 6)
+	data.notifyQueue = make([]LockResult, 0, 5)
 	m.internal[key] = data
-	return nil, !ok
+	return LockResult{}, !ok
 }
 
 // Release remove entry from memory map
@@ -89,8 +101,8 @@ func (m *MemoryLock) Release(key string) {
 	m.lock.RUnlock()
 	if ok {
 		m.lock.Lock()
-		for _, c := range res.responseChans {
-			close(c)
+		for _, q := range res.notifyQueue {
+			close(q.ResponseChan)
 		}
 		defer m.lock.Unlock()
 		delete(m.internal, key)

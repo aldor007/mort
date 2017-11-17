@@ -173,7 +173,7 @@ cd $GOPATH/src/github.com/aldor007/mort
 ```bash
 dep ensure
 ```
-Run end to end tests:
+Run unit tests:
 ```bash
 make unit
 ```

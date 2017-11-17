@@ -1,8 +1,8 @@
 package middleware
 
 import (
-	"net/http"
 	"encoding/xml"
+	"net/http"
 	"regexp"
 	"strings"
 	"time"
@@ -40,7 +40,7 @@ type s3Auth struct {
 }
 
 // NewS3AuthDiddleware returns S3 compatible authorization handler
-// Correctly it can handle AWS v2 (S3 mode) and AWS v4 (only header mode without streaming)
+// it can handle AWS v2 (S3 mode) and AWS v4 (only header mode without streaming)
 func NewS3AuthMiddleware(mortConfig *config.Config) *s3Auth {
 	return &s3Auth{mortConfig: mortConfig}
 }

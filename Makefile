@@ -21,4 +21,4 @@ docker-push:
 	docker push aldor007/mort:latest
 
 run-server:
-	go run cmd/mort.go
+	go run cmd/mort.go 2> mort.log
