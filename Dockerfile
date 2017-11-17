@@ -1,9 +1,9 @@
 # Start from a Debian image with the latest version of Go installed
 # and a workspace (GOPATH) configured at /go.
-FROM golang:1.9.1-stretch
+FROM golang:1.9.2-stretch
 
-ENV LIBVIPS_VERSION 8.5.6
-ENV DEP_VERSION v0.3.1
+ENV LIBVIPS_VERSION 8.5.9
+ENV DEP_VERSION v0.3.2
 
 # Installs libvips + required libraries
 RUN \

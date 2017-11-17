@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi"
+	"go.uber.org/zap"
 
 	"mort"
 	"mort/config"
@@ -16,8 +17,6 @@ import (
 	"mort/object"
 	"mort/response"
 	"mort/throttler"
-
-	"go.uber.org/zap"
 )
 
 const (
@@ -38,6 +37,7 @@ func main() {
 
 	fmt.Printf(BANNER, ("v" + Version))
 	fmt.Printf("Config file %s listen addr %s\n", *configPath, *listenAddr)
+
 	logger, _ := zap.NewProduction()
 	//logger, _ := zap.NewDevelopment()
 	zap.ReplaceGlobals(logger)
@@ -90,4 +90,5 @@ func main() {
 	}
 
 	s.ListenAndServe()
+
 }

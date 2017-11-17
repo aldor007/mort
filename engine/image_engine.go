@@ -14,6 +14,7 @@ import (
 	"mort/object"
 	"mort/response"
 	"mort/transforms"
+	"runtime"
 )
 
 // ImageEngine is main struct that is responding for image processing
@@ -36,7 +37,7 @@ func (self *ImageEngine) Process(obj *object.FileObject, trans []transforms.Tran
 	var transHash uint64
 	for _, tran := range trans {
 		image := bimg.NewImage(buf)
-		meta, err := bimg.Metadata(buf)
+		meta, err := image.Metadata()
 		if err != nil {
 			return response.NewError(500, err), err
 		}
@@ -52,6 +53,8 @@ func (self *ImageEngine) Process(obj *object.FileObject, trans []transforms.Tran
 		}
 		transHash = transHash + tran.Hash().Sum64()
 	}
+
+	runtime.KeepAlive(buf)
 
 	transHashB := make([]byte, 8)
 	binary.LittleEndian.PutUint64(transHashB, transHash)

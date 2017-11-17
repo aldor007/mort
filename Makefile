@@ -12,7 +12,7 @@ format:
 	@(go fmt ./...)
 	@(go vet ./...)
 
-test: unit integrations
+tests: unit integrations
 
 docker-build:
 	docker build -t aldo007/mort -f Dockerfile .
@@ -22,3 +22,8 @@ docker-push:
 
 run-server:
 	go run cmd/mort.go 2> mort.log
+
+clean-prof:
+	find . -name ".test" -depth -exec rm {} \;
+	find . -name ".cpu" -depth -exec rm {} \;
+	find . -name ".mem" -depth -exec rm {} \;

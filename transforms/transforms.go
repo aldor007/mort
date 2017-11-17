@@ -288,7 +288,22 @@ func (t *Transforms) BimgOptions(imageInfo ImageInfo) (bimg.Options, error) {
 			return b, err
 		}
 
-		top, left := t.watermark.calculatePostion(imageInfo.width, imageInfo.height)
+		// calculate correct image dimensions
+		width := imageInfo.width
+		height := imageInfo.height
+
+		if t.width != 0 && t.height != 0 {
+			width = t.width
+			height = t.height
+		} else if t.width != 0 {
+			width = t.width
+			height = t.width * height / imageInfo.width
+		} else if t.height != 0 {
+			height = t.height
+			width = t.height * width / imageInfo.height
+		}
+
+		top, left := t.watermark.calculatePostion(width, height)
 
 		b.WatermarkImage = bimg.WatermarkImage{
 			Left:    left,
