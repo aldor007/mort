@@ -179,7 +179,7 @@ docker pull aldor007/mort
 Create Dockerfile
 ```
 FROM aldor007/mort:latest
-ADD config.yml /go/configuration/config.yml # add you configu
+ADD config.yml /go/configuration/config.yml # add yours config
 ```
 
 Run docker 
