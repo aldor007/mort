@@ -28,8 +28,8 @@ func NewImageEngine(res *response.Response) *ImageEngine {
 }
 
 // Process main ImageEngine function that create new image (stored in response object)
-func (self *ImageEngine) Process(obj *object.FileObject, trans []transforms.Transforms) (*response.Response, error) {
-	buf, err := self.parent.ReadBody()
+func (c *ImageEngine) Process(obj *object.FileObject, trans []transforms.Transforms) (*response.Response, error) {
+	buf, err := c.parent.ReadBody()
 	if err != nil {
 		return response.NewError(500, err), err
 	}

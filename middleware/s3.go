@@ -13,8 +13,11 @@ import (
 	"github.com/aldor007/go-aws-auth"
 )
 
-var AutHeaderRegexpv4 = regexp.MustCompile("^(:?[A-Za-z0-9-]+) Credential=(:?.+),\\s*SignedHeaders=(:?[a-zA-Z0-9;-]+),\\s*Signature=(:?[a-zA-Z0-9]+)$")
-var AuthHeaderRegexpv2 = regexp.MustCompile("^AWS ([A-Za-z0-9-]+):(.+)$")
+// authHeaderRegexpv4 reugular expression for AWS Auth v4 header mode
+var autHeaderRegexpv4 = regexp.MustCompile("^(:?[A-Za-z0-9-]+) Credential=(:?.+),\\s*SignedHeaders=(:?[a-zA-Z0-9;-]+),\\s*Signature=(:?[a-zA-Z0-9]+)$")
+
+// authHeaderRegexpv2 regular expression for Aws Auth v2 header mode
+var authHeaderRegexpv2 = regexp.MustCompile("^AWS ([A-Za-z0-9-]+):(.+)$")
 
 func isAuthRequired(method string, auth string, path string) bool {
 	switch method {
@@ -35,17 +38,21 @@ func isAuthRequired(method string, auth string, path string) bool {
 	return true
 }
 
-type s3Auth struct {
-	mortConfig *config.Config
+// S3Auth middleware for performing validation of signed requests
+type S3Auth struct {
+	mortConfig *config.Config // config for buckets
 }
 
-// NewS3AuthDiddleware returns S3 compatible authorization handler
+// NewS3AuthMiddleware returns S3 compatible authorization handler
 // it can handle AWS v2 (S3 mode) and AWS v4 (only header mode without streaming)
-func NewS3AuthMiddleware(mortConfig *config.Config) *s3Auth {
-	return &s3Auth{mortConfig: mortConfig}
+func NewS3AuthMiddleware(mortConfig *config.Config) *S3Auth {
+	return &S3Auth{mortConfig: mortConfig}
 }
 
-func (s *s3Auth) Handler(next http.Handler) http.Handler {
+// Handler main method of S3AuthMiddleware it check if request should be signed. If so it create copy of request
+// and calculate signature and compare result with user request if signature is correct request is passed to next handler
+// otherwise it return 403
+func (s *S3Auth) Handler(next http.Handler) http.Handler {
 	mortConfig := s.mortConfig
 	fn := func(resWriter http.ResponseWriter, req *http.Request) {
 		path := req.URL.Path
@@ -71,7 +78,7 @@ func (s *s3Auth) Handler(next http.Handler) http.Handler {
 		var credential awsauth.Credentials
 		var authAlg string
 
-		matches := AutHeaderRegexpv4.FindStringSubmatch(auth)
+		matches := autHeaderRegexpv4.FindStringSubmatch(auth)
 		if len(matches) == 5 {
 			authAlg = "v4"
 			alg := matches[1]
@@ -86,7 +93,7 @@ func (s *s3Auth) Handler(next http.Handler) http.Handler {
 			signedHeaders = strings.Split(matches[3], ";")
 		}
 
-		matches = AuthHeaderRegexpv2.FindStringSubmatch(auth)
+		matches = authHeaderRegexpv2.FindStringSubmatch(auth)
 		if len(matches) == 3 {
 			authAlg = "s3"
 			accessKey = matches[1]
@@ -172,8 +179,8 @@ func (s *s3Auth) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
-func (s *s3Auth) listAllMyBuckets(resWriter http.ResponseWriter, accessKey string) {
-	type bucketXml struct {
+func (s *S3Auth) listAllMyBuckets(resWriter http.ResponseWriter, accessKey string) {
+	type bucketXML struct {
 		XMLName      xml.Name `xml:"Bucket"`
 		Name         string   `xml:"Name"`
 		CreationDate string   `xml:"CreationDate"`
@@ -185,7 +192,7 @@ func (s *s3Auth) listAllMyBuckets(resWriter http.ResponseWriter, accessKey strin
 			ID          string `xml:"ID"`
 			DisplayName string `xml:"DisplayName"`
 		} `xml:"owner"`
-		Buckets []bucketXml `xml:"Buckets>Bucket"`
+		Buckets []bucketXML `xml:"Buckets>Bucket"`
 	}
 
 	buckets := s.mortConfig.BucketsByAccessKey(accessKey)
@@ -194,7 +201,7 @@ func (s *s3Auth) listAllMyBuckets(resWriter http.ResponseWriter, accessKey strin
 	listAllBucketsXML.Owner.ID = accessKey
 
 	for _, bucket := range buckets {
-		b := bucketXml{}
+		b := bucketXML{}
 		b.Name = bucket.Name
 		b.CreationDate = time.Now().Format(time.RFC3339)
 		listAllBucketsXML.Buckets = append(listAllBucketsXML.Buckets, b)

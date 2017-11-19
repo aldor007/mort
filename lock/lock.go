@@ -5,7 +5,6 @@ import (
 )
 
 // Lock is responding for collapsing request for same object
-
 type Lock interface {
 	// Lock try  get a lock for given key
 	Lock(key string) (observer LockResult, acquired bool)
@@ -26,6 +25,7 @@ type lockData struct {
 	notifyQueue []LockResult
 }
 
+// AddWatcher add next request waiting for lock to expire or return result
 func (l *lockData) AddWatcher() LockResult {
 	d := LockResult{}
 	d.ResponseChan = make(chan *response.Response)
@@ -34,6 +34,7 @@ func (l *lockData) AddWatcher() LockResult {
 	return d
 }
 
+// NewNopLock create lock that do nothing
 func NewNopLock() *NopLock {
 	return &NopLock{}
 }
@@ -42,14 +43,17 @@ func NewNopLock() *NopLock {
 type NopLock struct {
 }
 
+// Lock always return that lock was acquired
 func (l *NopLock) Lock(_ string) (LockResult, bool) {
 	return LockResult{}, true
 }
 
+// Release do nothing
 func (l *NopLock) Release(_ string) {
 
 }
 
+// NotifyAndRelease do nothing
 func (l *NopLock) NotifyAndRelease(_ string, _ *response.Response) {
 
 }

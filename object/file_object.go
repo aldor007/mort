@@ -5,10 +5,10 @@ import (
 	"path"
 	"strings"
 
-	"go.uber.org/zap"
 	"github.com/aldor007/mort/config"
 	"github.com/aldor007/mort/log"
 	"github.com/aldor007/mort/transforms"
+	"go.uber.org/zap"
 	"strconv"
 )
 
@@ -104,35 +104,35 @@ func NewFileObject(uri string, mortConfig *config.Config) (*FileObject, error) {
 	return &obj, err
 }
 
-func (self *FileObject) decode(mortConfig *config.Config) error {
-	elements := strings.SplitN(self.Uri, "/", 3)
+func (o *FileObject) decode(mortConfig *config.Config) error {
+	elements := strings.SplitN(o.Uri, "/", 3)
 
-	self.Bucket = elements[1]
+	o.Bucket = elements[1]
 	if len(elements) > 2 {
-		self.Key = "/" + elements[2]
+		o.Key = "/" + elements[2]
 	}
 
-	if bucket, ok := mortConfig.Buckets[self.Bucket]; ok {
-		err := self.decodeKey(bucket, mortConfig)
-		if self.Transforms.NotEmpty {
-			self.Storage = bucket.Storages.Transform()
+	if bucket, ok := mortConfig.Buckets[o.Bucket]; ok {
+		err := o.decodeKey(bucket, mortConfig)
+		if o.Transforms.NotEmpty {
+			o.Storage = bucket.Storages.Transform()
 		} else {
-			self.Storage = bucket.Storages.Basic()
+			o.Storage = bucket.Storages.Basic()
 		}
 		return err
 
 	}
 
-	return errors.New("Unknown bucket")
+	return errors.New("unknown bucket")
 }
 
-func (self *FileObject) decodeKey(bucket config.Bucket, mortConfig *config.Config) error {
+func (o *FileObject) decodeKey(bucket config.Bucket, mortConfig *config.Config) error {
 	if bucket.Transform == nil {
 		return nil
 	}
 
 	trans := bucket.Transform
-	matches := trans.PathRegexp.FindStringSubmatch(self.Key)
+	matches := trans.PathRegexp.FindStringSubmatch(o.Key)
 	if matches == nil {
 		return nil
 	}
@@ -148,13 +148,13 @@ func (self *FileObject) decodeKey(bucket config.Bucket, mortConfig *config.Confi
 	parent := subMatchMap["parent"]         // "/" + string(matches[trans.Order.Parent+1])
 
 	if _, ok := bucket.Transform.Presets[presetName]; !ok {
-		log.Log().Warn("FileObject decodeKey unknown preset", zap.String("obj.Key", self.Key), zap.String("parent", parent), zap.String("presetName", presetName),
+		log.Log().Warn("FileObject decodeKey unknown preset", zap.String("obj.Key", o.Key), zap.String("parent", parent), zap.String("presetName", presetName),
 			zap.String("regexp", trans.Path))
-		return errors.New("Unknown preset " + presetName)
+		return errors.New("unknown preset " + presetName)
 	}
 
 	var err error
-	self.Transforms, err = presetToTransform(bucket.Transform.Presets[presetName])
+	o.Transforms, err = presetToTransform(bucket.Transform.Presets[presetName])
 	if err != nil {
 		return err
 	}
@@ -165,20 +165,20 @@ func (self *FileObject) decodeKey(bucket config.Bucket, mortConfig *config.Confi
 	parentObj.Storage = bucket.Storages.Get(bucket.Transform.ParentStorage)
 
 	if parentObj != nil && bucket.Transform.ResultKey == "hash" {
-		self.Key = "/" + strings.Join([]string{strconv.FormatUint(uint64(self.Transforms.Hash().Sum64()), 16), subMatchMap["parent"]}, "-")
+		o.Key = "/" + strings.Join([]string{strconv.FormatUint(uint64(o.Transforms.Hash().Sum64()), 16), subMatchMap["parent"]}, "-")
 	}
 
-	self.Parent = parentObj
-	self.CheckParent = trans.CheckParent
+	o.Parent = parentObj
+	o.CheckParent = trans.CheckParent
 	return err
 }
 
 // HasParent inform if object has parent
-func (self *FileObject) HasParent() bool {
-	return self.Parent != nil
+func (o *FileObject) HasParent() bool {
+	return o.Parent != nil
 }
 
 // HasTransform inform if object has transform
-func (self *FileObject) HasTransform() bool {
-	return self.Transforms.NotEmpty == true
+func (o *FileObject) HasTransform() bool {
+	return o.Transforms.NotEmpty == true
 }

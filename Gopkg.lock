@@ -10,8 +10,8 @@
 [[projects]]
   branch = "develop"
   name = "github.com/aldor007/stow"
-  packages = [".","local","local-meta","s3"]
-  revision = "cdf14051f5ac67332f8c52dd6ae68476d617546b"
+  packages = [".","http","local","local-meta","noop","s3"]
+  revision = "a4b5cb5adf642bbdaea41f7102d43052ad5efcac"
 
 [[projects]]
   name = "github.com/aws/aws-sdk-go"
@@ -135,6 +135,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "41a3780ae0551d16025bc9fdfe605c59f751edc5151bd343801bd368445bdc73"
+  inputs-digest = "1e159efa2fcc01a3724db01aa9c36cb8a0e406958d4a3993f2ca13deea2e164f"
   solver-name = "gps-cdcl"
   solver-version = 1

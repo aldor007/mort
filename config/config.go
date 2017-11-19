@@ -14,7 +14,7 @@ import (
 
 // Config contains configuration for buckets etc
 //
-// Config should be singletn
+// Config should be used like singleton
 type Config struct {
 	Buckets         map[string]Bucket `yaml:"buckets"`
 	Headers         []HeaderYaml      `yaml:"headers"`
@@ -23,7 +23,7 @@ type Config struct {
 
 var instance *Config
 var once sync.Once
-var storageKinds []string = []string{"local", "local-meta", "s3", "http", "noop"}
+var storageKinds = []string{"local", "local-meta", "s3", "http", "noop"}
 
 // GetInstance return single instance of Config object
 func GetInstance() *Config {
@@ -34,29 +34,29 @@ func GetInstance() *Config {
 }
 
 // Load reads config data from file
-// How configuration file should be formated see README.md
-func (self *Config) Load(filePath string) error {
+// How configuration file should be formatted see README.md
+func (c *Config) Load(filePath string) error {
 	data, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		panic(err)
 	}
 
-	return self.load(data)
+	return c.load(data)
 }
 
 // LoadFromString parse configuration form string
-func (self *Config) LoadFromString(data string) error {
-	return self.load([]byte(data))
+func (c *Config) LoadFromString(data string) error {
+	return c.load([]byte(data))
 }
 
-func (self *Config) load(data []byte) error {
-	errYaml := yaml.Unmarshal(data, self)
+func (c *Config) load(data []byte) error {
+	errYaml := yaml.Unmarshal(data, c)
 	if errYaml != nil {
 		panic(errYaml)
 	}
 
-	self.accessKeyBucket = make(map[string][]string)
-	for name, bucket := range self.Buckets {
+	c.accessKeyBucket = make(map[string][]string)
+	for name, bucket := range c.Buckets {
 		if bucket.Transform != nil {
 			if bucket.Transform.Path != "" {
 				bucket.Transform.PathRegexp = regexp.MustCompile(bucket.Transform.Path)
@@ -67,24 +67,25 @@ func (self *Config) load(data []byte) error {
 			}
 		}
 
-		for sName, storage := range self.Buckets[name].Storages {
+		for sName, storage := range c.Buckets[name].Storages {
 			storage.Hash = name + sName + storage.Kind
 			bucket.Storages[sName] = storage
 		}
 
 		bucket.Name = name
-		self.Buckets[name] = bucket
+		c.Buckets[name] = bucket
 		for _, key := range bucket.Keys {
-			self.accessKeyBucket[key.AccessKey] = append(self.accessKeyBucket[key.AccessKey], name)
+			c.accessKeyBucket[key.AccessKey] = append(c.accessKeyBucket[key.AccessKey], name)
 		}
 	}
 
-	return self.validate()
+	return c.validate()
 }
 
+// BucketsByAccessKey return list of buckets that have given accessKey
 func (c *Config) BucketsByAccessKey(accessKey string) []Bucket {
 	list := c.accessKeyBucket[accessKey]
-	var buckets []Bucket = make([]Bucket, len(list))
+	buckets := make([]Bucket, len(list))
 	for i, name := range list {
 		buckets[i] = c.Buckets[name]
 	}

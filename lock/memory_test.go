@@ -2,8 +2,8 @@ package lock
 
 import (
 	"errors"
-	"github.com/stretchr/testify/assert"
 	"github.com/aldor007/mort/response"
+	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
 )

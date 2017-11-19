@@ -5,9 +5,12 @@ import "go.uber.org/zap"
 // logger is single singleton instance of logger
 // default logger do nothing
 var logger *zap.Logger = zap.NewNop()
-var suggaredLogger *zap.SugaredLogger = logger.Sugar()
 
-// RetiserLogger register new logger as main logger for service
+// sugaredLogger extend version on zap.Logger that allow
+// using sting format functions
+var sugaredLogger *zap.SugaredLogger = logger.Sugar()
+
+// RegisterLogger new logger as main logger for service
 // RegisterLogger is NOT THREAD SAFE
 func RegisterLogger(l *zap.Logger) {
 	logger = l
@@ -18,7 +21,7 @@ func Log() *zap.Logger {
 	return logger
 }
 
-// Logs return suggared zap logger
+// Logs return sugared zap logger
 func Logs() *zap.SugaredLogger {
-	return suggaredLogger
+	return sugaredLogger
 }

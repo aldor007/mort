@@ -100,7 +100,7 @@ func NewImageInfo(metadata bimg.ImageMetadata, format string) ImageInfo {
 	return ImageInfo{width: metadata.Size.Width, height: metadata.Size.Height, format: format}
 }
 
-// Transform struct hold information about what operations should be performed on image
+// Transforms struct hold information about what operations should be performed on image
 type Transforms struct {
 	height        int
 	width         int
@@ -261,7 +261,7 @@ func imageFormat(format string) (bimg.ImageType, error) {
 	}
 }
 
-// BigmOptions return complete options for bimg lib
+// BimgOptions return complete options for bimg lib
 func (t *Transforms) BimgOptions(imageInfo ImageInfo) (bimg.Options, error) {
 	b := bimg.Options{
 		Width:         t.width,

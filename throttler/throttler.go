@@ -23,10 +23,12 @@ func NewNopThrottler(_ ...interface{}) *NopThrottler {
 	return &NopThrottler{}
 }
 
+// Take return always true
 func (*NopThrottler) Take(_ context.Context) bool {
 	return true
 }
 
+// Release do nothing
 func (*NopThrottler) Release() {
 
 }

@@ -9,9 +9,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/aldor007/mort/config"
 	"github.com/aldor007/mort/object"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestMain(m *testing.M) {

@@ -9,7 +9,7 @@ echo "test" > /tmp/mort-tests/remote/file
 MORT_PORT=$(( ( RANDOM % 1024 )  + 6012 ))
 export MORT_PORT
 
-go run cmd/mort.go -listen ":${MORT_PORT}" -config tests-int/config.yml > mort.logs &
+go run cmd/mort/mort.go -listen ":${MORT_PORT}" -config tests-int/config.yml > mort.logs &
 pid=$!
 sleep 10
 

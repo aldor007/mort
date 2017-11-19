@@ -1,12 +1,12 @@
-package mort
+package processor
 
 import (
 	"bytes"
-	"io/ioutil"
 	"github.com/aldor007/mort/config"
 	"github.com/aldor007/mort/lock"
 	"github.com/aldor007/mort/object"
 	"github.com/aldor007/mort/throttler"
+	"io/ioutil"
 	"net/http"
 	"testing"
 )

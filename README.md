@@ -1,6 +1,7 @@
 # Mort [![Build Status](https://travis-ci.org/aldor007/mort.png)](https://travis-ci.org/aldor007/mort) [![Docker](https://img.shields.io/badge/docker-aldor007/mort-blue.svg)](https://hub.docker.com/r/aldor007/mort/) [![Docker Registry](https://img.shields.io/docker/pulls/aldor007/mort.svg)](https://hub.docker.com/r/aldor007/mort/) [![Go Report Card](http://goreportcard.com/badge/aldor007/mort)](http://goreportcard.com/report/aldor007/mort) 
+<img src="https://mort.mkaciuba.com/demo/medium/gopher.png" width="500px"/>
 
-S3 compatible image processing server written in Go.
+S3 compatible image processing server written in Go. Still in active development.
 
 # Features
 
@@ -78,7 +79,7 @@ S3 compatible image processing server written in Go.
                  </ul>
             </td>
             <td>
-                <a href="https://mort.mkaciuba.com/watermark/watermark/img.jpg" target="_blank">
+                <a href="https://mort.mkaciuba.com/demo/watermark/img.jpg" target="_blank">
                   <img src="https://mort.mkaciuba.com/demo/watermark/img.jpg" width="1300px" />
                 </a>
             </td>
@@ -93,7 +94,7 @@ Mort can be used direct from Internet and behind any proxy.
 ## Install
 
 ```bash
-go get github.com/aldor007/mort/cmd/mort.go
+go get github.com/aldor007/mort/cmd/
 ```
 
 
@@ -213,11 +214,7 @@ make integrations
 
 ## Contributing
 
-Please read [CONTRIBUTING.md](https://github.com/aldor007/mort/CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us.
-
-## Versioning
-
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/aldor007/mort/tags). 
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us.
 
 ## License
 

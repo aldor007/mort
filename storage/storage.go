@@ -3,21 +3,22 @@ package storage
 import (
 	"encoding/json"
 	"github.com/aldor007/stow"
+	httpStorage "github.com/aldor007/stow/http"
 	fileStorage "github.com/aldor007/stow/local"
 	metaStorage "github.com/aldor007/stow/local-meta"
+	// import blank to register noop adapter in stow.Register
+	_ "github.com/aldor007/stow/noop"
 	s3Storage "github.com/aldor007/stow/s3"
 	"io"
 	"mime"
-	httpStorage "github.com/aldor007/mort/storage/http"
-	_ "github.com/aldor007/mort/storage/noop"
 	"net/http"
 	"path"
 
 	"encoding/xml"
-	"go.uber.org/zap"
 	"github.com/aldor007/mort/log"
 	"github.com/aldor007/mort/object"
 	"github.com/aldor007/mort/response"
+	"go.uber.org/zap"
 	"strings"
 	"time"
 )
@@ -117,7 +118,7 @@ func List(obj *object.FileObject, maxKeys int, delimeter string, prefix string, 
 		return response.NewError(500, err)
 	}
 
-	type contentXml struct {
+	type contentXML struct {
 		Key          string    `xml:"Key"`
 		StorageClass string    `xml:"StorageClass"`
 		LastModified time.Time `xml:"LastModified"`
@@ -125,7 +126,7 @@ func List(obj *object.FileObject, maxKeys int, delimeter string, prefix string, 
 		Size         int64     `xml:"Size"`
 	}
 
-	type commonPrefixXml struct {
+	type commonPrefixXML struct {
 		Prefix string `xml:"Prefix"`
 	}
 
@@ -136,8 +137,8 @@ func List(obj *object.FileObject, maxKeys int, delimeter string, prefix string, 
 		Marker         string            `xml:"Marker"`
 		MaxKeys        int               `xml:"MaxKeys"`
 		IsTruncated    bool              `xml:"IsTruncated"`
-		Contents       []contentXml      `xml:"Contents"`
-		CommonPrefixes []commonPrefixXml `xml:"CommonPrefixes"`
+		Contents       []contentXML      `xml:"Contents"`
+		CommonPrefixes []commonPrefixXML `xml:"CommonPrefixes"`
 	}
 
 	result := listBucketResult{Name: obj.Bucket, Prefix: prefix, Marker: resultMarker, MaxKeys: maxKeys, IsTruncated: false}
@@ -176,21 +177,21 @@ func List(obj *object.FileObject, maxKeys int, delimeter string, prefix string, 
 		}
 
 		if key != "" {
-			result.Contents = append(result.Contents, contentXml{Key: key, LastModified: lastMod, Size: size, ETag: etag, StorageClass: "STANDARD"})
+			result.Contents = append(result.Contents, contentXML{Key: key, LastModified: lastMod, Size: size, ETag: etag, StorageClass: "STANDARD"})
 		}
 
 		if commonPrefix != "" {
-			result.CommonPrefixes = append(result.CommonPrefixes, commonPrefixXml{commonPrefix + "/"})
+			result.CommonPrefixes = append(result.CommonPrefixes, commonPrefixXML{commonPrefix + "/"})
 		}
 
 	}
 
-	resultXml, err := xml.Marshal(result)
+	resultXML, err := xml.Marshal(result)
 	if err != nil {
 		return response.NewError(500, err)
 	}
 
-	res := response.NewBuf(200, resultXml)
+	res := response.NewBuf(200, resultXML)
 	res.SetContentType("application/xml")
 	return res
 }
@@ -206,10 +207,7 @@ func getClient(obj *object.FileObject) (stow.Container, error) {
 
 	switch storageCfg.Kind {
 	case "local":
-		allowMetadata := ""
-		if storageCfg.AllowMetadata {
-			allowMetadata = "true"
-		}
+		allowMetadata := "true"
 		config = stow.ConfigMap{
 			fileStorage.ConfigKeyPath:      storageCfg.RootPath,
 			fileStorage.ConfigKeyMetaAllow: allowMetadata,

@@ -1,4 +1,5 @@
 # Improvements
+* Deb package
 * Check fasthttp
 * Check govips
 * Create debian package 

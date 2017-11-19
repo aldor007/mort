@@ -12,23 +12,23 @@ import (
 )
 
 const (
-	HeaderContentType = "content-type"
+	// HeaderContentType name of Content-Type header
+	HeaderContentType = "Content-Type"
 )
 
-// Response is helper struct for wrapping diffrent storage response
+// Response is helper struct for wrapping different storage response
 type Response struct {
-	StatusCode    int
-	Headers       http.Header
-	ContentLength int64
-	debug         bool
-	errorValue    error
-	errorWritten  bool
+	StatusCode    int         // status code of response
+	Headers       http.Header // headers for response
+	ContentLength int64       // if buffered response contains length of buffer, for streams it equal to -1
+	debug         bool        // debug flag
+	errorValue    error       // error value
 
-	reader     io.ReadCloser
-	body       []byte
-	bodyReader io.ReadCloser
-	resStream  *stream.Stream
-	parent     *Response
+	reader     io.ReadCloser  // reader for response body
+	body       []byte         // response body for buffored value
+	bodyReader io.ReadCloser  // original response buffor
+	resStream  *stream.Stream // response stream dispatcher
+	hasParent  bool           // flag indicated that response is a caopy
 }
 
 // New create response object with io.ReadCloser
@@ -53,7 +53,7 @@ func NewString(statusCode int, body string) *Response {
 	return r
 }
 
-// NewString create response object from []byte
+// NewBuf create response object from []byte
 func NewBuf(statusCode int, body []byte) *Response {
 	res := Response{StatusCode: statusCode, reader: ioutil.NopCloser(bytes.NewReader(body))}
 	res.ContentLength = int64(len(body))
@@ -130,7 +130,7 @@ func (r *Response) Close() {
 		r.bodyReader.Close()
 	}
 
-	if r.resStream != nil && r.parent == nil {
+	if r.resStream != nil && r.hasParent == false {
 		go func() {
 			r.resStream.Close()
 			r.resStream.Remove()
@@ -246,7 +246,7 @@ func (r *Response) CopyWithStream() (*Response, error) {
 
 	if r.resStream != nil {
 		c.resStream = r.resStream
-		c.parent = r
+		c.hasParent = true
 		return &c, nil
 	}
 
@@ -254,7 +254,7 @@ func (r *Response) CopyWithStream() (*Response, error) {
 
 	r.resStream = stream.NewMemStream()
 	c.resStream = r.resStream
-	c.parent = r
+	c.hasParent = true
 	r.reader = ioutil.NopCloser(io.TeeReader(r.bodyReader, r.resStream))
 
 	return &c, nil
@@ -263,7 +263,7 @@ func (r *Response) CopyWithStream() (*Response, error) {
 
 // Stream return io.Reader interferace from correct response content
 func (r *Response) Stream() io.Reader {
-	if r.parent != nil && r.resStream != nil {
+	if r.hasParent == true && r.resStream != nil {
 		r, _ := r.resStream.NextReader()
 		return r
 	}

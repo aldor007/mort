@@ -9,19 +9,21 @@ import (
 	"github.com/go-chi/chi"
 	"go.uber.org/zap"
 
-	"github.com/aldor007/mort"
 	"github.com/aldor007/mort/config"
 	"github.com/aldor007/mort/lock"
 	"github.com/aldor007/mort/log"
 	mortMiddleware "github.com/aldor007/mort/middleware"
 	"github.com/aldor007/mort/object"
+	"github.com/aldor007/mort/processor"
 	"github.com/aldor007/mort/response"
 	"github.com/aldor007/mort/throttler"
 )
 
 const (
+	// Version of mort
 	Version = "0.0.1"
-	BANNER  = `
+	// BANNER just fancy command line banner
+	BANNER = `
   /\/\   ___  _ __| |_
  /    \ / _ \| '__| __|
 / /\/\ \ (_) | |  | |_
@@ -35,7 +37,7 @@ func main() {
 	listenAddr := flag.String("listen", ":8080", "Listen addr")
 	flag.Parse()
 
-	fmt.Printf(BANNER, "v" + Version)
+	fmt.Printf(BANNER, "v"+Version)
 	fmt.Printf("Config file %s listen addr %s\n", *configPath, *listenAddr)
 
 	logger, _ := zap.NewProduction()
@@ -43,7 +45,7 @@ func main() {
 	zap.ReplaceGlobals(logger)
 	log.RegisterLogger(logger)
 	router := chi.NewRouter()
-	rp := mort.NewRequestProcessor(5, lock.NewMemoryLock(), throttler.NewBucketThrottler(10))
+	rp := processor.NewRequestProcessor(5, lock.NewMemoryLock(), throttler.NewBucketThrottler(10))
 
 	imgConfig := config.GetInstance()
 	imgConfig.Load(*configPath)

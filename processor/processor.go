@@ -1,4 +1,4 @@
-package mort
+package processor
 
 import (
 	"context"
@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"go.uber.org/zap"
 	"github.com/aldor007/mort/config"
 	"github.com/aldor007/mort/engine"
 	"github.com/aldor007/mort/lock"
@@ -18,9 +17,10 @@ import (
 	"github.com/aldor007/mort/storage"
 	"github.com/aldor007/mort/throttler"
 	"github.com/aldor007/mort/transforms"
+	"go.uber.org/zap"
 )
 
-const S3_LOCATION_STR = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><LocationConstraint xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">EU</LocationConstraint>"
+const s3LocationStr = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><LocationConstraint xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">EU</LocationConstraint>"
 
 // timeout for collapse request
 var defaultLockTimeout = time.Second * 60
@@ -29,27 +29,30 @@ var defaultLockTimeout = time.Second * 60
 var defaultProcessTimeout = time.Second * 70
 
 // NewRequestProcessor create instance of request processor
-func NewRequestProcessor(queueLen int, l lock.Lock, throttler_ throttler.Throttler) RequestProcessor {
+// It main component of mort it handle all of requests
+func NewRequestProcessor(queueLen int, l lock.Lock, throttler throttler.Throttler) RequestProcessor {
 	rp := RequestProcessor{}
 	rp.collapse = l
-	rp.throttler = throttler_
+	rp.throttler = throttler
 	rp.queue = make(chan requestMessage, queueLen)
 
 	return rp
 }
 
+// RequestProcessor handle incoming requests
 type RequestProcessor struct {
-	collapse  lock.Lock
-	throttler throttler.Throttler
-	queue     chan requestMessage
+	collapse  lock.Lock           // interface used for request collapsing
+	throttler throttler.Throttler // interface used for rate limiting creating of new images
+	queue     chan requestMessage // request queue
 }
+
 type requestMessage struct {
 	responseChan chan *response.Response
 	obj          *object.FileObject
 	request      *http.Request
 }
 
-// Proecess handle incoming request and create response
+// Process handle incoming request and create response
 func (r *RequestProcessor) Process(req *http.Request, obj *object.FileObject) *response.Response {
 	msg := requestMessage{}
 	msg.request = req
@@ -72,6 +75,7 @@ func (r *RequestProcessor) Process(req *http.Request, obj *object.FileObject) *r
 	}
 
 }
+
 func (r *RequestProcessor) processChan() {
 	msg := <-r.queue
 	res := r.process(msg.request, msg.obj)
@@ -140,7 +144,7 @@ func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) 
 	}
 
 	var currObj *object.FileObject = obj
-	var parentObj *object.FileObject = nil
+	var parentObj *object.FileObject
 	var transforms []transforms.Transforms
 	var res *response.Response
 	var parentRes *response.Response
@@ -240,7 +244,7 @@ func handleS3Get(req *http.Request, obj *object.FileObject) *response.Response {
 	query := req.URL.Query()
 
 	if _, ok := query["location"]; ok {
-		return response.NewBuf(200, []byte(S3_LOCATION_STR))
+		return response.NewString(200, s3LocationStr)
 	}
 
 	maxKeys := 1000

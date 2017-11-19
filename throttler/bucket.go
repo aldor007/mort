@@ -17,7 +17,7 @@ func NewBucketThrottler(limit int) *BucketThrottler {
 	return NewBucketThrottlerBacklog(limit, 0, defaultBacklogTimeout)
 }
 
-// NewBacklog crete a new instance of Throttler which more configuration options
+// NewBucketThrottlerBacklog crete a new instance of Throttler which more configuration options
 func NewBucketThrottlerBacklog(limit int, backlog int, timeout time.Duration) *BucketThrottler {
 	max := limit + backlog
 	t := &BucketThrottler{
