@@ -17,7 +17,7 @@ S3 compatible image processing server written in Go.
 
 # Demo
 -------
-[Original image](https://mort.mkaciuba.com/demo/cat.jpg)
+[Original image 12 Mpix](https://mort.mkaciuba.com/demo/img.jpg)
 <table>
     <thead>
     <tr>
@@ -33,8 +33,8 @@ S3 compatible image processing server written in Go.
                  width: 75 </p> 
             </td>
             <td>
-                <a href="https://mort.mkaciuba.com/demo/small/cat.jpg" target="_blank">
-                ![small](https://mort.mkaciuba.com/demo/small/cat.jpg)
+               <a href="https://mort.mkaciuba.com/demo/small/img.jpg" target="_blank">
+                <img src="https://mort.mkaciuba.com/demo/small/img.jpg" width="75px" />
                 </a>
             </td>
         </tr>
@@ -48,8 +48,8 @@ S3 compatible image processing server written in Go.
                  </ul>
             </td>
             <td>
-                <a href="https://mort.mkaciuba.com/demo/blur/cat.jpg" target="_blank">
-                ![blur](https://mort.mkaciuba.com/demo/blur/cat.jpg")
+                  <a href="https://mort.mkaciuba.com/demo/blur/img.jpg" target="_blank">
+                <img src="https://mort.mkaciuba.com/demo/blur/img.jpg" width="700px" />
                 </a>
             </td>
         </tr>
@@ -63,23 +63,23 @@ S3 compatible image processing server written in Go.
                  </ul>
             </td>
             <td>
-                <a href="https://mort.mkaciuba.com/demo/webp/cat.jpg" target="_blank">
-                ![webp](https://mort.mkaciuba.com/demo/webp/cat.jpg)
+                <a href="https://mort.mkaciuba.com/demo/webp/img.jpg" target="_blank">
+               <img src="https://mort.mkaciuba.com/demo/webp/img.jpg" width="1000px" />
                 </a>
             </td>
         </tr>
         <tr>
             <td>
-                <p>preset: watermakr</p>
+                <p>preset: watermark</p>
                 <ul>
                 <li>                <p>resize image (preserve aspect ratio) 
                  width: 1300</p></li>
-                 <li><p>and add watermark</p></li>
+                 <li><p>and add watermark</p></li>                             
                  </ul>
             </td>
             <td>
-                <a href="https://mort.mkaciuba.com/watermark/webp/cat.jpg" target="_blank">
-                ![watermark](https://mort.mkaciuba.com/watermark/cat.jpg)
+                <a href="https://mort.mkaciuba.com/watermark/watermark/img.jpg" target="_blank">
+                  <img src="https://mort.mkaciuba.com/demo/watermark/img.jpg" width="1300px" />
                 </a>
             </td>
         </tr>
