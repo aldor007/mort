@@ -48,9 +48,8 @@ S3 compatible image processing server written in Go.
                  </ul>
             </td>
             <td>
-                <a href="https://mort.mkaciuba.com/demo/blur/cat.jpg" target="_blank">
                 ![blur](https://mort.mkaciuba.com/demo/blur/cat.jpg")
-                </a>
+                
             </td>
         </tr>
         <tr>
