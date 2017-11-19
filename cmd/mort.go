@@ -35,7 +35,7 @@ func main() {
 	listenAddr := flag.String("listen", ":8080", "Listen addr")
 	flag.Parse()
 
-	fmt.Printf(BANNER, ("v" + Version))
+	fmt.Printf(BANNER, "v" + Version)
 	fmt.Printf("Config file %s listen addr %s\n", *configPath, *listenAddr)
 
 	logger, _ := zap.NewProduction()

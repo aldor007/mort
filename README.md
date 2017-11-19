@@ -66,6 +66,21 @@ S3 compatible image processing server written in Go.
                 </a>
             </td>
         </tr>
+        <tr>
+            <td>
+                <p>preset: watermakr</p>
+                <ul>
+                <li>                <p>resize image (preserve aspect ratio) 
+                 width: 1300</p></li>
+                 <li><p>and add watermark</p></li>
+                 </ul>
+            </td>
+            <td>
+                <a href="https://mort.mkaciuba.com/watermark/webp/cat.jpg" target="_blank">
+                <img src="https://mort.mkaciuba.com/watermark/webp/cat.jpg">
+                </a>
+            </td>
+        </tr>
      </tbody>
 </table>   
     
