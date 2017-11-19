@@ -11,7 +11,9 @@ S3 compatible image processing server written in Go.
 * Convert (JPEG, , PNG , BMP, TIFF, ...)
 * Multiple storage backends (disk, S3, http)
 * Fully modular
-* S3 API for listing and uploading files 
+* S3 API for listing and uploading files
+* Request collapsing
+* Build in rate limiter
 
 # Demo
 -------
@@ -32,7 +34,7 @@ S3 compatible image processing server written in Go.
             </td>
             <td>
                 <a href="https://mort.mkaciuba.com/demo/small/cat.jpg" target="_blank">
-                <img src="https://mort.mkaciuba.com/demo/small/cat.jpg">
+                ![small](https://mort.mkaciuba.com/demo/small/cat.jpg)
                 </a>
             </td>
         </tr>
@@ -47,7 +49,7 @@ S3 compatible image processing server written in Go.
             </td>
             <td>
                 <a href="https://mort.mkaciuba.com/demo/blur/cat.jpg" target="_blank">
-                <img src="https://mort.mkaciuba.com/demo/blur/cat.jpg">
+                ![blur](https://mort.mkaciuba.com/demo/blur/cat.jpg")
                 </a>
             </td>
         </tr>
@@ -62,7 +64,7 @@ S3 compatible image processing server written in Go.
             </td>
             <td>
                 <a href="https://mort.mkaciuba.com/demo/webp/cat.jpg" target="_blank">
-                <img src="https://mort.mkaciuba.com/demo/webp/cat.jpg">
+                ![webp](https://mort.mkaciuba.com/demo/webp/cat.jpg)
                 </a>
             </td>
         </tr>
@@ -77,7 +79,7 @@ S3 compatible image processing server written in Go.
             </td>
             <td>
                 <a href="https://mort.mkaciuba.com/watermark/webp/cat.jpg" target="_blank">
-                <img src="https://mort.mkaciuba.com/watermark/webp/cat.jpg">
+                ![watermark](https://mort.mkaciuba.com/watermark/cat.jpg)
                 </a>
             </td>
         </tr>
@@ -87,6 +89,13 @@ S3 compatible image processing server written in Go.
 # Usage
 
 Mort can be used direct from Internet and behind any proxy. 
+
+## Install
+
+```bash
+go get github.com/aldor007/mort/cmd/mort.go
+```
+
 
 ## Command line help
 ```bash
@@ -109,7 +118,7 @@ headers: # overwritten all response headers of given status. This field is optio
 
 buckets: # list of available buckets 
     demo:    # bucket name 
-        keys: # list of S3 keys (optiona
+        keys: # list of S3 keys (optional)
           - accessKey: "access"
             secretAccessKey: "random"
         transform: # config for transforms
@@ -156,7 +165,7 @@ buckets: # list of available buckets
 
 ## Debian and Ubuntu
 
-We will provide Debian package when we will be completely stable ;)
+I will provide Debian package when we will be completely stable ;)
 
 ## Docker
 Pull docker image

@@ -1,7 +1,7 @@
 package lock
 
 import (
-	"mort/response"
+	"github.com/aldor007/mort/response"
 )
 
 // Lock is responding for collapsing request for same object

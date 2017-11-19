@@ -9,7 +9,7 @@ import (
 	"strings"
 	"sync"
 
-	"mort/log"
+	"github.com/aldor007/mort/log"
 )
 
 // Config contains configuration for buckets etc

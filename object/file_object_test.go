@@ -5,8 +5,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"mort/config"
-	"mort/transforms"
+	"github.com/aldor007/mort/config"
+	"github.com/aldor007/mort/transforms"
 )
 
 var imageInfo = transforms.ImageInfo{}

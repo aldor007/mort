@@ -19,7 +19,7 @@ First step is to fork it at http://help.github.com/fork-a-repo/ and create your 
 
 Running the tests is as easy as:
 
-    make test
+    make tests
 
 You should see the results of running your tests after an instant.
 

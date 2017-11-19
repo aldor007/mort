@@ -3,10 +3,10 @@ package mort
 import (
 	"bytes"
 	"io/ioutil"
-	"mort/config"
-	"mort/lock"
-	"mort/object"
-	"mort/throttler"
+	"github.com/aldor007/mort/config"
+	"github.com/aldor007/mort/lock"
+	"github.com/aldor007/mort/object"
+	"github.com/aldor007/mort/throttler"
 	"net/http"
 	"testing"
 )

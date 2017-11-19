@@ -9,14 +9,14 @@ import (
 	"github.com/go-chi/chi"
 	"go.uber.org/zap"
 
-	"mort"
-	"mort/config"
-	"mort/lock"
-	"mort/log"
-	mortMiddleware "mort/middleware"
-	"mort/object"
-	"mort/response"
-	"mort/throttler"
+	"github.com/aldor007/mort"
+	"github.com/aldor007/mort/config"
+	"github.com/aldor007/mort/lock"
+	"github.com/aldor007/mort/log"
+	mortMiddleware "github.com/aldor007/mort/middleware"
+	"github.com/aldor007/mort/object"
+	"github.com/aldor007/mort/response"
+	"github.com/aldor007/mort/throttler"
 )
 
 const (
@@ -70,7 +70,7 @@ func main() {
 			res.Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, HEAD")
 			defer logger.Sync() // flushes buffer, if any
 			if res.HasError() {
-				log.Log().Warn("Mort process error", zap.String("obj.Key", obj.Key), zap.Error(res.Error()))
+				log.Log().Warn("github.com/aldor007/mort process error", zap.String("obj.Key", obj.Key), zap.Error(res.Error()))
 			}
 
 			res.Send(resWriter)
@@ -79,7 +79,7 @@ func main() {
 
 	router.HandleFunc("/", http.HandlerFunc(func(resWriter http.ResponseWriter, req *http.Request) {
 		resWriter.WriteHeader(400)
-		log.Log().Warn("Mort error request shouldn't go here")
+		log.Log().Warn("github.com/aldor007/mort error request shouldn't go here")
 	}))
 
 	s := &http.Server{

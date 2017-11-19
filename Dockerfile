@@ -51,11 +51,11 @@ ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
 RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH"
 WORKDIR $GOPATH
 RUN curl -fsSL -o /usr/local/bin/dep https://github.com/golang/dep/releases/download/$DEP_VERSION/dep-linux-amd64 && chmod +x /usr/local/bin/dep
-ADD . /go/src/mort
+ADD . /go/src/github.com/aldor007/mort
 
-RUN cd /go/src/mort &&  dep ensure -vendor-only
+RUN cd /go/src/github.com/aldor007/mort &&  dep ensure -vendor-only
 # RUN build
-RUN cd /go/src/mort; go build cmd/mort.go; cp mort /go/mort; cp -r /go/src/mort/configuration /go/
+RUN cd /go/src/github.com/aldor007/mort; go build cmd/mort.go; cp mort /go/mort; cp -r /go/src/github.com/aldor007/mort/configuration /go/
 # clean up
 RUN rm -rf /go/src; rm -rf /go/pkg; rm -rf /usr/share/; rm -rf /usr/include/
 

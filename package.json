@@ -1,5 +1,5 @@
 {
-  "name": "mort-integrations-tests",
+  "name": "github.com/aldor007/mort-integrations-tests",
   "version": "1.0.0",
   "dependencies": {
     "aws-sdk": "^2.131.0",
@@ -13,8 +13,7 @@
     "test": "mocha"
   },
   "repository": {
-    "type": "git",
-    "url": "git+ssh://git@bitbucket.org/aldor007/go-img.git"
+    "type": "git"
   },
   "keywords": [
     "s3",
@@ -25,6 +24,5 @@
     "processing"
   ],
   "author": "",
-  "license": "ISC",
-  "homepage": "https://bitbucket.org/aldor007/go-img#readme"
+  "license": "ISC"
 }

@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"go.uber.org/zap"
-	"mort/config"
-	"mort/log"
-	"mort/transforms"
+	"github.com/aldor007/mort/config"
+	"github.com/aldor007/mort/log"
+	"github.com/aldor007/mort/transforms"
 	"strconv"
 )
 

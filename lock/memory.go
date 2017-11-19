@@ -1,7 +1,7 @@
 package lock
 
 import (
-	"mort/response"
+	"github.com/aldor007/mort/response"
 	"sync"
 )
 

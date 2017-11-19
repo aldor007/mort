@@ -10,10 +10,10 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/h2non/bimg.v1"
 
-	"mort/log"
-	"mort/object"
-	"mort/response"
-	"mort/transforms"
+	"github.com/aldor007/mort/log"
+	"github.com/aldor007/mort/object"
+	"github.com/aldor007/mort/response"
+	"github.com/aldor007/mort/transforms"
 	"runtime"
 )
 

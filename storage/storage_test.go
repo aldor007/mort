@@ -10,8 +10,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"mort/config"
-	"mort/object"
+	"github.com/aldor007/mort/config"
+	"github.com/aldor007/mort/object"
 )
 
 func TestMain(m *testing.M) {

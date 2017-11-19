@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"mort/config"
-	"mort/response"
+	"github.com/aldor007/mort/config"
+	"github.com/aldor007/mort/response"
 
 	"github.com/aldor007/go-aws-auth"
 )
