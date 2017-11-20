@@ -23,35 +23,30 @@ buckets:
                 small:
                     quality: 75
                     filters:
-                        thumbnail: {size: [150]}
+                        thumbnail:
+                            width: 150
                 blur:
                     quality: 80
                     filters:
-                        thumbnail: {size: [700]}
+                        thumbnail:
+                          width: 700
                         blur:
                           sigma: 5.0
                 webp:
                     quality: 100
                     format: webp
                     filters:
-                        thumbnail: {size: [1000]}
+                        thumbnail:
+                          width: 1000
                 watermark:
                     quality: 100
                     filters:
-                        thumbnail: {size: [1300]}
+                        thumbnail:
+                            width: 1300
                         watermark:
                             image: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Imgur_logo.svg/150px-Imgur_logo.svg.png"
                             position: "center-center"
                             opacity: 0.5
-
-                gallery_big300:
-                    quality: 100
-                    filters:
-                        thumbnail: {size: [300]}
-                gallery_big200:
-                    quality: 100
-                    filters:
-                        thumbnail: {size: [200]}
         storages:
             basic:
                 kind: "http"

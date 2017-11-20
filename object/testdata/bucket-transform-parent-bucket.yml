@@ -8,15 +8,22 @@ buckets:
                 blog_small:
                     quality: 75
                     filters:
-                        thumbnail: { size: [100, 100], mode: outbound }
+                        thumbnail:
+                            width: 100
+                            height: 100
+                            mode: outbound
                 width:
                     quality: 75
                     filters:
-                        thumbnail: { size: [100], mode: outbound }
+                        thumbnail:
+                            width: 100
+                            mode: outbound
                 height:
                     quality: 75
                     filters:
-                        thumbnail: { size: [0, 100], mode: outbound }
+                        thumbnail:
+                            height: 100
+                            mode: outbound
         storages:
             basic:
                 kind: "local"

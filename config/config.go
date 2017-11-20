@@ -150,7 +150,7 @@ func (c *Config) validateTransform(bucketName string, bucket Bucket) error {
 	transform := bucket.Transform
 	var err error
 	errorMsgPrefix := fmt.Sprintf("%s has invalid transform config", bucketName)
-	if transform.Kind != "presets" {
+	if transform.Kind != "presets" && transform.Kind != "query" {
 		return configInvalidError(fmt.Sprintf("%s - unknown kind %s", errorMsgPrefix, transform.Kind))
 	}
 
@@ -164,12 +164,14 @@ func (c *Config) validateTransform(bucketName string, bucket Bucket) error {
 		}
 	}
 
-	if strings.Index(transform.Path, "(?P<presetName>") == -1 {
-		err = configInvalidError(fmt.Sprintf("%s invalid transform regexp it should have capturing group for presetName `(?P<presetName>``", errorMsgPrefix))
-	}
+	if transform.Kind == "prestes" {
+		if strings.Index(transform.Path, "(?P<presetName>") == -1 {
+			err = configInvalidError(fmt.Sprintf("%s invalid transform regexp it should have capturing group for presetName `(?P<presetName>``", errorMsgPrefix))
+		}
 
-	if strings.Index(transform.Path, "(?P<parent>") == -1 {
-		err = configInvalidError(fmt.Sprintf("%s invalid transform regexp it should have capturing group for parent `(?P<parent>``", errorMsgPrefix))
+		if strings.Index(transform.Path, "(?P<parent>") == -1 {
+			err = configInvalidError(fmt.Sprintf("%s invalid transform regexp it should have capturing group for parent `(?P<parent>``", errorMsgPrefix))
+		}
 	}
 
 	return err

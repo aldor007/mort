@@ -21,7 +21,7 @@ docker-push:
 	docker push aldor007/mort:latest
 
 run-server:
-	go run cmd/mort/mort.go 2> mort.log
+	go run cmd/mort/mort.go
 
 clean-prof:
 	find . -name ".test" -depth -exec rm {} \;

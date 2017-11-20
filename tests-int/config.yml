@@ -24,18 +24,30 @@ buckets:
                 blog_small:
                     quality: 75
                     filters:
-                        thumbnail: { size: [100, 70], mode: outbound }
+                        thumbnail:
+                            width: 100
+                            height: 70
+                            mode: outbound
                         interlace: yes
                 blog_medium:
                     quality: 75
                     filters:
-                        thumbnail: { size: [903, 600], mode: outbound }
-                        crop: { start: [0, 0], size: [900, 320] }
+                        thumbnail:
+                            width: 903
+                            height: 600
+                            mode: outbound
+                        crop:
+                            start: [0, 0]
+                            width: 900
+                            height: 320
 
                 blog_home:
                     quality: 75
                     filters:
-                        entropy_crop: { size: [756, 396], mode: outbound }
+                        crop:
+                            width: 756
+                            height: 396
+                            mode: outbound
         storages:
             basic:
                 kind: "local-meta"
@@ -60,7 +72,9 @@ buckets:
                     quality: 95
                     format: webp
                     filters:
-                        thumbnail: {size: [150, 200]}
+                        thumbnail:
+                            width: 150
+                            height: 200
         storages:
             api:
                 kind: "http"

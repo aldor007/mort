@@ -129,26 +129,36 @@ buckets: # list of available buckets
                 small:
                     quality: 75
                     filters:
-                        thumbnail: {size: [150]}
+                        thumbnail: 
+                            width: 150
                 blur:
                     quality: 80
                     filters:
-                        thumbnail: {size: [700]}
+                        thumbnail: 
+                            width: 700
                         blur:
                           sigma: 5.0
                 webp:
                     quality: 100
                     format: webp
                     filters:
-                        thumbnail: {size: [1000]}
+                        thumbnail: 
+                            width: 1000
                 watermark:
                     quality: 100
                     filters:
-                        thumbnail: {size: [1300]}
+                        thumbnail: 
+                            width: 1300
                         watermark:
                             image: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Imgur_logo.svg/150px-Imgur_logo.svg.png"
                             position: "center-center"
                             opacity: 0.5
+                smartcrop:
+                    quality: 80
+                    filters:
+                      crop:
+                        width: 200
+                        height: 200
         storages:
              basic: # retrieve originals from s3
                  kind: "s3"
@@ -156,7 +166,7 @@ buckets: # list of available buckets
                  secretAccessKey: "sec"
                  region: ""
                  endpoint: "http://localhost:8080"
-             transform: # end stroe it on disk
+             transform: # and store it on disk
                  kind: "local-meta"
                  rootPath: "/var/www/domain/"
                  pathPrefix: "transform"
@@ -214,7 +224,7 @@ make integrations
 
 ## Contributing
 
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us.
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests.
 
 ## License
 

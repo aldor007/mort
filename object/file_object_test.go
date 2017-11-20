@@ -7,13 +7,19 @@ import (
 
 	"github.com/aldor007/mort/config"
 	"github.com/aldor007/mort/transforms"
+	"net/url"
 )
 
 var imageInfo = transforms.ImageInfo{}
 
+func pathToURL(urlPath string) *url.URL {
+	u, _ := url.Parse(urlPath)
+	return u
+}
+
 func TestNewFileObjectWhenUnknowBucket(t *testing.T) {
 	mortConfig := config.GetInstance()
-	_, err := NewFileObject("/bucket/path", mortConfig)
+	_, err := NewFileObject(pathToURL("/bucket/path"), mortConfig)
 
 	assert.NotNil(t, err)
 }
@@ -21,7 +27,7 @@ func TestNewFileObjectWhenUnknowBucket(t *testing.T) {
 func TestNewFileObjectNoTransform(t *testing.T) {
 	mortConfig := config.GetInstance()
 	mortConfig.Load("testdata/bucket-no-transform.yml")
-	obj, err := NewFileObject("/bucket/path", mortConfig)
+	obj, err := NewFileObject(pathToURL("/bucket/path"), mortConfig)
 
 	assert.Nil(t, err)
 
@@ -36,7 +42,7 @@ func TestNewFileObjectNoTransform(t *testing.T) {
 func TestNewFileObjectTransform(t *testing.T) {
 	mortConfig := config.GetInstance()
 	mortConfig.Load("testdata/bucket-transform.yml")
-	obj, err := NewFileObject("/bucket/blog_small/bucket/parent.jpg", mortConfig)
+	obj, err := NewFileObject(pathToURL("/bucket/blog_small/bucket/parent.jpg"), mortConfig)
 
 	assert.Nil(t, err, "Unexpected to have error when parsing path")
 
@@ -65,7 +71,7 @@ func TestNewFileObjectTransform(t *testing.T) {
 func TestNewFileObjectTransformParentBucket(t *testing.T) {
 	mortConfig := config.GetInstance()
 	mortConfig.Load("testdata/bucket-transform-parent-bucket.yml")
-	obj, err := NewFileObject("/bucket/blog_small/thumb_2334.jpg", mortConfig)
+	obj, err := NewFileObject(pathToURL("/bucket/blog_small/thumb_2334.jpg"), mortConfig)
 
 	assert.Nil(t, err, "Unexpected to have error when parsing path")
 
@@ -95,7 +101,7 @@ func TestNewFileObjectTransformParentStorage(t *testing.T) {
 	mortConfig := config.GetInstance()
 	err := mortConfig.Load("testdata/bucket-transform-parent-storage.yml")
 	assert.Nil(t, err, "Unexpected to have error when parsing config")
-	obj, err := NewFileObject("/bucket/blog_small/thumb_2334.jpg", mortConfig)
+	obj, err := NewFileObject(pathToURL("/bucket/blog_small/thumb_2334.jpg"), mortConfig)
 
 	assert.Nil(t, err, "Unexpected to have error when parsing path")
 
@@ -112,7 +118,7 @@ func TestNewFileObjectTransformParentStorage(t *testing.T) {
 func TestNewFileObjectTransformOnlyWitdh(t *testing.T) {
 	mortConfig := config.GetInstance()
 	mortConfig.Load("testdata/bucket-transform.yml")
-	obj, err := NewFileObject("/bucket/width/bucket/parent.jpg", mortConfig)
+	obj, err := NewFileObject(pathToURL("/bucket/width/bucket/parent.jpg"), mortConfig)
 
 	assert.Nil(t, err, "Unexpected to have error when parsing path")
 
@@ -140,7 +146,7 @@ func TestNewFileObjectTransformOnlyWitdh(t *testing.T) {
 func TestNewFileObjecWithNestedParent(t *testing.T) {
 	mortConfig := config.GetInstance()
 	mortConfig.Load("testdata/bucket-transform.yml")
-	obj, err := NewFileObject("/bucket/width/bucket/height/bucket/parent.jpg", mortConfig)
+	obj, err := NewFileObject(pathToURL("/bucket/width/bucket/height/bucket/parent.jpg"), mortConfig)
 
 	assert.Nil(t, err, "Unexpected to have error when parsing path")
 
@@ -155,6 +161,68 @@ func TestNewFileObjecWithNestedParent(t *testing.T) {
 	assert.Equal(t, "/parent.jpg", parent.Parent.Key, "parent of parent should have correct path")
 }
 
+func TestNewFileObjectQueryResize(t *testing.T) {
+	mortConfig := &config.Config{}
+	mortConfig.Load("testdata/bucket-transform-query-parent-storage.yml")
+	obj, err := NewFileObject(pathToURL("/bucket/parent.jpg?width=100"), mortConfig)
+
+	assert.Nil(t, err, "Unexpected to have error when parsing path")
+
+	assert.NotNil(t, obj, "obj should be nil")
+
+	assert.True(t, obj.HasParent(), "obj should have parent")
+	assert.True(t, obj.HasTransform(), "obj should have transforms")
+
+	parent := obj.Parent
+
+	assert.Equal(t, "/parent.jpg", parent.Key, "invalid parent key")
+
+	transCfg, err := obj.Transforms.BimgOptions(imageInfo)
+
+	assert.Nil(t, err, "Unexpected to have error when getting transforms")
+
+	assert.Equal(t, 100, transCfg.Width, "invalid width for transform")
+	assert.Equal(t, 0, transCfg.Height, "invalid width for transform")
+}
+
+func TestNewFileObjectQueryCrop(t *testing.T) {
+	mortConfig := &config.Config{}
+	mortConfig.Load("testdata/bucket-transform-query-parent-storage.yml")
+	obj, err := NewFileObject(pathToURL("/bucket/parent.jpg?width=100&operation=crop"), mortConfig)
+
+	assert.Nil(t, err, "Unexpected to have error when parsing path")
+
+	assert.NotNil(t, obj, "obj should be nil")
+
+	assert.True(t, obj.HasParent(), "obj should have parent")
+	assert.True(t, obj.HasTransform(), "obj should have transforms")
+
+	parent := obj.Parent
+
+	assert.Equal(t, "/parent.jpg", parent.Key, "invalid parent key")
+
+	transCfg, err := obj.Transforms.BimgOptions(imageInfo)
+
+	assert.Nil(t, err, "Unexpected to have error when getting transforms")
+
+	assert.Equal(t, 100, transCfg.Width, "invalid width for transform")
+	assert.Equal(t, 0, transCfg.Height, "invalid height for transform")
+	assert.True(t, transCfg.Crop)
+}
+
+func TestNewFileObjectQueryNoTransform(t *testing.T) {
+	mortConfig := &config.Config{}
+	mortConfig.Load("testdata/bucket-transform-query-parent-storage.yml")
+	obj, err := NewFileObject(pathToURL("/bucket/parent.jpg"), mortConfig)
+
+	assert.Nil(t, err, "Unexpected to have error when parsing path")
+
+	assert.NotNil(t, obj, "obj should be nil")
+
+	assert.False(t, obj.HasParent(), "obj shouldn't have parent")
+	assert.False(t, obj.HasTransform(), "obj shouldn't have transforms")
+}
+
 func BenchmarkNewFileObject(b *testing.B) {
 
 	benchmarks := []struct {
@@ -163,6 +231,7 @@ func BenchmarkNewFileObject(b *testing.B) {
 	}{
 		{"/bucket/width/thumb_121332.jpg", "testdata/bucket-transform-parent-storage.yml"},
 		{"/bucket/parent.jpg", "testdata/bucket-transform.yml"},
+		{"/bucket/parent.jpg?width=100", "testdata/bucket-transform-query-parent-storage.yml"},
 	}
 
 	b.ReportAllocs()
@@ -175,7 +244,7 @@ func BenchmarkNewFileObject(b *testing.B) {
 
 		b.Run(bm.path, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				NewFileObject(bm.path, &config)
+				NewFileObject(pathToURL(bm.path), &config)
 			}
 		})
 	}

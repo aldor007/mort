@@ -22,10 +22,10 @@ import (
 
 const s3LocationStr = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><LocationConstraint xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">EU</LocationConstraint>"
 
-// timeout for collapse request
+// timeout for collapsed request
 var defaultLockTimeout = time.Second * 60
 
-// default requst timeout
+// default request timeout
 var defaultProcessTimeout = time.Second * 70
 
 // NewRequestProcessor create instance of request processor

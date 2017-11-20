@@ -135,11 +135,9 @@ type Transforms struct {
 }
 
 // Resize change image width and height
-func (t *Transforms) Resize(size []int, enlarge bool) error {
-	t.width = size[0]
-	if len(size) == 2 {
-		t.height = size[1]
-	}
+func (t *Transforms) Resize(width, height int, enlarge bool) error {
+	t.width = width
+	t.height = height
 	t.enlarge = enlarge
 
 	t.transHash = 1000 + t.transHash + uint64(t.width) + uint64(t.height)
@@ -153,9 +151,9 @@ func (t *Transforms) Resize(size []int, enlarge bool) error {
 }
 
 // Crop extract part of image
-func (t *Transforms) Crop(size []int, enlarge bool) error {
-	t.width = size[0]
-	t.height = size[1]
+func (t *Transforms) Crop(width, height int, enlarge bool) error {
+	t.width = width
+	t.height = height
 	t.enlarge = enlarge
 	t.crop = true
 	t.NotEmpty = true

@@ -35,7 +35,7 @@ func BenchmarkNewRequestProcessorMemoryLock(b *testing.B) {
 			panic(err)
 		}
 
-		obj, _ := object.NewFileObject(req.URL.Path, &config)
+		obj, _ := object.NewFileObject(req.URL, &config)
 		rp := NewRequestProcessor(3, lock.NewMemoryLock(), throttler.NewBucketThrottler(10))
 		b.Run(bm.name, func(b *testing.B) {
 			b.ReportAllocs()
@@ -75,7 +75,7 @@ func BenchmarkNewRequestProcessorNopLock(b *testing.B) {
 			panic(err)
 		}
 
-		obj, _ := object.NewFileObject(req.URL.Path, &config)
+		obj, _ := object.NewFileObject(req.URL, &config)
 		rp := NewRequestProcessor(3, lock.NewNopLock(), throttler.NewBucketThrottler(10))
 		b.Run(bm.name, func(b *testing.B) {
 			b.ReportAllocs()

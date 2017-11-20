@@ -8,7 +8,10 @@ buckets:
                 small:
                     quality: 75
                     filters:
-                        thumbnail: { size: [100, 70], mode: outbound }
+                        thumbnail:
+                            width: 100
+                            height: 70
+                            mode: outbound
                         interlace: true
         storages:
             basic:

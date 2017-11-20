@@ -39,7 +39,7 @@ func TestGet(t *testing.T) {
 	mortConfig := config.Config{}
 	mortConfig.Load("testdata/config.yml")
 
-	obj, _ := object.NewFileObject("/bucket/file", &mortConfig)
+	obj, _ := object.NewFileObjectFromPath("/bucket/file", &mortConfig)
 
 	res := Get(obj)
 
@@ -50,7 +50,7 @@ func TestHead(t *testing.T) {
 	mortConfig := config.Config{}
 	mortConfig.Load("testdata/config.yml")
 
-	obj, _ := object.NewFileObject("/bucket/file", &mortConfig)
+	obj, _ := object.NewFileObjectFromPath("/bucket/file", &mortConfig)
 
 	res := Head(obj)
 
@@ -61,7 +61,7 @@ func TestSet(t *testing.T) {
 	mortConfig := config.Config{}
 	mortConfig.Load("testdata/config.yml")
 
-	obj, _ := object.NewFileObject("/bucket/file-set", &mortConfig)
+	obj, _ := object.NewFileObjectFromPath("/bucket/file-set", &mortConfig)
 
 	headers := make(http.Header)
 	headers["X-Header"] = []string{"val"}
@@ -84,7 +84,7 @@ func TestSet(t *testing.T) {
 func BenchmarkGet(b *testing.B) {
 	mortConfig := config.Config{}
 	mortConfig.Load("testdata/config.yml")
-	obj, _ := object.NewFileObject("/bucket/file", &mortConfig)
+	obj, _ := object.NewFileObjectFromPath("/bucket/file", &mortConfig)
 	for i := 0; i < b.N; i++ {
 		Get(obj)
 	}
@@ -93,7 +93,7 @@ func BenchmarkGet(b *testing.B) {
 func BenchmarkHead(b *testing.B) {
 	mortConfig := config.Config{}
 	mortConfig.Load("testdata/config.yml")
-	obj, _ := object.NewFileObject("/bucket/file", &mortConfig)
+	obj, _ := object.NewFileObjectFromPath("/bucket/file", &mortConfig)
 	for i := 0; i < b.N; i++ {
 		Head(obj)
 	}

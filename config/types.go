@@ -2,32 +2,35 @@ package config
 
 import "regexp"
 
-// PresetsYaml describe properties of transform preset
-type PresetsYaml struct {
+// Preset describe properties of transform preset
+type Preset struct {
 	Quality int    `yaml:"quality"`
 	Format  string `yaml:"format"`
 	Filters struct {
-		Thumbnail struct {
-			Size []int  `yaml:"size"`
-			Mode string `yaml:"mode"`
-		} `yaml:"thumbnail"`
+		Thumbnail *struct {
+			Width  int    `yaml:"width"`
+			Height int    `yaml:"height"`
+			Mode   string `yaml:"mode"`
+		} `yaml:"thumbnail,omitempty"`
 		Interlace bool `yaml:"interlace"`
-		Crop      struct {
-			Size  []int  `yaml:"size"`
-			Start []int  `yaml:"start"`
-			Mode  string `yaml:"mode"`
-		} `yaml:"crop"`
-		SmartCrop struct {
-			Size []int  `yaml:"size"`
-			Mode string `yaml:"mode"`
-		} `yaml:"entropy_crop"`
-		AutoRotate bool `yaml:"auto_rtate"`
+		Crop      *struct {
+			Width  int    `yaml:"width"`
+			Height int    `yaml:"height"`
+			Start  []int  `yaml:"start"`
+			Mode   string `yaml:"mode"`
+		} `yaml:"crop,omitempty"`
+		SmartCrop *struct {
+			Width  int    `yaml:"width"`
+			Height int    `yaml:"height"`
+			Mode   string `yaml:"mode"`
+		} `yaml:"smart_crop,omitempty"`
+		AutoRotate bool `yaml:"auto_rotate"`
 		Strip      bool `yaml:"strip"`
-		Blur       struct {
+		Blur       *struct {
 			Sigma   float64 `yaml:"sigma"`
 			MinAmpl float64 `yaml:"minAmpl"`
-		} `yaml:"blur"`
-		Watermark struct {
+		} `yaml:"blur,omitempty"`
+		Watermark *struct {
 			Image    string  `yaml:"image"`
 			Position string  `yaml:"position"`
 			Opacity  float32 `yaml:"opacity"`
@@ -35,16 +38,16 @@ type PresetsYaml struct {
 	} `yaml:"filters"`
 }
 
-// TransformYaml describe transform for bucket
-type TransformYaml struct {
+// Transform describe transform for bucket
+type Transform struct {
 	Path          string `yaml:"path"`
 	ParentStorage string `yaml:"parentStorage"`
 	ParentBucket  string `yaml:"parentBucket"`
 	PathRegexp    *regexp.Regexp
-	Kind          string                 `yaml:"kind"`
-	Presets       map[string]PresetsYaml `yaml:"presets"`
-	CheckParent   bool                   `yaml:"checkParent"`
-	ResultKey     string                 `yaml:"resultKey"`
+	Kind          string            `yaml:"kind"`
+	Presets       map[string]Preset `yaml:"presets"`
+	CheckParent   bool              `yaml:"checkParent"`
+	ResultKey     string            `yaml:"resultKey"`
 }
 
 // Storage contains information about kind of used storage
@@ -87,9 +90,9 @@ type S3Key struct {
 
 // Bucket describe single bucket entry in config
 type Bucket struct {
-	Transform *TransformYaml `yaml:"transform,omitempty"`
-	Storages  StorageTypes   `yaml:"storages"`
-	Keys      []S3Key        `yaml:"keys"`
+	Transform *Transform   `yaml:"transform,omitempty"`
+	Storages  StorageTypes `yaml:"storages"`
+	Keys      []S3Key      `yaml:"keys"`
 	Name      string
 }
 

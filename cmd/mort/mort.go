@@ -57,7 +57,7 @@ func main() {
 	router.Use(func(_ http.Handler) http.Handler {
 		return http.HandlerFunc(func(resWriter http.ResponseWriter, req *http.Request) {
 			debug := req.Header.Get("X-Mort-Debug") != ""
-			obj, err := object.NewFileObject(req.URL.Path, imgConfig)
+			obj, err := object.NewFileObject(req.URL, imgConfig)
 			if err != nil {
 				logger.Sugar().Errorf("Unable to create file object err = %s", err)
 				response.NewError(400, err).SetDebug(debug).Send(resWriter)

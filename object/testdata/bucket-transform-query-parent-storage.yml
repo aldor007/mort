@@ -1,11 +1,9 @@
 buckets:
     bucket:
         transform:
-            path: "\\/(?P<presetName>[a-z0-9_]+)\\/thumb_(?P<parent>.*)"
-            kind: "presets"
+            kind: "query"
             parentStorage: "other"
             parentBucket: "bucket"
-            resultKey: "hash"
             presets:
                 blog_small:
                     quality: 75
