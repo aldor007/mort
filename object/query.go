@@ -6,20 +6,22 @@ import (
 	"net/url"
 	"path"
 	"strconv"
-	"strings"
 )
 
 func decodeQuery(url *url.URL, mortConfig *config.Config, bucketConfig config.Bucket, obj *FileObject) error {
 	trans := bucketConfig.Transform
-	parent := obj.Key
 
 	var err error
 	obj.Transforms, err = queryToTransform(url.Query())
 
-	parent = "/" + path.Join(trans.ParentBucket, parent)
-
 	if obj.HasTransform() {
-		obj.Key = "/" + strings.Join([]string{strconv.FormatUint(uint64(obj.Transforms.Hash().Sum64()), 16), parent}, "-")
+		parentBucket := obj.Bucket
+		if trans.ParentBucket != "" {
+			parentBucket = trans.ParentBucket
+		}
+
+		parent := "/" + path.Join(parentBucket, obj.Key)
+		obj.Key = hashKey(obj.Transforms.Hash(), obj.key)
 		parentObj, err := NewFileObjectFromPath(parent, mortConfig)
 		parentObj.Storage = bucketConfig.Storages.Get(trans.ParentStorage)
 		obj.Parent = parentObj
@@ -36,22 +38,31 @@ func queryToTransform(query url.Values) (transforms.Transforms, error) {
 		return trans, nil
 	}
 
+	var err error
 	opt := query.Get("operation")
 	if opt == "" {
-		opt = "resize"
+		err = trans.Resize(queryToInt(query, "width"), queryToInt(query, "height"), false)
+	} else {
+		for qsKey, values := range query {
+			if qsKey == "operation" {
+				for _, o := range values {
+					switch o {
+					case "resize":
+						err = trans.Resize(queryToInt(query, "width"), queryToInt(query, "height"), false)
+					case "crop":
+						err = trans.Crop(queryToInt(query, "width"), queryToInt(query, "height"), false)
+					case "watermark":
+						var sigma float64
+						sigma, err = strconv.ParseFloat(query.Get("sigma"), 32)
+						err = trans.Watermark(query.Get("image"), query.Get("position"), float32(sigma))
+					}
+				}
+			}
+		}
 	}
 
-	var err error
-	switch opt {
-	case "resize":
-		err = trans.Resize(queryToInt(query, "width"), queryToInt(query, "height"), false)
-	case "crop":
-		err = trans.Crop(queryToInt(query, "width"), queryToInt(query, "height"), false)
-	}
-	//case "watermark":
-	//opacity, err := strnconv. query.Get("opacity")
-	//err = trans.Watermark(query.Get("image"), query.Get("position"),
 	err = trans.Quality(queryToInt(query, "quality"))
+	err = trans.Format(query.Get("format"))
 
 	return trans, err
 }

@@ -8,11 +8,9 @@ import (
 	"go.uber.org/zap"
 	"net/url"
 	"path"
-	"strconv"
-	"strings"
 )
 
-// presetCache cache use presets because we don't need create it always new for each request
+// presetCache cache used presets because we don't need create it always new for each request
 var presetCache = make(map[string]transforms.Transforms)
 
 // decodePreset parse given url by matching user defined regexp with request path
@@ -30,6 +28,7 @@ func decodePreset(url *url.URL, mortConfig *config.Config, bucketConfig config.B
 			subMatchMap[name] = matches[i]
 		}
 	}
+
 	presetName := subMatchMap["presetName"]
 	parent := subMatchMap["parent"]
 
@@ -53,8 +52,9 @@ func decodePreset(url *url.URL, mortConfig *config.Config, bucketConfig config.B
 	parentObj.Storage = bucketConfig.Storages.Get(trans.ParentStorage)
 
 	if parentObj != nil && bucketConfig.Transform.ResultKey == "hash" {
-		obj.Key = "/" + strings.Join([]string{strconv.FormatUint(uint64(obj.Transforms.Hash().Sum64()), 16), subMatchMap["parent"]}, "-")
+		obj.Key = hashKey(obj.Transforms.Hash(), subMatchMap["parent"])
 	}
+
 	obj.Parent = parentObj
 	obj.CheckParent = trans.CheckParent
 	return err

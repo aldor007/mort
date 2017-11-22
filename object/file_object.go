@@ -10,9 +10,10 @@ import (
 
 // FileObject is representing parsed request for image or file
 type FileObject struct {
-	Uri         *url.URL              `json:"uri"`        // original request path
-	Bucket      string                `json:"bucket"`     // request matched bucket
-	Key         string                `json:"key"`        // storage path for file
+	Uri         *url.URL `json:"uri"`    // original request path
+	Bucket      string   `json:"bucket"` // request matched bucket
+	Key         string   `json:"key"`    // storage path for file with leading slash
+	key         string
 	Transforms  transforms.Transforms `json:"transforms"` // list of transform that should be performed
 	Storage     config.Storage        `json:"storage"`    // selected storage that should be used
 	Parent      *FileObject           // original image for transformed image
@@ -33,7 +34,7 @@ func NewFileObjectFromPath(path string, mortConfig *config.Config) (*FileObject,
 	err := Parse(obj.Uri, mortConfig, &obj)
 
 	log.Log().Info("FileObject", zap.String("path", path), zap.String("key", obj.Key), zap.String("bucket", obj.Bucket), zap.String("storage", obj.Storage.Kind),
-		zap.Bool("hasTransforms", !obj.Transforms.NotEmpty), zap.Bool("hasParent", obj.HasParent()))
+		zap.Bool("hasTransforms", obj.HasTransform()), zap.Bool("hasParent", obj.HasParent()))
 	return &obj, err
 }
 
@@ -49,7 +50,7 @@ func NewFileObject(uri *url.URL, mortConfig *config.Config) (*FileObject, error)
 	err := Parse(uri, mortConfig, &obj)
 
 	log.Log().Info("FileObject", zap.String("path", uri.Path), zap.String("key", obj.Key), zap.String("bucket", obj.Bucket), zap.String("storage", obj.Storage.Kind),
-		zap.Bool("hasTransforms", !obj.Transforms.NotEmpty), zap.Bool("hasParent", obj.HasParent()))
+		zap.Bool("hasTransforms", obj.HasTransform()), zap.Bool("hasParent", obj.HasParent()))
 	return &obj, err
 }
 

@@ -86,3 +86,19 @@ buckets:
             basic:
                 kind: "local-meta"
                 rootPath: "/tmp/mort-tests/"
+    remote-query:
+        transform:
+            kind: "query"
+            parentStorage: "api"
+            parentBucket: "remote-query"
+        storages:
+            api:
+                kind: "http"
+                url: "https://i.redd.it<item>" # Cnxpvwo7qqfwz.jpg
+            transform:
+                kind: "local-meta"
+                rootPath: "/tmp/mort-tests/"
+                pathPrefix: "transforms"
+            basic:
+                kind: "local-meta"
+                rootPath: "/tmp/mort-tests/"

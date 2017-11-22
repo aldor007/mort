@@ -6,10 +6,29 @@ import (
 	"github.com/aldor007/mort/lock"
 	"github.com/aldor007/mort/object"
 	"github.com/aldor007/mort/throttler"
+	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
 	"testing"
 )
+
+func TestNewRequestProcessor(t *testing.T) {
+	req, _ := http.NewRequest("GET", "http://mort/local/small.jpg-small", nil)
+
+	config := config.Config{}
+	err := config.Load("../tests/benchmark/small.yml")
+	assert.Nil(t, err)
+
+	obj, err := object.NewFileObject(req.URL, &config)
+	assert.Nil(t, err)
+
+	rp := NewRequestProcessor(3, lock.NewMemoryLock(), throttler.NewBucketThrottler(10))
+	res := rp.Process(req, obj)
+
+	assert.Equal(t, res.StatusCode, 200)
+	assert.Equal(t, res.Headers.Get("x-amz-meta-public-width"), "105")
+	assert.Equal(t, res.Headers.Get("ETag"), "5b95df244105a698")
+}
 
 func BenchmarkNewRequestProcessorMemoryLock(b *testing.B) {
 	benchmarks := []struct {

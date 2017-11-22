@@ -88,7 +88,7 @@ func (w watermark) calculatePostion(width, height int) (top int, left int) {
 	return
 }
 
-// ImageInfo holds informaation about image
+// ImageInfo holds information about image
 type ImageInfo struct {
 	width  int    // width of image in px
 	height int    // height of image in px
@@ -219,18 +219,18 @@ func (t *Transforms) Format(format string) error {
 // Watermark merge two image in one
 func (t *Transforms) Watermark(image string, position string, opacity float32) error {
 	if image == "" || position == "" {
-		return errors.New("Missing required params")
+		return errors.New("missing required params")
 	}
 	p := strings.Split(position, "-")
 	if len(p) != 2 {
-		return errors.New("Invalid position given")
+		return errors.New("invalid position given")
 	}
 	if _, ok := watermarkPosY[p[0]]; !ok {
-		return errors.New("Invalid first position argument")
+		return errors.New("invalid first position argument")
 	}
 
 	if _, ok := watermarkPosX[p[1]]; !ok {
-		return errors.New("Invalid second position argument")
+		return errors.New("invalid second position argument")
 	}
 
 	t.NotEmpty = true
