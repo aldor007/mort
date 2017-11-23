@@ -61,7 +61,7 @@ describe('S3 features', function () {
 
                 this.s3.listObjects(listParams, function (err, data) {
                     expect(err).to.be.null;
-                    expect(data['CommonPrefixes']).to.deep.eql([ { Prefix: 'dir/' } ]);
+                    expect(data['CommonPrefixes']).to.deep.eql([ { Prefix: 'dir/' }, { Prefix: 'dir2/' } ]);
                     expect(data['Contents'].length).to.eql(1);
                     done(err)
                 });
@@ -194,7 +194,7 @@ describe('S3 features', function () {
 
                 this.s3.listObjects(listParams, function (err, data) {
                     expect(err).to.be.null;
-                    expect(data['CommonPrefixes']).to.deep.eql([ { Prefix: 'dir/' } ]);
+                    expect(data['CommonPrefixes']).to.deep.eql([ { Prefix: 'dir/' }, { Prefix: 'dir2/' } ]);
                     expect(data['Contents'].length).to.eql(2);
                     done(err)
                 });

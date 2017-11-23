@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
-mkdir -p /tmp/mort-tests/local/dir
+mkdir -p /tmp/mort-tests/local/dir/
+mkdir -p /tmp/mort-tests/local/dir/a/b/c
+mkdir -p /tmp/mort-tests/local/dir2/a/b/c
 mkdir -p /tmp/mort-tests/remote/dir
 
 echo "test" > /tmp/mort-tests/local/file

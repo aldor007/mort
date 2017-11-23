@@ -161,10 +161,8 @@ func List(obj *object.FileObject, maxKeys int, delimeter string, prefix string, 
 			key = ""
 		} else {
 			key = item.Name()
-			// FIXME: add is dir for others adapters
-			itemMeta, _ := item.Metadata()
 			_, ok := commonPrefixes[key]
-			if itemMeta["is_dir"].(bool) && !ok {
+			if isDir(item) && !ok {
 				commonPrefix = key
 				commonPrefixes[key] = true
 				key = ""
@@ -348,4 +346,30 @@ func parseMetadata(obj *object.FileObject, metadata map[string]interface{}, res 
 		}
 	}
 
+}
+
+func isDir(item stow.Item)  bool {
+	metaData, err := item.Metadata()
+	if err != nil {
+		return false
+	}
+
+	if dir, ok := metaData["is_dir"]; ok {
+		return dir.(bool)
+	}
+
+	if ct, ok := metaData["content-type"]; ok {
+		return ct.(string) == "application/directory"
+	}
+
+	size, err := item.Size()
+	if err != nil {
+		return false
+	}
+
+	if size == 0 {
+		return true
+	}
+
+	return false
 }
