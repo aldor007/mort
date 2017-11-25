@@ -52,10 +52,10 @@ RUN cd /go/src/github.com/aldor007/mort &&  dep ensure -vendor-only
 # RUN build
 RUN cd /go/src/github.com/aldor007/mort; go build cmd/mort/mort.go; cp mort /go/mort; cp -r /go/src/github.com/aldor007/mort/configuration /go/
 # clean up
-RUN rm -rf /go/src; rm -rf /go/pkg; rm -rf /usr/share/; rm -rf /usr/include/
+# RUN rm -rf /go/src; rm -rf /go/pkg; rm -rf /usr/share/; rm -rf /usr/include/
 
 # Run the outyet command by default when the container starts.
 ENTRYPOINT ["/go/mort"]
 
 # Expose the server TCP port
-EXPOSE 8080
+EXPOSE 8080 8081

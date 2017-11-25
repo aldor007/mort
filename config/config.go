@@ -69,6 +69,12 @@ func (c *Config) load(data []byte) error {
 
 		for sName, storage := range c.Buckets[name].Storages {
 			storage.Hash = name + sName + storage.Kind
+			if sName == "transforms" {
+				if storage.PathPrefix == "" {
+					storage.PathPrefix = "transforms"
+				}
+			}
+
 			bucket.Storages[sName] = storage
 		}
 

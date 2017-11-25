@@ -164,3 +164,7 @@
 [[constraint]]
   name = "github.com/aldor007/go-aws-auth"
   branch = "master"
+
+[[constraint]]
+  name = "github.com/karlseguin/ccache"
+  branch = "master"

@@ -348,7 +348,7 @@ func parseMetadata(obj *object.FileObject, metadata map[string]interface{}, res 
 
 }
 
-func isDir(item stow.Item)  bool {
+func isDir(item stow.Item) bool {
 	metaData, err := item.Metadata()
 	if err != nil {
 		return false

@@ -25,10 +25,11 @@ RUN \
   make install && \
   ldconfig && \
   # Clean up
-  apt-get remove -y curl automake build-essential && \
+  apt-get remove -y curl automake && \
   apt-get autoremove -y && \
   apt-get autoclean && \
   apt-get clean && \
+  apt-get install dh-golang  -y && \
   rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Server port to listen
@@ -51,8 +52,6 @@ ADD . /go/src/github.com/aldor007/mort
 RUN cd /go/src/github.com/aldor007/mort &&  dep ensure -vendor-only
 # RUN build
 RUN cd /go/src/github.com/aldor007/mort; go build cmd/mort/mort.go; cp mort /go/mort; cp -r /go/src/github.com/aldor007/mort/configuration /go/
-
-RUN sudo apt-get install ruby-dev build-essential
-RUN sudo gem install fpm
+RUN go get github.com/goreleaser/goreleaser
 
 

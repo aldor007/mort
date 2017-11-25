@@ -41,9 +41,9 @@ func (m *MemoryLock) NotifyAndRelease(key string, res *response.Response) {
 			}
 
 		} else {
+			defer resCopy.Close()
 			buf, err := resCopy.ReadBody()
 			if err != nil {
-				defer resCopy.Close()
 				buf = []byte{}
 			}
 
@@ -62,6 +62,7 @@ func (m *MemoryLock) NotifyAndRelease(key string, res *response.Response) {
 		}
 	} else {
 		resCopy, _ := res.CopyWithStream()
+		defer resCopy.Close()
 		for _, q := range result.notifyQueue {
 			select {
 			case <-q.Cancel:
