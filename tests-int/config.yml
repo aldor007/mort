@@ -75,6 +75,24 @@ buckets:
                         thumbnail:
                             width: 150
                             height: 200
+                crop:
+                    quality: 75
+                    filters:
+                        crop:
+                            width: 756
+                            height: 396
+                            mode: outbound
+                blur:
+                    quality: 75
+                    filters:
+                        crop:
+                            width: 756
+                            height: 396
+                            mode: outbound
+                        blur:
+                          sigma: 5.0
+
+        storages:
         storages:
             api:
                 kind: "http"

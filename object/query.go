@@ -52,17 +52,27 @@ func queryToTransform(query url.Values) (transforms.Transforms, error) {
 					case "crop":
 						err = trans.Crop(queryToInt(query, "width"), queryToInt(query, "height"), false)
 					case "watermark":
-						var sigma float64
+						var opacity float64
+						opacity, err = strconv.ParseFloat(query.Get("opacity"), 32)
+						err = trans.Watermark(query.Get("image"), query.Get("position"), float32(opacity))
+					case "blur":
+						var sigma, minAmpl float64
 						sigma, err = strconv.ParseFloat(query.Get("sigma"), 32)
-						err = trans.Watermark(query.Get("image"), query.Get("position"), float32(sigma))
+						minAmpl, err = strconv.ParseFloat(query.Get("minAmpl"), 32)
+						err = trans.Blur(sigma, minAmpl)
 					}
+
 				}
+				break
 			}
 		}
 	}
 
 	err = trans.Quality(queryToInt(query, "quality"))
 	err = trans.Format(query.Get("format"))
+	if query.Get("grayscale") != "" {
+		trans.Grayscale()
+	}
 
 	return trans, err
 }

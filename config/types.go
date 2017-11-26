@@ -25,6 +25,7 @@ type Preset struct {
 			Mode   string `yaml:"mode"`
 		} `yaml:"smart_crop,omitempty"`
 		AutoRotate bool `yaml:"auto_rotate"`
+		Grayscale  bool `yaml:"grayscale"`
 		Strip      bool `yaml:"strip"`
 		Blur       *struct {
 			Sigma   float64 `yaml:"sigma"`

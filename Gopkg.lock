@@ -33,7 +33,7 @@
 
 [[projects]]
   name = "github.com/go-chi/chi"
-  packages = ["."]
+  packages = [".","middleware"]
   revision = "f7c66f685bcab06bcce78ac212c5f3553c063d19"
   version = "v3.3.0"
 
@@ -53,6 +53,12 @@
   name = "github.com/jmespath/go-jmespath"
   packages = ["."]
   revision = "0b12d6b5"
+
+[[projects]]
+  name = "github.com/karlseguin/ccache"
+  packages = ["."]
+  revision = "a2d62155777b39595c825ed3824279e642a5db3c"
+  version = "v2.0.2"
 
 [[projects]]
   name = "github.com/pkg/errors"
@@ -135,6 +141,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "1e159efa2fcc01a3724db01aa9c36cb8a0e406958d4a3993f2ca13deea2e164f"
+  inputs-digest = "b260006820d07df44bcae558530bdaa291660fa75b7f22e72911dda5a7b9bc93"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -79,7 +79,7 @@ func presetToTransform(preset config.Preset) (transforms.Transforms, error) {
 	}
 
 	if filters.Crop != nil {
-		err := trans.Crop(filters.Crop.Height, filters.Crop.Width, filters.Crop.Mode == "outbound")
+		err := trans.Crop(filters.Crop.Width, filters.Crop.Height, filters.Crop.Mode == "outbound")
 		if err != nil {
 			return trans, err
 		}
@@ -120,6 +120,10 @@ func presetToTransform(preset config.Preset) (transforms.Transforms, error) {
 		if err != nil {
 			return trans, err
 		}
+	}
+
+	if filters.Grayscale {
+		trans.Grayscale()
 	}
 
 	return trans, nil

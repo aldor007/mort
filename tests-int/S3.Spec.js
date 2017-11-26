@@ -32,8 +32,6 @@ describe('S3 features', function () {
                 this.s3.listBuckets({}, function (err, data) {
                     expect(err).to.be.null;
                     expect(Object.keys(data['Buckets']).length).to.eql(2);
-                    expect(data['Buckets'][0].Name).to.eql('local');
-                    expect(data['Buckets'][1].Name).to.eql('remote');
                     done(err)
                 })
             });
@@ -165,8 +163,6 @@ describe('S3 features', function () {
                 this.s3.listBuckets({}, function (err, data) {
                     expect(err).to.be.null;
                     expect(Object.keys(data['Buckets']).length).to.eql(2);
-                    expect(data['Buckets'][0].Name).to.eql('local');
-                    expect(data['Buckets'][1].Name).to.eql('remote');
                     done(err)
                 })
             });
