@@ -1,0 +1,9 @@
+[Unit]
+Description=mort - A storage and image processing server
+
+[Service]
+ExecStart=/usr/local/bin/mort
+Restart=on-abort
+
+[Install]
+WantedBy=multi-user.target
