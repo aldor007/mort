@@ -25,10 +25,10 @@ type Response struct {
 	errorValue    error       // error value
 
 	reader     io.ReadCloser  // reader for response body
-	body       []byte         // response body for buffored value
-	bodyReader io.ReadCloser  // original response buffor
+	body       []byte         // response body for buffered value
+	bodyReader io.ReadCloser  // original response buffer
 	resStream  *stream.Stream // response stream dispatcher
-	hasParent  bool           // flag indicated that response is a caopy
+	hasParent  bool           // flag indicated that response is a copy
 }
 
 // New create response object with io.ReadCloser
@@ -167,13 +167,12 @@ func (r *Response) Send(w http.ResponseWriter) error {
 		w.Header().Set(headerName, headerValue[0])
 	}
 
+	defer r.Close()
 	var resStream io.Reader
 	if r.ContentLength != 0 {
 		resStream = r.Stream()
 		if resStream == nil {
 			r.StatusCode = 500
-		} else {
-			defer r.Close()
 		}
 
 	}
@@ -262,10 +261,10 @@ func (r *Response) CopyWithStream() (*Response, error) {
 }
 
 // Stream return io.Reader interferace from correct response content
-func (r *Response) Stream() io.Reader {
+func (r *Response) Stream() io.ReadCloser {
 	if r.hasParent == true && r.resStream != nil {
 		r, _ := r.resStream.NextReader()
-		return r
+		return ioutil.NopCloser(r)
 	}
 
 	if r.reader != nil {
@@ -273,7 +272,7 @@ func (r *Response) Stream() io.Reader {
 	}
 
 	if r.body != nil {
-		return bytes.NewReader(r.body)
+		return ioutil.NopCloser(bytes.NewReader(r.body))
 	}
 
 	return nil

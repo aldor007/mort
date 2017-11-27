@@ -1,3 +1,4 @@
 src/*
 vendor/*
 pkg/*
+node_modules/*

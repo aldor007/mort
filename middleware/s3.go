@@ -13,7 +13,7 @@ import (
 	"github.com/aldor007/go-aws-auth"
 )
 
-// authHeaderRegexpv4 reugular expression for AWS Auth v4 header mode
+// authHeaderRegexpv4 regular expression for AWS Auth v4 header mode
 var autHeaderRegexpv4 = regexp.MustCompile("^(:?[A-Za-z0-9-]+) Credential=(:?.+),\\s*SignedHeaders=(:?[a-zA-Z0-9;-]+),\\s*Signature=(:?[a-zA-Z0-9]+)$")
 
 // authHeaderRegexpv2 regular expression for Aws Auth v2 header mode

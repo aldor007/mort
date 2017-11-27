@@ -69,6 +69,12 @@ func (c *Config) load(data []byte) error {
 
 		for sName, storage := range c.Buckets[name].Storages {
 			storage.Hash = name + sName + storage.Kind
+			if sName == "transforms" {
+				if storage.PathPrefix == "" {
+					storage.PathPrefix = "transforms"
+				}
+			}
+
 			bucket.Storages[sName] = storage
 		}
 
@@ -164,7 +170,7 @@ func (c *Config) validateTransform(bucketName string, bucket Bucket) error {
 		}
 	}
 
-	if transform.Kind == "prestes" {
+	if transform.Kind == "presets" {
 		if strings.Index(transform.Path, "(?P<presetName>") == -1 {
 			err = configInvalidError(fmt.Sprintf("%s invalid transform regexp it should have capturing group for presetName `(?P<presetName>``", errorMsgPrefix))
 		}

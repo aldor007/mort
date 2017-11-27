@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 
-mkdir -p /tmp/mort-tests/local/dir
+rm -rf /tmp/mort-tests
+
+mkdir -p /tmp/mort-tests/local/dir/
+mkdir -p /tmp/mort-tests/local/dir/a/b/c
+mkdir -p /tmp/mort-tests/local/dir2/a/b/c
 mkdir -p /tmp/mort-tests/remote/dir
 
 echo "test" > /tmp/mort-tests/local/file
@@ -14,8 +18,10 @@ pid=$!
 sleep 10
 
 ./node_modules/.bin/mocha tests-int/*.Spec.js
-
+TEST_RESULT=$?
 echo
 kill -9 $pid
-rm -rf /tmp/mort-tests
+if [[ $TEST_RESULT -eq 0 ]]; then
+    rm -rf /tmp/mort-tests
+fi
 unset MORT_PORT

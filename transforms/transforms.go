@@ -39,6 +39,8 @@ type watermark struct {
 	yPos    string
 }
 
+var prime64 = 1099511628211
+
 func (w watermark) fetchImage() ([]byte, error) {
 	if strings.HasPrefix(w.image, "http") {
 		client := &http.Client{
@@ -88,7 +90,7 @@ func (w watermark) calculatePostion(width, height int) (top int, left int) {
 	return
 }
 
-// ImageInfo holds informaation about image
+// ImageInfo holds information about image
 type ImageInfo struct {
 	width  int    // width of image in px
 	height int    // height of image in px
@@ -102,26 +104,27 @@ func NewImageInfo(metadata bimg.ImageMetadata, format string) ImageInfo {
 
 // Transforms struct hold information about what operations should be performed on image
 type Transforms struct {
-	height        int
-	width         int
-	areaHeight    int
-	areaWidth     int
-	top           int
-	left          int
-	quality       int
-	compression   int
-	zoom          int
-	crop          bool
-	enlarge       bool
-	embed         bool
-	flip          bool
-	flop          bool
-	force         bool
-	noAutoRotate  bool
-	noProfile     bool
-	interlace     bool
-	stripMetadata bool
-	trim          bool
+	height         int
+	width          int
+	areaHeight     int
+	areaWidth      int
+	top            int
+	left           int
+	quality        int
+	compression    int
+	zoom           int
+	crop           bool
+	enlarge        bool
+	embed          bool
+	flip           bool
+	flop           bool
+	force          bool
+	noAutoRotate   bool
+	noProfile      bool
+	interlace      bool
+	stripMetadata  bool
+	trim           bool
+	interpretation bimg.Interpretation
 
 	blur blur
 
@@ -131,7 +134,7 @@ type Transforms struct {
 
 	NotEmpty bool
 
-	transHash uint64
+	transHash fnvI64
 }
 
 // Resize change image width and height
@@ -140,10 +143,10 @@ func (t *Transforms) Resize(width, height int, enlarge bool) error {
 	t.height = height
 	t.enlarge = enlarge
 
-	t.transHash = 1000 + t.transHash + uint64(t.width) + uint64(t.height)
+	t.transHash.Write(1111, uint64(t.width)*7, uint64(t.height)*3)
 
 	if t.enlarge {
-		t.transHash = t.transHash + 1
+		t.transHash.Write(12311)
 	}
 
 	t.NotEmpty = true
@@ -158,7 +161,7 @@ func (t *Transforms) Crop(width, height int, enlarge bool) error {
 	t.crop = true
 	t.NotEmpty = true
 
-	t.transHash = 1200 + t.transHash + uint64(t.width) + uint64(t.height)
+	t.transHash.Write(1211, uint64(t.width)*5, uint64(t.height))
 	return nil
 }
 
@@ -166,7 +169,7 @@ func (t *Transforms) Crop(width, height int, enlarge bool) error {
 func (t *Transforms) Interlace() error {
 	t.interlace = true
 	t.NotEmpty = true
-	t.transHash = 1300 + t.transHash + 71
+	t.transHash.Write(1311, 71)
 	return nil
 }
 
@@ -174,7 +177,7 @@ func (t *Transforms) Interlace() error {
 func (t *Transforms) Quality(quality int) error {
 	t.quality = quality
 	t.NotEmpty = true
-	t.transHash = 1400 + t.transHash + uint64(t.quality)
+	t.transHash.Write(1401, uint64(t.quality))
 	return nil
 }
 
@@ -182,7 +185,7 @@ func (t *Transforms) Quality(quality int) error {
 func (t *Transforms) StripMetadata() error {
 	t.stripMetadata = true
 	t.NotEmpty = true
-	t.transHash = 1500 + t.transHash + 85
+	t.transHash.Write(1999)
 	return nil
 }
 
@@ -191,7 +194,7 @@ func (t *Transforms) Blur(sigma, minAmpl float64) error {
 	t.NotEmpty = true
 	t.blur.sigma = sigma
 	t.blur.minAmpl = minAmpl
-	t.transHash = 1600 + t.transHash + uint64(t.blur.sigma) + uint64(t.blur.minAmpl)
+	t.transHash.Write(19121, uint64(t.blur.sigma), uint64(t.blur.minAmpl))
 	return nil
 }
 
@@ -199,7 +202,7 @@ func (t *Transforms) Blur(sigma, minAmpl float64) error {
 func (t *Transforms) Hash() hash.Hash64 {
 	hash := murmur3.New64WithSeed(20171108)
 	transHashB := make([]byte, 8)
-	binary.LittleEndian.PutUint64(transHashB, t.transHash)
+	binary.LittleEndian.PutUint64(transHashB, t.transHash.Value())
 	hash.Write(transHashB)
 	return hash
 }
@@ -207,36 +210,41 @@ func (t *Transforms) Hash() hash.Hash64 {
 // Format change image format
 func (t *Transforms) Format(format string) error {
 	t.NotEmpty = true
-	t.transHash = 1700 + t.transHash + 11
 	f, err := imageFormat(format)
 	if err != nil {
 		return err
 	}
 	t.format = f
+	t.transHash.Write(1122121, uint64(f))
 	return nil
 }
 
 // Watermark merge two image in one
 func (t *Transforms) Watermark(image string, position string, opacity float32) error {
 	if image == "" || position == "" {
-		return errors.New("Missing required params")
+		return errors.New("missing required params")
 	}
 	p := strings.Split(position, "-")
 	if len(p) != 2 {
-		return errors.New("Invalid position given")
+		return errors.New("invalid position given")
 	}
 	if _, ok := watermarkPosY[p[0]]; !ok {
-		return errors.New("Invalid first position argument")
+		return errors.New("invalid first position argument")
 	}
 
 	if _, ok := watermarkPosX[p[1]]; !ok {
-		return errors.New("Invalid second position argument")
+		return errors.New("invalid second position argument")
 	}
 
 	t.NotEmpty = true
-	t.transHash = 1700 + t.transHash + uint64(len(image)) + uint64(len(position))
+	t.transHash.Write(171200, uint64(len(image)), uint64(len(position)), uint64(opacity*100))
 	t.watermark = watermark{image: image, xPos: p[1], yPos: p[0], opacity: opacity}
 	return nil
+}
+
+// Grayscale convert image to B&W
+func (t *Transforms) Grayscale() {
+	t.interpretation = bimg.InterpretationBW
 }
 
 func imageFormat(format string) (bimg.ImageType, error) {
@@ -279,6 +287,10 @@ func (t *Transforms) BimgOptions(imageInfo ImageInfo) (bimg.Options, error) {
 		b.Type = t.format
 	}
 
+	if t.interpretation != 0 {
+		b.Interpretation = t.interpretation
+	}
+
 	if t.watermark.image != "" {
 		// fetch image
 		buf, err := t.watermark.fetchImage()
@@ -312,4 +324,26 @@ func (t *Transforms) BimgOptions(imageInfo ImageInfo) (bimg.Options, error) {
 	}
 
 	return b, nil
+}
+
+//  FNV  for uint64
+type fnvI64 uint64
+
+func (f *fnvI64) Write(data ...uint64) {
+	hash := *f
+
+	if hash == 0 {
+		hash = fnvI64(1231)
+	}
+
+	for _, d := range data {
+		hash ^= fnvI64(d)
+		hash *= fnvI64(prime64)
+	}
+
+	*f = hash
+}
+
+func (f fnvI64) Value() uint64 {
+	return uint64(f)
 }

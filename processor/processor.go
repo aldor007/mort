@@ -17,6 +17,7 @@ import (
 	"github.com/aldor007/mort/storage"
 	"github.com/aldor007/mort/throttler"
 	"github.com/aldor007/mort/transforms"
+	"github.com/karlseguin/ccache"
 	"go.uber.org/zap"
 )
 
@@ -35,7 +36,7 @@ func NewRequestProcessor(queueLen int, l lock.Lock, throttler throttler.Throttle
 	rp.collapse = l
 	rp.throttler = throttler
 	rp.queue = make(chan requestMessage, queueLen)
-
+	rp.cache = ccache.New(ccache.Configure().MaxSize(100))
 	return rp
 }
 
@@ -44,6 +45,7 @@ type RequestProcessor struct {
 	collapse  lock.Lock           // interface used for request collapsing
 	throttler throttler.Throttler // interface used for rate limiting creating of new images
 	queue     chan requestMessage // request queue
+	cache     *ccache.Cache
 }
 
 type requestMessage struct {
@@ -132,7 +134,11 @@ func (r *RequestProcessor) collapseGET(req *http.Request, obj *object.FileObject
 			lockResult.Cancel <- true
 			return response.NewString(504, "timeout")
 		default:
-
+			cacheValue := r.cache.Get(obj.Key)
+			if cacheValue != nil {
+				lockResult.Cancel <- true
+				return cacheValue.Value().(*response.Response)
+			}
 		}
 	}
 
@@ -141,6 +147,11 @@ func (r *RequestProcessor) collapseGET(req *http.Request, obj *object.FileObject
 func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) *response.Response {
 	if obj.Key == "" {
 		return handleS3Get(req, obj)
+	}
+
+	cacheValue := r.cache.Get(obj.Key)
+	if cacheValue != nil {
+		return cacheValue.Value().(*response.Response)
 	}
 
 	var currObj *object.FileObject = obj
@@ -287,9 +298,11 @@ func (r *RequestProcessor) processImage(ctx context.Context, obj *object.FileObj
 	}
 
 	resCpy, err := res.Copy()
+	r.cache.Set(obj.Key, resCpy, time.Minute*10)
 	if err == nil {
 		go func(objS object.FileObject, resS *response.Response) {
-			storage.Set(obj, resS.Headers, resS.ContentLength, resS.Stream())
+			storage.Set(&objS, resS.Headers, resS.ContentLength, resS.Stream())
+			//r.cache.Delete(objS.Key)
 			resS.Close()
 		}(*obj, resCpy)
 	} else {
