@@ -2,9 +2,10 @@
 # and a workspace (GOPATH) configured at /go.
 FROM golang:1.9.2-stretch
 
+ARG GITHUB_TOKEN=""
+
 ENV LIBVIPS_VERSION 8.5.9
 ENV DEP_VERSION v0.3.2
-
 # Installs libvips + required libraries
 RUN \
   # Install dependencies
@@ -32,9 +33,6 @@ RUN \
   apt-get install ruby ruby-dev rubygems  -y && \
   rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Server port to listen
-ENV PORT 8080
-
 # gcc for cgo
 RUN apt-get update && apt-get install -y \
     gcc curl git libc6-dev make ca-certificates \
@@ -52,8 +50,7 @@ WORKDIR $GOPATH
 RUN curl -fsSL -o /usr/local/bin/dep https://github.com/golang/dep/releases/download/$DEP_VERSION/dep-linux-amd64 && chmod +x /usr/local/bin/dep
 ADD . /go/src/github.com/aldor007/mort
 
-RUN cd /go/src/github.com/aldor007/mort &&  dep ensure -vendor-only
+RUN cd /go/src/github.com/aldor007/mort; dep ensure -vendor-only
 # RUN build
-RUN cd /go/src/github.com/aldor007/mort; go build cmd/mort/mort.go
-RUN cd /go/src/github.com/aldor007/mort; goreleaser
+RUN cd /go/src/github.com/aldor007/mort; GITHUB_TOKEN=${GITHUB_TOKEN} goreleaser
 

@@ -17,3 +17,6 @@ prof.mem
 .glide/
 
 .DS_Store
+.idea
+vendor/
+node_modules/
