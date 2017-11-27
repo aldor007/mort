@@ -25,10 +25,11 @@ RUN \
   make install && \
   ldconfig && \
   # Clean up
-  apt-get remove -y curl automake build-essential && \
+  apt-get remove -y curl automake && \
   apt-get autoremove -y && \
   apt-get autoclean && \
   apt-get clean && \
+  apt-get install ruby ruby-dev rubygems  -y && \
   rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Server port to listen
@@ -40,6 +41,9 @@ RUN apt-get update && apt-get install -y \
     --no-install-recommends \
   && rm -rf /var/lib/apt/lists/*
 
+RUN gem install --no-ri --no-rdoc fpm
+RUN go get github.com/goreleaser/goreleaser
+
 ENV GOPATH /go
 ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
 
@@ -50,12 +54,6 @@ ADD . /go/src/github.com/aldor007/mort
 
 RUN cd /go/src/github.com/aldor007/mort &&  dep ensure -vendor-only
 # RUN build
-RUN cd /go/src/github.com/aldor007/mort; go build cmd/mort/mort.go; cp mort /go/mort; cp -r /go/src/github.com/aldor007/mort/configuration /go/
-# clean up
-# RUN rm -rf /go/src; rm -rf /go/pkg; rm -rf /usr/share/; rm -rf /usr/include/
+RUN cd /go/src/github.com/aldor007/mort; go build cmd/mort/mort.go
+RUN cd /go/src/github.com/aldor007/mort; goreleaser
 
-# Run the outyet command by default when the container starts.
-ENTRYPOINT ["/go/mort"]
-
-# Expose the server TCP port
-EXPOSE 8080 8081

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
 	"go.uber.org/zap"
 
 	"github.com/aldor007/mort/config"
@@ -17,6 +18,9 @@ import (
 	"github.com/aldor007/mort/processor"
 	"github.com/aldor007/mort/response"
 	"github.com/aldor007/mort/throttler"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 const (
@@ -32,13 +36,35 @@ const (
 `
 )
 
+var debugServer *http.Server
+
+func debugListener() {
+	if debugServer != nil {
+		debugServer.Close()
+		return
+	}
+
+	router := chi.NewRouter()
+	router.Mount("/", middleware.Profiler())
+	s := &http.Server{
+		Addr:         "localhost:8081",
+		ReadTimeout:  2 * time.Minute,
+		WriteTimeout: 2 * time.Minute,
+		Handler:      router,
+	}
+
+	debugServer = s
+	s.ListenAndServe()
+}
+
 func main() {
 	configPath := flag.String("config", "configuration/config.yml", "Path to configuration")
 	listenAddr := flag.String("listen", ":8080", "Listen addr")
+	debug := flag.Bool("debug", false, "enable debug mode")
 	flag.Parse()
 
 	fmt.Printf(BANNER, "v"+Version)
-	fmt.Printf("Config file %s listen addr %s\n", *configPath, *listenAddr)
+	fmt.Printf("Config file %s listen addr %s debug: %t pid: %d \n", *configPath, *listenAddr, *debug, os.Getpid())
 
 	logger, _ := zap.NewProduction()
 	//logger, _ := zap.NewDevelopment()
@@ -72,7 +98,7 @@ func main() {
 			res.Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, HEAD")
 			defer logger.Sync() // flushes buffer, if any
 			if res.HasError() {
-				log.Log().Warn("github.com/aldor007/mort process error", zap.String("obj.Key", obj.Key), zap.Error(res.Error()))
+				log.Log().Warn("Mort process error", zap.String("obj.Key", obj.Key), zap.Error(res.Error()))
 			}
 
 			res.Send(resWriter)
@@ -90,6 +116,30 @@ func main() {
 		WriteTimeout: 2 * time.Minute,
 		Handler:      router,
 	}
+
+	if debug != nil && *debug {
+		go debugListener()
+	}
+
+	signal_chan := make(chan os.Signal, 1)
+	signal.Notify(signal_chan, syscall.SIGUSR2)
+
+	go func() {
+		for {
+			sig := <-signal_chan
+			switch sig {
+			// kill -SIGHUP XXXX
+			case syscall.SIGUSR2:
+				if debugServer != nil {
+					log.Log().Info("Stop debug server on port 8081")
+				} else {
+					log.Log().Info("Start debug server on port 8081")
+				}
+				go debugListener()
+			default:
+			}
+		}
+	}()
 
 	s.ListenAndServe()
 

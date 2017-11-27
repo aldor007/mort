@@ -16,6 +16,6 @@ buckets:
         storages:
             basic:
                 kind: "local-meta"
-                rootPath: "../tests/benchmark"
+                rootPath: "./tests/benchmark"
             transform:
                 kind: "noop"

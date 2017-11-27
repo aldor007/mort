@@ -124,7 +124,7 @@ buckets: # list of available buckets
             secretAccessKey: "random"
         transform: # config for transforms
             path: "\\/(?P<presetName>[a-z0-9_]+)\\/(?P<parent>[a-z0-9-\\.]+)" # regexp for transform path 
-            kind: "presets" #  type of transform for now only "presets" is available 
+            kind: "presets" #  type of transform or "query"
             presets: # list of presets
                 small:
                     quality: 75

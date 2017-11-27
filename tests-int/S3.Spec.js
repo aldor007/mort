@@ -32,8 +32,6 @@ describe('S3 features', function () {
                 this.s3.listBuckets({}, function (err, data) {
                     expect(err).to.be.null;
                     expect(Object.keys(data['Buckets']).length).to.eql(2);
-                    expect(data['Buckets'][0].Name).to.eql('local');
-                    expect(data['Buckets'][1].Name).to.eql('remote');
                     done(err)
                 })
             });
@@ -61,7 +59,7 @@ describe('S3 features', function () {
 
                 this.s3.listObjects(listParams, function (err, data) {
                     expect(err).to.be.null;
-                    expect(data['CommonPrefixes']).to.deep.eql([ { Prefix: 'dir/' } ]);
+                    expect(data['CommonPrefixes']).to.deep.eql([ { Prefix: 'dir/' }, { Prefix: 'dir2/' } ]);
                     expect(data['Contents'].length).to.eql(1);
                     done(err)
                 });
@@ -105,6 +103,28 @@ describe('S3 features', function () {
                 });
             });
 
+            it('shouldn\'t upload file', function (done) {
+                const headers = {};
+                const body = 'aaaa body';
+                headers['content-length'] = headers['content-length'] || body.length;
+                headers['content-type'] = headers['content-type'] ||  'image/jpeg'
+
+                const params = {
+                    Body: body,
+                    Bucket: 'remote-query',
+                    Key: 'file.jpg',
+                    ContentType: headers['content-type'],
+                    ContentLength: headers['content-length'],
+                    Etag: headers['etag'],
+                    Metadata: {}
+                };
+
+                this.s3.upload(params, function (err) {
+                    expect(err).to.be.an('error');
+                    done()
+                });
+            });
+
             it('should return error when invalid access key', function (done) {
                 this.s3opts.accessKeyId = 'invalid';
                 this.s3 = new AWS.S3(this.s3opts);
@@ -143,8 +163,6 @@ describe('S3 features', function () {
                 this.s3.listBuckets({}, function (err, data) {
                     expect(err).to.be.null;
                     expect(Object.keys(data['Buckets']).length).to.eql(2);
-                    expect(data['Buckets'][0].Name).to.eql('local');
-                    expect(data['Buckets'][1].Name).to.eql('remote');
                     done(err)
                 })
             });
@@ -172,7 +190,7 @@ describe('S3 features', function () {
 
                 this.s3.listObjects(listParams, function (err, data) {
                     expect(err).to.be.null;
-                    expect(data['CommonPrefixes']).to.deep.eql([ { Prefix: 'dir/' } ]);
+                    expect(data['CommonPrefixes']).to.deep.eql([ { Prefix: 'dir/' }, { Prefix: 'dir2/' } ]);
                     expect(data['Contents'].length).to.eql(2);
                     done(err)
                 });

@@ -57,3 +57,22 @@ buckets:
                 kind: "local-meta"
                 rootPath: "/Users/aldor/workspace/mkaciubacom/web"
                 pathPrefix: "transforms"
+
+    query:
+        keys:
+          - accessKey: "acc"
+            secretAccessKey: "sec"
+        transform:
+            kind: "query"
+            resultKey: "hash"
+            presets:
+        storages:
+            basic:
+                kind: "http"
+                url: "https://i.imgur.com/<item>"
+                headers:
+                  "x--key": "sec"
+            transform:
+                kind: "local-meta"
+                rootPath: "/Users/aldor/workspace/mkaciubacom/web"
+                pathPrefix: "transforms"

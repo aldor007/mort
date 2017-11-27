@@ -22,6 +22,12 @@ docker-push:
 
 run-server:
 	go run cmd/mort/mort.go
+	
+run-test-server:
+	mkdir -p /tmp/mort-tests/remote
+	mkdir -p /tmp/mort-tests/remote-query
+	mkdir -p /tmp/mort-tests/local
+	go run cmd/mort/mort.go -config ./tests-int/config.yml
 
 clean-prof:
 	find . -name ".test" -depth -exec rm {} \;

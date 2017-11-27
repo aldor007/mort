@@ -14,7 +14,6 @@ import (
 	"github.com/aldor007/mort/object"
 	"github.com/aldor007/mort/response"
 	"github.com/aldor007/mort/transforms"
-	"runtime"
 )
 
 // ImageEngine is main struct that is responding for image processing
@@ -53,8 +52,6 @@ func (c *ImageEngine) Process(obj *object.FileObject, trans []transforms.Transfo
 		}
 		transHash = transHash + tran.Hash().Sum64()
 	}
-
-	runtime.KeepAlive(buf)
 
 	transHashB := make([]byte, 8)
 	binary.LittleEndian.PutUint64(transHashB, transHash)

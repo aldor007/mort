@@ -25,6 +25,7 @@ type Preset struct {
 			Mode   string `yaml:"mode"`
 		} `yaml:"smart_crop,omitempty"`
 		AutoRotate bool `yaml:"auto_rotate"`
+		Grayscale  bool `yaml:"grayscale"`
 		Strip      bool `yaml:"strip"`
 		Blur       *struct {
 			Sigma   float64 `yaml:"sigma"`
@@ -61,6 +62,7 @@ type Storage struct {
 	Region          string            `yaml:"region,omitempty"`          // region for s3 storage
 	Endpoint        string            `yaml:"endpoint,omitempty"`        // endpoint for s3 storage
 	PathPrefix      string            `yaml:"pathPrefix,omitempty"`      // prefix in path for all storage
+	Bucket          string            `yaml:"bucket"`
 	Hash            string            // unique hash for given storage
 }
 

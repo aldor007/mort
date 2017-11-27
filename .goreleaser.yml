@@ -1,0 +1,46 @@
+project_name: mort
+builds:
+  -
+    binary: mort
+    goarch:
+      - amd64
+    goarm:
+      - "6"
+    goos:
+      - linux
+#      - darwin
+    ldflags: "-s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}"
+    main: "./cmd/mort/mort.go"
+archive:
+  files:
+    - licence*
+    - LICENCE*
+    - license*
+    - LICENSE*
+    - readme*
+    - README*
+    - changelog*
+    - CHANGELOG*
+  format: tar.gz
+  name_template: "{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
+checksum:
+  name_template: "{{ .ProjectName }}_{{ .Version }}_checksums.txt"
+fpm:
+  bindir: /usr/local/bin
+  dependencies:
+    - libvips-dev
+  description: "Storage and image processing server"
+  formats:
+    - deb
+  license: MIT
+  maintainer: "Marcin Kaciuba <marcin.kaciuba@gmail.com>"
+  files:
+    "etc/mort.service": "/lib/systemd/system/mort.service"
+    "configuration/config.yml": "/etc/mort/mort.yml"
+release:
+  github:
+    name: mort
+    owner: aldor007
+  name_template: "{{.Tag}}"
+snapshot:
+  name_template: "SNAPSHOT-{{ .Commit }}"

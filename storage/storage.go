@@ -88,12 +88,7 @@ func Set(obj *object.FileObject, metaHeaders http.Header, contentLen int64, body
 		return response.NewError(503, err)
 	}
 
-	metadata := make(map[string]interface{}, len(metaHeaders))
-	for k, v := range metaHeaders {
-		metadata[k] = v[0]
-	}
-
-	_, err = client.Put(getKey(obj), body, contentLen, metadata)
+	_, err = client.Put(getKey(obj), body, contentLen, prepareMetadata(obj, metaHeaders))
 
 	if err != nil {
 		log.Logs().Warnw("Storage/Set cannot set", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 500), zap.Error(err))
@@ -166,10 +161,8 @@ func List(obj *object.FileObject, maxKeys int, delimeter string, prefix string, 
 			key = ""
 		} else {
 			key = item.Name()
-			// FIXME: add is dir for others adapters
-			itemMeta, _ := item.Metadata()
 			_, ok := commonPrefixes[key]
-			if itemMeta["is_dir"].(bool) && !ok {
+			if isDir(item) && !ok {
 				commonPrefix = key
 				commonPrefixes[key] = true
 				key = ""
@@ -240,8 +233,12 @@ func getClient(obj *object.FileObject) (stow.Container, error) {
 
 	// XXX: check if it is ok
 	//defer client.Close()
+	bucketName := obj.Bucket
+	if storageCfg.Bucket != "" {
+		bucketName = storageCfg.Bucket
+	}
 
-	container, err := client.Container(obj.Bucket)
+	container, err := client.Container(bucketName)
 
 	if err != nil {
 		log.Log().Info("Storage/getClient error", zap.String("kind", storageCfg.Kind), zap.String("bucket", obj.Bucket), zap.Error(err))
@@ -269,22 +266,11 @@ func prepareResponse(obj *object.FileObject, stream io.ReadCloser, item stow.Ite
 	res := response.New(200, stream)
 
 	metadata, err := item.Metadata()
+	parseMetadata(obj, metadata, res)
 
 	if err != nil {
 		log.Logs().Warnw("Storage/prepareResponse read metadata", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 500), zap.Error(err))
 		return response.NewError(500, err)
-	}
-
-	for k, v := range metadata {
-		switch k {
-		case "Cache-Control":
-			res.Set(k, v.(string))
-
-		}
-
-		if strings.HasPrefix(k, "X-") {
-			res.Set(k, v.(string))
-		}
 	}
 
 	etag, err := item.ETag()
@@ -302,7 +288,9 @@ func prepareResponse(obj *object.FileObject, stream io.ReadCloser, item stow.Ite
 		return response.NewError(500, err)
 	}
 
-	res.Set("ETag", etag)
+	if etag != "" {
+		res.Set("ETag", etag)
+	}
 	res.Set("Last-Modified", lastMod.Format(http.TimeFormat))
 	res.ContentLength = size
 
@@ -313,4 +301,75 @@ func prepareResponse(obj *object.FileObject, stream io.ReadCloser, item stow.Ite
 	}
 
 	return res
+}
+
+func prepareMetadata(obj *object.FileObject, metaHeaders http.Header) map[string]interface{} {
+	metadata := make(map[string]interface{}, len(metaHeaders))
+	for k, v := range metaHeaders {
+		switch obj.Storage.Kind {
+		case "s3":
+			keyLower := strings.ToLower(k)
+			if strings.HasPrefix(keyLower, "x-amz-meta") || keyLower == "content-type" {
+				metadata[strings.Replace(strings.ToLower(k), "x-amz-meta-", "", 1)] = v[0]
+			}
+		default:
+			metadata[k] = v[0]
+		}
+	}
+
+	return metadata
+}
+
+func parseMetadata(obj *object.FileObject, metadata map[string]interface{}, res *response.Response) {
+	for k, v := range metadata {
+		switch k {
+		case "Cache-Control":
+			res.Set(k, v.(string))
+
+		}
+
+		if strings.HasPrefix(k, "X-") {
+			res.Set(k, v.(string))
+		}
+	}
+
+	switch obj.Storage.Kind {
+	case "s3":
+		for k, v := range metadata {
+			switch k {
+			case "cache-control", "content-type":
+				res.Set(k, v.(string))
+
+			}
+
+			res.Set(strings.Join([]string{"x-amz-meta", k}, "-"), v.(string))
+		}
+	}
+
+}
+
+func isDir(item stow.Item) bool {
+	metaData, err := item.Metadata()
+	if err != nil {
+		return false
+	}
+
+	if dir, ok := metaData["is_dir"]; ok {
+		return dir.(bool)
+	}
+
+	if ct, ok := metaData["content-type"]; ok {
+		return ct.(string) == "application/directory"
+	}
+
+	size, err := item.Size()
+	if err != nil {
+		return false
+	}
+
+	if size == 0 {
+		return true
+	}
+
+	return false
 }

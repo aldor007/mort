@@ -75,6 +75,40 @@ buckets:
                         thumbnail:
                             width: 150
                             height: 200
+                crop:
+                    quality: 75
+                    filters:
+                        crop:
+                            width: 756
+                            height: 396
+                            mode: outbound
+                blur:
+                    quality: 75
+                    filters:
+                        crop:
+                            width: 756
+                            height: 396
+                            mode: outbound
+                        blur:
+                          sigma: 5.0
+
+        storages:
+        storages:
+            api:
+                kind: "http"
+                url: "https://i.redd.it<item>" # Cnxpvwo7qqfwz.jpg
+            transform:
+                kind: "local-meta"
+                rootPath: "/tmp/mort-tests/"
+                pathPrefix: "transforms"
+            basic:
+                kind: "local-meta"
+                rootPath: "/tmp/mort-tests/"
+    remote-query:
+        transform:
+            kind: "query"
+            parentStorage: "api"
+            parentBucket: "remote-query"
         storages:
             api:
                 kind: "http"
