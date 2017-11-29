@@ -15,7 +15,7 @@ export MORT_PORT
 
 go run cmd/mort/mort.go -listen ":${MORT_PORT}" -config tests-int/config.yml > mort.logs &
 pid=$!
-sleep 10
+sleep 15
 
 ./node_modules/.bin/mocha tests-int/*.Spec.js
 TEST_RESULT=$?

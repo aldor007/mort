@@ -13,18 +13,19 @@ import (
 
 	"github.com/spaolacci/murmur3"
 	"gopkg.in/h2non/bimg.v1"
+	"fmt"
 )
 
 var watermarkPosX = map[string]float32{
-	"top":    0,
-	"center": 1. / 3.,
-	"bottom": 2. / 3.,
-}
-
-var watermarkPosY = map[string]float32{
 	"left":   0,
 	"center": 1. / 3.,
 	"right":  2. / 3.,
+}
+
+var watermarkPosY = map[string]float32{
+	"top":    0,
+	"center": 1. / 3.,
+	"bottom": 2. / 3.,
 }
 
 type blur struct {
@@ -85,8 +86,8 @@ func (w watermark) fetchImage() ([]byte, error) {
 }
 
 func (w watermark) calculatePostion(width, height int) (top int, left int) {
-	top = int(watermarkPosY[w.yPos]*float32(height)) + 1
-	left = int(watermarkPosX[w.yPos]*float32(width)) + 1
+	top = int(watermarkPosY[w.yPos]*float32(height))
+	left = int(watermarkPosX[w.yPos]*float32(width))
 	return
 }
 
@@ -124,6 +125,7 @@ type Transforms struct {
 	interlace      bool
 	stripMetadata  bool
 	trim           bool
+	rotate         int
 	interpretation bimg.Interpretation
 
 	blur blur
@@ -245,6 +247,13 @@ func (t *Transforms) Watermark(image string, position string, opacity float32) e
 // Grayscale convert image to B&W
 func (t *Transforms) Grayscale() {
 	t.interpretation = bimg.InterpretationBW
+	t.NotEmpty = true
+}
+
+// Rotate rotate image of given angle
+func (t *Transforms) Rotate(angle int) {
+	t.rotate = angle
+	t.NotEmpty = true
 }
 
 func imageFormat(format string) (bimg.ImageType, error) {
@@ -281,6 +290,7 @@ func (t *Transforms) BimgOptions(imageInfo ImageInfo) (bimg.Options, error) {
 			Sigma:   t.blur.sigma,
 			MinAmpl: t.blur.minAmpl,
 		},
+		Rotate: t.rotate,
 	}
 
 	if t.format != 0 {

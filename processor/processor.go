@@ -88,10 +88,10 @@ func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *r
 	switch req.Method {
 	case "GET", "HEAD":
 		if obj.HasTransform() {
-			return r.collapseGET(req, obj)
+			return updateHeaders(r.collapseGET(req, obj))
 		}
 
-		return r.handleGET(req, obj)
+		return updateHeaders(r.handleGET(req, obj))
 	case "PUT":
 		return handlePUT(req, obj)
 
@@ -201,21 +201,21 @@ resLoop:
 			} else {
 				if res.StatusCode == 200 {
 					if obj.CheckParent && parentObj != nil && parentRes.StatusCode == 200 {
-						return updateHeaders(res)
+						return res
 					}
 
-					return updateHeaders(res)
+					return res
 				}
 
 				if res.StatusCode == 404 {
 					break resLoop
 				} else {
-					return updateHeaders(res)
+					return res
 				}
 			}
 		case parentRes = <-parentChan:
 			if parentRes.StatusCode == 404 {
-				return updateHeaders(parentRes)
+				return parentRes
 			}
 		default:
 
@@ -227,13 +227,9 @@ resLoop:
 			parentRes = storage.Head(parentObj)
 		}
 
-		if obj.HasTransform() && strings.Contains(parentRes.Headers.Get(response.HeaderContentType), "image/") {
+		if obj.HasTransform() && parentRes.StatusCode == 200 && strings.Contains(parentRes.Headers.Get(response.HeaderContentType), "image/") {
 			defer res.Close()
-			parentRes = updateHeaders(storage.Get(parentObj))
-
-			if parentRes.StatusCode != 200 {
-				return updateHeaders(parentRes)
-			}
+			parentRes = storage.Get(parentObj)
 
 			defer parentRes.Close()
 
@@ -244,11 +240,11 @@ resLoop:
 			}
 
 			log.Log().Info("Performing transforms", zap.String("obj.Bucket", obj.Bucket), zap.String("obj.Key", obj.Key), zap.Int("transformsLen", len(transforms)))
-			return updateHeaders(r.processImage(ctx, obj, parentRes, transforms))
+			return r.processImage(ctx, obj, parentRes, transforms)
 		}
 	}
 
-	return updateHeaders(res)
+	return res
 }
 
 func handleS3Get(req *http.Request, obj *object.FileObject) *response.Response {

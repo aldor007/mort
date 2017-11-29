@@ -13,7 +13,7 @@ import (
 
 const (
 	// HeaderContentType name of Content-Type header
-	HeaderContentType = "Content-Type"
+	HeaderContentType = "content-type"
 )
 
 // Response is helper struct for wrapping different storage response

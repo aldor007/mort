@@ -19,11 +19,6 @@ type Preset struct {
 			Start  []int  `yaml:"start"`
 			Mode   string `yaml:"mode"`
 		} `yaml:"crop,omitempty"`
-		SmartCrop *struct {
-			Width  int    `yaml:"width"`
-			Height int    `yaml:"height"`
-			Mode   string `yaml:"mode"`
-		} `yaml:"smart_crop,omitempty"`
 		AutoRotate bool `yaml:"auto_rotate"`
 		Grayscale  bool `yaml:"grayscale"`
 		Strip      bool `yaml:"strip"`
@@ -35,7 +30,7 @@ type Preset struct {
 			Image    string  `yaml:"image"`
 			Position string  `yaml:"position"`
 			Opacity  float32 `yaml:"opacity"`
-		}
+		} `yaml:"watermark,omitempty"`
 	} `yaml:"filters"`
 }
 

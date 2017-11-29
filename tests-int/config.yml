@@ -91,8 +91,15 @@ buckets:
                             mode: outbound
                         blur:
                           sigma: 5.0
-
-        storages:
+                watermark:
+                    filters:
+                        crop:
+                            width: 200
+                            height: 200
+                        watermark:
+                            opacity: 0.5
+                            image: "https://i.imgur.com/uomkVIL.png"
+                            position: "top-left"
         storages:
             api:
                 kind: "http"

@@ -64,7 +64,7 @@ func hashKey(h hash.Hash64, suffix string) string {
 	buf.WriteByte('/')
 	buf.Write(hashB)
 	buf.WriteByte('-')
-	buf.WriteString(suffix)
+	buf.WriteString(strings.Replace(suffix, "/", "-", -1))
 	defer bufPool.Put(buf)
 	return buf.String()
 }

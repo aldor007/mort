@@ -70,7 +70,7 @@ func Head(obj *object.FileObject) *response.Response {
 	if err != nil {
 		if err == stow.ErrNotFound {
 			log.Logs().Infow("Storage/Head item response", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 404))
-			return response.NewString(404, notFound)
+			return response.NewString(404, obj.Key)
 		}
 
 		log.Logs().Infow("Storage/Head item response", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Error(err))

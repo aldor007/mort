@@ -8,6 +8,7 @@ import (
 	"go.uber.org/zap"
 	"net/url"
 	"path"
+	"fmt"
 )
 
 // presetCache cache used presets because we don't need create it always new for each request
@@ -43,6 +44,9 @@ func decodePreset(url *url.URL, mortConfig *config.Config, bucketConfig config.B
 		obj.Transforms = t
 	} else {
 		obj.Transforms, err = presetToTransform(trans.Presets[presetName])
+		if err != nil {
+			return err
+		}
 		presetCache[presetName] = obj.Transforms
 	}
 
@@ -66,13 +70,6 @@ func presetToTransform(preset config.Preset) (transforms.Transforms, error) {
 
 	if filters.Thumbnail != nil {
 		err := trans.Resize(filters.Thumbnail.Width, filters.Thumbnail.Height, filters.Thumbnail.Mode == "outbound")
-		if err != nil {
-			return trans, err
-		}
-	}
-
-	if filters.SmartCrop != nil {
-		err := trans.Crop(filters.SmartCrop.Width, filters.SmartCrop.Height, filters.SmartCrop.Mode == "outbound")
 		if err != nil {
 			return trans, err
 		}
@@ -116,6 +113,7 @@ func presetToTransform(preset config.Preset) (transforms.Transforms, error) {
 	}
 
 	if filters.Watermark != nil {
+		fmt.Println("Watermark has preset", filters.Watermark.Image)
 		err := trans.Watermark(filters.Watermark.Image, filters.Watermark.Position, filters.Watermark.Opacity)
 		if err != nil {
 			return trans, err
