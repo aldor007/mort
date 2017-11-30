@@ -17,8 +17,6 @@ var bufPool = sync.Pool{
 	},
 }
 
-var bytePrefix = []byte("prefix")
-
 // Parse pare given url using appropriate parser
 // it set object Key, Bucket, Parent and transforms
 func Parse(url *url.URL, mortConfig *config.Config, obj *FileObject) error {
@@ -36,9 +34,15 @@ func Parse(url *url.URL, mortConfig *config.Config, obj *FileObject) error {
 
 			switch bucketConfig.Transform.Kind {
 			case "presets":
-				err = decodePreset(url, mortConfig, bucketConfig, obj)
+				_, err = decodePreset(url, mortConfig, bucketConfig, obj)
 			case "query":
-				err = decodeQuery(url, mortConfig, bucketConfig, obj)
+				_, err = decodeQuery(url, mortConfig, bucketConfig, obj)
+			case "presets-query":
+				var run bool
+				run, err = decodePreset(url, mortConfig, bucketConfig, obj)
+				if run == false || err != nil {
+					_, err = decodeQuery(url, mortConfig, bucketConfig, obj)
+				}
 			}
 		}
 

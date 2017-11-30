@@ -8,18 +8,17 @@ import (
 	"go.uber.org/zap"
 	"net/url"
 	"path"
-	"fmt"
 )
 
 // presetCache cache used presets because we don't need create it always new for each request
 var presetCache = make(map[string]transforms.Transforms)
 
 // decodePreset parse given url by matching user defined regexp with request path
-func decodePreset(url *url.URL, mortConfig *config.Config, bucketConfig config.Bucket, obj *FileObject) error {
+func decodePreset(url *url.URL, mortConfig *config.Config, bucketConfig config.Bucket, obj *FileObject) (bool, error) {
 	trans := bucketConfig.Transform
 	matches := trans.PathRegexp.FindStringSubmatch(obj.Key)
 	if matches == nil {
-		return nil
+		return false, nil
 	}
 
 	subMatchMap := make(map[string]string, 2)
@@ -36,7 +35,7 @@ func decodePreset(url *url.URL, mortConfig *config.Config, bucketConfig config.B
 	if _, ok := trans.Presets[presetName]; !ok {
 		log.Log().Warn("FileObject decodePreset unknown preset", zap.String("obj.Key", obj.Key), zap.String("parent", parent), zap.String("presetName", presetName),
 			zap.String("regexp", trans.Path))
-		return errors.New("unknown preset " + presetName)
+		return true, errors.New("unknown preset " + presetName)
 	}
 
 	var err error
@@ -45,7 +44,7 @@ func decodePreset(url *url.URL, mortConfig *config.Config, bucketConfig config.B
 	} else {
 		obj.Transforms, err = presetToTransform(trans.Presets[presetName])
 		if err != nil {
-			return err
+			return true, err
 		}
 		presetCache[presetName] = obj.Transforms
 	}
@@ -61,7 +60,7 @@ func decodePreset(url *url.URL, mortConfig *config.Config, bucketConfig config.B
 
 	obj.Parent = parentObj
 	obj.CheckParent = trans.CheckParent
-	return err
+	return true, err
 }
 
 func presetToTransform(preset config.Preset) (transforms.Transforms, error) {
@@ -113,7 +112,6 @@ func presetToTransform(preset config.Preset) (transforms.Transforms, error) {
 	}
 
 	if filters.Watermark != nil {
-		fmt.Println("Watermark has preset", filters.Watermark.Image)
 		err := trans.Watermark(filters.Watermark.Image, filters.Watermark.Position, filters.Watermark.Opacity)
 		if err != nil {
 			return trans, err
@@ -122,6 +120,10 @@ func presetToTransform(preset config.Preset) (transforms.Transforms, error) {
 
 	if filters.Grayscale {
 		trans.Grayscale()
+	}
+
+	if filters.Rotate != nil {
+		trans.Rotate(filters.Rotate.Angle)
 	}
 
 	return trans, nil

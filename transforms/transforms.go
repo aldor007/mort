@@ -13,7 +13,6 @@ import (
 
 	"github.com/spaolacci/murmur3"
 	"gopkg.in/h2non/bimg.v1"
-	"fmt"
 )
 
 var watermarkPosX = map[string]float32{
@@ -40,6 +39,12 @@ type watermark struct {
 	yPos    string
 }
 
+var angleMap = map[int]bimg.Angle{
+	0: bimg.D0,
+	1: bimg.D90,
+	2: bimg.D180,
+	3: bimg.D270,
+}
 var prime64 = 1099511628211
 
 func (w watermark) fetchImage() ([]byte, error) {
@@ -86,8 +91,8 @@ func (w watermark) fetchImage() ([]byte, error) {
 }
 
 func (w watermark) calculatePostion(width, height int) (top int, left int) {
-	top = int(watermarkPosY[w.yPos]*float32(height))
-	left = int(watermarkPosX[w.yPos]*float32(width))
+	top = int(watermarkPosY[w.yPos] * float32(height))
+	left = int(watermarkPosX[w.yPos] * float32(width))
 	return
 }
 
@@ -109,8 +114,6 @@ type Transforms struct {
 	width          int
 	areaHeight     int
 	areaWidth      int
-	top            int
-	left           int
 	quality        int
 	compression    int
 	zoom           int
@@ -125,7 +128,7 @@ type Transforms struct {
 	interlace      bool
 	stripMetadata  bool
 	trim           bool
-	rotate         int
+	rotate         bimg.Angle
 	interpretation bimg.Interpretation
 
 	blur blur
@@ -163,7 +166,7 @@ func (t *Transforms) Crop(width, height int, enlarge bool) error {
 	t.crop = true
 	t.NotEmpty = true
 
-	t.transHash.Write(1211, uint64(t.width)*5, uint64(t.height))
+	t.transHash.Write(1212, uint64(t.width)*5, uint64(t.height))
 	return nil
 }
 
@@ -247,13 +250,21 @@ func (t *Transforms) Watermark(image string, position string, opacity float32) e
 // Grayscale convert image to B&W
 func (t *Transforms) Grayscale() {
 	t.interpretation = bimg.InterpretationBW
+	t.transHash.Write(32309)
 	t.NotEmpty = true
 }
 
 // Rotate rotate image of given angle
-func (t *Transforms) Rotate(angle int) {
-	t.rotate = angle
-	t.NotEmpty = true
+func (t *Transforms) Rotate(angle int) error {
+	a := int(angle / 90)
+	if v, ok := angleMap[a]; ok {
+		t.transHash.Write(32941, uint64(a))
+		t.rotate = v
+		t.NotEmpty = true
+		return nil
+	}
+
+	return errors.New("wrong angle")
 }
 
 func imageFormat(format string) (bimg.ImageType, error) {
@@ -291,6 +302,10 @@ func (t *Transforms) BimgOptions(imageInfo ImageInfo) (bimg.Options, error) {
 			MinAmpl: t.blur.minAmpl,
 		},
 		Rotate: t.rotate,
+	}
+
+	if t.crop {
+		b.Gravity = bimg.GravitySmart
 	}
 
 	if t.format != 0 {

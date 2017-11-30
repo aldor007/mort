@@ -156,7 +156,7 @@ func (c *Config) validateTransform(bucketName string, bucket Bucket) error {
 	transform := bucket.Transform
 	var err error
 	errorMsgPrefix := fmt.Sprintf("%s has invalid transform config", bucketName)
-	if transform.Kind != "presets" && transform.Kind != "query" {
+	if transform.Kind != "presets" && transform.Kind != "query" && transform.Kind != "presets-query" {
 		return configInvalidError(fmt.Sprintf("%s - unknown kind %s", errorMsgPrefix, transform.Kind))
 	}
 

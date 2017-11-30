@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-func decodeQuery(url *url.URL, mortConfig *config.Config, bucketConfig config.Bucket, obj *FileObject) error {
+func decodeQuery(url *url.URL, mortConfig *config.Config, bucketConfig config.Bucket, obj *FileObject) (bool, error) {
 	trans := bucketConfig.Transform
 
 	var err error
@@ -26,10 +26,10 @@ func decodeQuery(url *url.URL, mortConfig *config.Config, bucketConfig config.Bu
 		parentObj.Storage = bucketConfig.Storages.Get(trans.ParentStorage)
 		obj.Parent = parentObj
 		obj.CheckParent = trans.CheckParent
-		return err
+		return true, err
 	}
 
-	return err
+	return false, err
 }
 
 func queryToTransform(query url.Values) (transforms.Transforms, error) {
@@ -60,6 +60,8 @@ func queryToTransform(query url.Values) (transforms.Transforms, error) {
 						sigma, err = strconv.ParseFloat(query.Get("sigma"), 32)
 						minAmpl, err = strconv.ParseFloat(query.Get("minAmpl"), 32)
 						err = trans.Blur(sigma, minAmpl)
+					case "rotate":
+						err = trans.Rotate(queryToInt(query, "angle"))
 					}
 
 				}
@@ -70,7 +72,7 @@ func queryToTransform(query url.Values) (transforms.Transforms, error) {
 
 	err = trans.Quality(queryToInt(query, "quality"))
 	err = trans.Format(query.Get("format"))
-	if query.Get("grayscale") != "" {
+	if _, ok := query["grayscale"]; ok {
 		trans.Grayscale()
 	}
 

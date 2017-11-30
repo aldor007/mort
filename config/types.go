@@ -16,7 +16,6 @@ type Preset struct {
 		Crop      *struct {
 			Width  int    `yaml:"width"`
 			Height int    `yaml:"height"`
-			Start  []int  `yaml:"start"`
 			Mode   string `yaml:"mode"`
 		} `yaml:"crop,omitempty"`
 		AutoRotate bool `yaml:"auto_rotate"`
@@ -31,6 +30,9 @@ type Preset struct {
 			Position string  `yaml:"position"`
 			Opacity  float32 `yaml:"opacity"`
 		} `yaml:"watermark,omitempty"`
+		Rotate *struct {
+			Angle int `yaml:"angle"`
+		} `yaml:"rotate,omitempty"`
 	} `yaml:"filters"`
 }
 
