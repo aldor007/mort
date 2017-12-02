@@ -4,6 +4,9 @@ install:
 unit:
 	@(go list ./... | grep -v "vendor/" | xargs -n1 go test -v -cover)
 
+coverage:
+	go test github.com/aldor007/mort/... -race -coverprofile=coverage.txt -covermode=atomic
+
 integrations:
 	npm install
 	./scripts/run-tests.sh

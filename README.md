@@ -106,8 +106,6 @@ $ ./mort
 Usage of  mort
   -config string
     	Path to configuration (default "configuration/config.yml")
-  -listen string
-    	Listen addr (default ":8080")
 ```
 
 ## Configuration
@@ -183,6 +181,8 @@ More details about configuration can be found in [Configuration.md](doc/Configur
 I will provide Debian package when we will be completely stable ;)
 
 ## Docker
+See [Dockerfile](Dockerfile) for image details.
+
 Pull docker image
 
 ```bash
@@ -190,14 +190,23 @@ docker pull aldor007/mort
 
 ```
 
-Create Dockerfile
+### Create you custom docker deployment 
+
+Create Dockerfile or use Dockerfile.service
 ```
 FROM aldor007/mort:latest
 ADD config.yml /go/configuration/config.yml # add yours config
 ```
 
-Run docker 
+Build container
+```bash
+docker build -f Dockerfile.service -t myusername/mort
+```
 
+Run docker 
+```
+docker run -p 8080:8080 myusername/mort
+```
 
 # Development
 1. Make sure you have a Go language compiler >= 1.9 (required) and git installed.
@@ -205,10 +214,10 @@ Run docker
 3. Ensure your GOPATH is properly set.
 4. Download it
 ```bash
-go get -d github.com/aldor007/mort
+git clone  https://github.com/aldor007/mort.git $GOPATH/src/github.com/aldor007/mort
 cd $GOPATH/src/github.com/aldor007/mort
 ```
-5, Install dependencies:
+5. Install dependencies:
 ```bash
 dep ensure
 ```

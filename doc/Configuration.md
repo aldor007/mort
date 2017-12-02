@@ -50,7 +50,6 @@ buckets: # list of available buckets
              transform: # and store it on disk
                  kind: "local-meta"
                  rootPath: "/var/www/domain/"
-        
 ```
 
 ## Server
@@ -80,7 +79,6 @@ headers:
   - statusCodes: [500, 503]
     values:
       "cache-control": "max-age=10, public"
-
 ```
 
 ## Buckets
@@ -116,7 +114,6 @@ buckets:
                 kind: "local-meta"
                 rootPath: "/Users/aldor/workspace/mkaciubacom/web"
                 pathPrefix: "transforms"
-
 ```
 
 ### Transform
@@ -210,11 +207,10 @@ Example definition
     url: "http://remote/<container>/<item>"
     headers:
       "x-mort": 1
-    
 ```
 
 **url** - remote address, in url you should provide placeholders for bucket name (<conatiner>) and item path (<item>)
-**headers* - addition request headers (optional)
+**headers** - additional request headers (optional)
 
 #### s3
 
@@ -230,9 +226,13 @@ Example definition
     bucket: "mybucket" # optional
 ```
 **accessKey** - S3 access key
+
 **secretAccessKey** - S3 secret access key
+
 **endpoint** - address of S3 service
+
 **region** = region of s3 service
+
 **bucket** - bucket used for storage, when empty name of bucket will be used
 
 

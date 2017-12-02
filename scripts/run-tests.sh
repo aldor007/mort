@@ -13,7 +13,7 @@ echo "test" > /tmp/mort-tests/remote/file
 MORT_PORT=8091
 export MORT_PORT
 
-go run cmd/mort/mort.go  -config tests-int/config.yml > mort.logs &
+go run cmd/mort/mort.go -config tests-int/config.yml  &
 pid=$!
 sleep 15
 
