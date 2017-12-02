@@ -1,4 +1,4 @@
-So you want to contribute ? Awesome! Welcome aboard!
+So you want to contribute? Awesome! Welcome aboard!
 
 ## Steps
 
@@ -23,3 +23,8 @@ Running the tests is as easy as:
 
 You should see the results of running your tests after an instant.
 
+
+Format code
+
+    make format
+    

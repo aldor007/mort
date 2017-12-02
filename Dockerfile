@@ -1,6 +1,6 @@
 # Start from a Debian image with the latest version of Go installed
 # and a workspace (GOPATH) configured at /go.
-FROM golang:1.9.2-stretch as bui
+FROM golang:1.9.2-stretch as builder
 
 ENV LIBVIPS_VERSION 8.5.9
 ENV DEP_VERSION v0.3.2
@@ -50,9 +50,36 @@ ADD . /go/src/github.com/aldor007/mort
 
 RUN cd /go/src/github.com/aldor007/mort &&  dep ensure -vendor-only
 # RUN build
-RUN cd /go/src/github.com/aldor007/mort; go build cmd/mort/mort.go; cp mort /go/mort; cp -r /go/src/github.com/aldor007/mort/configuration /go/
+RUN cd /go; go build -o /go/mort src/github.com/aldor007cmd/mort/mort.go; cp -r /go/src/github.com/aldor007/mort/configuration /go/
 # clean up
 RUN rm -rf /go/src; rm -rf /go/pkg; rm -rf /usr/share/; rm -rf /usr/include/
+
+
+#FROM golang:1.9.2-stretch
+
+FROM debian:stretch
+
+RUN \
+  # Install dependencies
+  apt-get update && \
+  DEBIAN_FRONTEND=noninteractive apt-get install -y \
+  libglib2.0 libjpeg libpng \
+  libwebpv libtiff5 libgifv libexifv libxml2 libpoppler-glib \
+  libmagickwand libpango1.0 libmatio libopenslidev libcfitsio \
+  libgsf-1 fftw3 liborc-0.4 librsvg2 && \
+  # Clean up
+  apt-get remove -y curl automake build-essential && \
+  apt-get autoremove -y && \
+  apt-get autoclean && \
+  apt-get clean && \
+  rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# clean up
+RUN rm -rf /go/src; rm -rf /usr/share/; rm -rf /usr/include/
+
+COPY --from=builder /usr/local/lib /usr/local/lib
+RUN ldconfig
+COPY --from=builder /go/mort /go/mort
 
 # Run the outyet command by default when the container starts.
 ENTRYPOINT ["/go/mort"]

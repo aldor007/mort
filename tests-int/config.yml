@@ -1,3 +1,6 @@
+server:
+    listen: ":8091"
+
 headers:
   - statusCodes: [200]
     values:
