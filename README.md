@@ -21,6 +21,7 @@ S3 compatible image processing server written in Go. Still in active development
 # Demo
 -------
 [Original image](https://mort.mkaciuba.com/demo/img.jpg)
+
 Click on result image to see it url. More examples can be found in [Image Operations list](doc/Image-operations.md)
 <table>
     <thead>
