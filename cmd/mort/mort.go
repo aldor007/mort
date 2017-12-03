@@ -58,7 +58,7 @@ func debugListener(mortConfig *config.Config) {
 }
 
 func main() {
-	configPath := flag.String("config", "configuration/config.yml", "Path to configuration")
+	configPath := flag.String("config", "/etc/mort/mort.yml", "Path to configuration")
 	debug := flag.Bool("debug", false, "enable debug mode")
 	flag.Parse()
 

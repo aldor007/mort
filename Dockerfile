@@ -51,10 +51,7 @@ RUN curl -fsSL -o /usr/local/bin/dep https://github.com/golang/dep/releases/down
 ADD . /go/src/github.com/aldor007/mort
 
 RUN cd /go/src/github.com/aldor007/mort &&  dep ensure -vendor-only
-RUN cd /go/src/github.com/aldor007/mort; go build -o /go/mort cmd/mort/mort.go; cp -r /go/src/github.com/aldor007/mort/configuration /go/
-
-# clean up
-RUN rm -rf /go/src; rm -rf /go/pkg; rm -rf /usr/share/; rm -rf /usr/include/
+RUN cd /go/src/github.com/aldor007/mort; go build -o /go/mort cmd/mort/mort.go;
 
 FROM ubuntu:16.04
 
@@ -66,18 +63,23 @@ RUN \
     libwebp5 libtiff5 libgif7 libexif12 libxml2 libpoppler-glib8 \
     libmagickwand-6.q16-2 libpango1.0-0 libmatio2 libopenslide0 \
     libgsf-1-114 fftw3 liborc-0.4 librsvg2-2 libcfitsio2 && \
+    apt-get install -y ca-certificates && \
     # Clean up
     apt-get autoremove -y && \
     apt-get autoclean && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+RUN mkdir -p /etc/mort/
 # clean up
 RUN rm -rf /go/src; rm -rf /usr/share/; rm -rf /usr/include/
 
 COPY --from=builder /usr/local/lib /usr/local/lib
 RUN ldconfig
 COPY --from=builder /go/mort /go/mort
+COPY --from=builder /go/src/github.com/aldor007/mort/configuration/config.yml /etc/mort/mort.yml
+# add mime types
+ADD http://svn.apache.org/viewvc/httpd/httpd/branches/2.2.x/docs/conf/mime.types?view=co /etc/mime.types
 
 # Run the outyet command by default when the container starts.
 ENTRYPOINT ["/go/mort"]

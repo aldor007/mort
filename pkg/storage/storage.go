@@ -269,22 +269,25 @@ func prepareResponse(obj *object.FileObject, stream io.ReadCloser, item stow.Ite
 	parseMetadata(obj, metadata, res)
 
 	if err != nil {
-		log.Logs().Warnw("Storage/prepareResponse read metadata", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 500), zap.Error(err))
+		log.Log().Warn("Storage/prepareResponse read metadata error", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 500), zap.Error(err))
 		return response.NewError(500, err)
 	}
 
 	etag, err := item.ETag()
 	if err != nil {
+		log.Log().Warn("Storage/prepareResponse read etag error", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 500), zap.Error(err))
 		return response.NewError(500, err)
 	}
 
 	lastMod, err := item.LastMod()
 	if err != nil {
+		log.Log().Warn("Storage/prepareResponse read lastmod error", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 500), zap.Error(err))
 		return response.NewError(500, err)
 	}
 
 	size, err := item.Size()
 	if err != nil {
+		log.Log().Warn("Storage/prepareResponse read size error", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 500), zap.Error(err))
 		return response.NewError(500, err)
 	}
 
@@ -297,7 +300,7 @@ func prepareResponse(obj *object.FileObject, stream io.ReadCloser, item stow.Ite
 	if contentType, ok := metadata["Content-Type"]; ok {
 		res.SetContentType(contentType.(string))
 	} else {
-		res.SetContentType(mime.TypeByExtension(path.Ext(obj.Key)))
+		res.SetContentType(mime.TypeByExtension(path.Ext(obj.Uri.Path)))
 	}
 
 	return res

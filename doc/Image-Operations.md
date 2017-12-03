@@ -136,7 +136,7 @@ Parameters:
 <a href="https://mort.mkaciuba.com/demo/img.jpg?width=500">
 <figure>
 <img src="https://mort.mkaciuba.com/demo/img.jpg?width=500">
-<figcaption>resize with width 500 </figcaption>
+<figcaption><br/>resize with width 500 </figcaption>
 </figure>
 </a>
 
@@ -148,6 +148,13 @@ Parameters:
 * width - width of the cropped area.
 * height - height of the cropped area.
 * gravity - position of crop (optional)
+Position can be one of:
+* center
+* north
+* west
+* east
+* south
+* smart
 
 ### Preset 
 
@@ -167,6 +174,8 @@ Parameters:
 </figure>
 </a>
 
+</br>
+
 <a href="https://mort.mkaciuba.com/demo/img.jpg?operation=crop&width=200&height=200">
 <figure>
 <img src="https://mort.mkaciuba.com/demo/img.jpg?opetation=crop&width=200&height=200&gravity=north">
@@ -180,8 +189,18 @@ Add watermark to image
 
 Paramters:
 * image: url or path to image for adding
-* postion:  anchor point of image to combine with. See section TODO
 * opacity: choose transparency of image
+* position:  anchor point of image to combine with. 
+Can be one of:
+* top-left
+* top-center
+* top-right
+* center-left
+* center-center
+* center-right
+* bottom-left
+* bottom-center
+* bottom-right
 
 ### Preset 
 

@@ -24,7 +24,7 @@ docker-push:
 	docker push aldor007/mort:latest
 
 run-server:
-	go run cmd/mort/mort.go
+	go run cmd/mort/mort.go -config configuration/config.yml
 	
 run-test-server:
 	mkdir -p /tmp/mort-tests/remote

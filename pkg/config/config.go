@@ -202,7 +202,7 @@ func (c *Config) validateServer() error {
 	}
 
 	if c.Server.CacheSize == 0 {
-		c.Server.CacheSize = 10
+		c.Server.CacheSize = 100
 	}
 
 	if c.Server.RequestTimeout == 0 {

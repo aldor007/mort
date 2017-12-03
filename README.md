@@ -21,6 +21,7 @@ S3 compatible image processing server written in Go. Still in active development
 # Demo
 -------
 [Original image](https://mort.mkaciuba.com/demo/img.jpg)
+Click on result image to see it url. More examples can be found in [Image Operations list](doc/Image-operations.md)
 <table>
     <thead>
     <tr>
@@ -105,7 +106,7 @@ go get github.com/aldor007/mort/cmd/
 $ ./mort
 Usage of  mort
   -config string
-    	Path to configuration (default "configuration/config.yml")
+    	Path to configuration (default "/etc/mort/mort.yml")
 ```
 
 ## Configuration
@@ -195,7 +196,7 @@ docker pull aldor007/mort
 Create Dockerfile or use Dockerfile.service
 ```
 FROM aldor007/mort:latest
-ADD config.yml /go/configuration/config.yml # add yours config
+ADD config.yml /etc/mort/mort.yml # add yours config
 ```
 
 Build container

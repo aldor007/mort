@@ -32,7 +32,7 @@ func NewRequestProcessor(serverConfig config.Server, l lock.Lock, throttler thro
 	rp.queue = make(chan requestMessage, serverConfig.QueueLen)
 	rp.cache = ccache.New(ccache.Configure().MaxSize(serverConfig.CacheSize))
 	rp.processTimeout = time.Duration(serverConfig.RequestTimeout) * time.Second
-	rp.lockTimeout = time.Duration(serverConfig.RequestTimeout-10) * time.Second
+	rp.lockTimeout = time.Duration(serverConfig.RequestTimeout-1) * time.Second
 	return rp
 }
 
@@ -149,7 +149,11 @@ func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) 
 
 	cacheValue := r.cache.Get(obj.Key)
 	if cacheValue != nil {
-		return cacheValue.Value().(*response.Response)
+		res := cacheValue.Value().(*response.Response)
+		resCp, err := res.Copy()
+		if err == nil {
+			return resCp
+		}
 	}
 
 	var currObj *object.FileObject = obj
@@ -241,7 +245,7 @@ resLoop:
 			return r.processImage(ctx, obj, parentRes, transforms)
 		} else if obj.HasTransform() {
 			log.Log().Warn("Not performing transforms", zap.String("obj.Bucket", obj.Bucket), zap.String("obj.Key", obj.Key),
-				zap.Int("parent.sc", parentRes.StatusCode), zap.String("parent.ContentType", parentRes.Headers.Get(response.HeaderContentType)))
+				zap.Int("parent.sc", parentRes.StatusCode), zap.String("parent.ContentType", parentRes.Headers.Get(response.HeaderContentType)), zap.Error(parentRes.Error()))
 		}
 	}
 
