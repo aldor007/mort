@@ -22,7 +22,7 @@ S3 compatible image processing server written in Go. Still in active development
 -------
 [Original image](https://mort.mkaciuba.com/demo/img.jpg)
 
-Click on result image to see it url. More examples can be found in [Image Operations list](doc/Image-operations.md)
+Click on result image to see it url. More examples can be found in [Image Operations list](doc/Image-Operations.md)
 <table>
     <thead>
     <tr>
