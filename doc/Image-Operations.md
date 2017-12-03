@@ -42,7 +42,7 @@ Parameters
 <a href="https://mort.mkaciuba.com/demo/rotate/img.jpg">
 <figure>
 <img src="https://mort.mkaciuba.com/demo/rotate/img.jpg">
-<figcaption>Rotate 90 degree</figcaption>
+<figcaption><br/>Rotate 90 degree</figcaption>
 </figure>
 </a>
 
@@ -51,14 +51,14 @@ Parameters
 <a href="https://mort.mkaciuba.com/demo/img.jpg?operation=rotate&angle=90">
 <figure>
 <img  align="center" src="https://mort.mkaciuba.com/demo/img.jpg?operation=rotate&angle=90" alt="angle=90">
-<figcaption>Rotate 90 degree</figcaption>
+<figcaption><br/>Rotate 90 degree</figcaption>
 </figure>
 </a>
 
 <a href="https://mort.mkaciuba.com/demo/img.jpg?operation=rotate&angle=90">
 <figure>
 <img aling="center" src="https://mort.mkaciuba.com/demo/img.jpg?operation=rotate&angle=180">
-<figcaption>Rotate 180 degree</figcaption>
+<figcaption><br/>Rotate 180 degree</figcaption>
 </figure>
 </a>
 
@@ -85,7 +85,7 @@ Parameters:
 <a href="https://mort.mkaciuba.com/demo/img.jpd?operation=blur&sigma=10">
 <figure>
 <img align="center" src="https://mort.mkaciuba.com/demo/img.jpg?operation=blur&sigma=10">
-<figcaption>Blur image sigma 10</figcaption>
+<figcaption><br/>Blur image sigma 10</figcaption>
 </figure>
 </a>
 
@@ -101,7 +101,7 @@ Parameters: none
 <a href="https://mort.mkaciuba.com/demo/grayscale/img.jpg">
 <figure>
 <img src="https://mort.mkaciuba.com/demo/grayscale/img.jpg">
-<figcaption>Change image colors to grayscale</figcaption>
+ <figcaption></br>Change image colors to grayscale</figcaption>
 </figure>
 </a>
 
@@ -110,7 +110,7 @@ Parameters: none
 <a href="https://mort.mkaciuba.com/demo/img.jpg?grayscale=1">
 <figure>
 <img src="https://mort.mkaciuba.com/demo/img.jpg?grayscale=1">
-<figcaption>Change image colors to grayscale</figcaption>
+<figcaption><br/>Change image colors to grayscale</figcaption>
 </figure>
 </a>
 
@@ -149,12 +149,12 @@ Parameters:
 * height - height of the cropped area.
 * gravity - position of crop (optional)
 Position can be one of:
-* center
-* north
-* west
-* east
-* south
-* smart
+  + center
+  + north
+  + west
+  + east
+  + south
+  + smart
 
 ### Preset 
 
@@ -192,15 +192,15 @@ Paramters:
 * opacity: choose transparency of image
 * position:  anchor point of image to combine with. 
 Can be one of:
-* top-left
-* top-center
-* top-right
-* center-left
-* center-center
-* center-right
-* bottom-left
-* bottom-center
-* bottom-right
+ + top-left
+ + top-center
+ + top-right
+ + center-left
+ + center-center
+ + center-right
+ + bottom-left
+ + bottom-center
+ + bottom-right
 
 ### Preset 
 
