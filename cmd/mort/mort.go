@@ -10,14 +10,14 @@ import (
 	"github.com/go-chi/chi/middleware"
 	"go.uber.org/zap"
 
-	"github.com/aldor007/mort/config"
-	"github.com/aldor007/mort/lock"
-	"github.com/aldor007/mort/log"
-	mortMiddleware "github.com/aldor007/mort/middleware"
-	"github.com/aldor007/mort/object"
-	"github.com/aldor007/mort/processor"
-	"github.com/aldor007/mort/response"
-	"github.com/aldor007/mort/throttler"
+	"github.com/aldor007/mort/pkg/config"
+	"github.com/aldor007/mort/pkg/lock"
+	"github.com/aldor007/mort/pkg/log"
+	mortMiddleware "github.com/aldor007/mort/pkg/middleware"
+	"github.com/aldor007/mort/pkg/object"
+	"github.com/aldor007/mort/pkg/processor"
+	"github.com/aldor007/mort/pkg/response"
+	"github.com/aldor007/mort/pkg/throttler"
 	"os"
 	"os/signal"
 	"syscall"
@@ -25,7 +25,7 @@ import (
 
 const (
 	// Version of mort
-	Version = "0.0.1"
+	Version = "0.1.0"
 	// BANNER just fancy command line banner
 	BANNER = `
   /\/\   ___  _ __| |_
@@ -38,7 +38,7 @@ const (
 
 var debugServer *http.Server
 
-func debugListener() {
+func debugListener(mortConfig *config.Config) {
 	if debugServer != nil {
 		debugServer.Close()
 		return
@@ -47,7 +47,7 @@ func debugListener() {
 	router := chi.NewRouter()
 	router.Mount("/", middleware.Profiler())
 	s := &http.Server{
-		Addr:         "localhost:8081",
+		Addr:         mortConfig.Server.DebugListen,
 		ReadTimeout:  2 * time.Minute,
 		WriteTimeout: 2 * time.Minute,
 		Handler:      router,
@@ -58,24 +58,27 @@ func debugListener() {
 }
 
 func main() {
-	configPath := flag.String("config", "configuration/config.yml", "Path to configuration")
-	listenAddr := flag.String("listen", ":8080", "Listen addr")
+	configPath := flag.String("config", "/etc/mort/mort.yml", "Path to configuration")
 	debug := flag.Bool("debug", false, "enable debug mode")
 	flag.Parse()
-
-	fmt.Printf(BANNER, "v"+Version)
-	fmt.Printf("Config file %s listen addr %s debug: %t pid: %d \n", *configPath, *listenAddr, *debug, os.Getpid())
 
 	logger, _ := zap.NewProduction()
 	//logger, _ := zap.NewDevelopment()
 	zap.ReplaceGlobals(logger)
 	log.RegisterLogger(logger)
 	router := chi.NewRouter()
-	rp := processor.NewRequestProcessor(5, lock.NewMemoryLock(), throttler.NewBucketThrottler(10))
 
 	imgConfig := config.GetInstance()
-	imgConfig.Load(*configPath)
+	err := imgConfig.Load(*configPath)
 
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf(BANNER, "v"+Version)
+	fmt.Printf("Config file %s listen addr %s debug: %t pid: %d \n", *configPath, imgConfig.Server.Listen, *debug, os.Getpid())
+
+	rp := processor.NewRequestProcessor(imgConfig.Server, lock.NewMemoryLock(), throttler.NewBucketThrottler(10))
 	s3Auth := mortMiddleware.NewS3AuthMiddleware(imgConfig)
 
 	router.Use(s3Auth.Handler)
@@ -111,14 +114,14 @@ func main() {
 	}))
 
 	s := &http.Server{
-		Addr:         *listenAddr,
+		Addr:         imgConfig.Server.Listen,
 		ReadTimeout:  2 * time.Minute,
 		WriteTimeout: 2 * time.Minute,
 		Handler:      router,
 	}
 
 	if debug != nil && *debug {
-		go debugListener()
+		go debugListener(imgConfig)
 	}
 
 	signal_chan := make(chan os.Signal, 1)
@@ -135,7 +138,7 @@ func main() {
 				} else {
 					log.Log().Info("Start debug server on port 8081")
 				}
-				go debugListener()
+				go debugListener(imgConfig)
 			default:
 			}
 		}

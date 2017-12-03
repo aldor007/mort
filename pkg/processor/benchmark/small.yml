@@ -1,0 +1,32 @@
+server:
+  requestTimeout: 10
+
+buckets:
+    local:
+        transform:
+            path: "\\/(?P<parent>[a-zA-Z0-9\\.\\/]+)\\-(?P<presetName>[a-z]+)"
+            kind: "presets"
+            parentBucket: "local"
+            presets:
+                small:
+                    quality: 75
+                    filters:
+                        thumbnail:
+                            width: 100
+                            height: 70
+                            mode: outbound
+                        interlace: true
+                m:
+                    quality: 75
+                    filters:
+                        thumbnail:
+                            width: 100
+                            height: 100
+                            mode: outbound
+                        interlace: true
+        storages:
+            basic:
+                kind: "local-meta"
+                rootPath: "./benchmark"
+            transform:
+                kind: "noop"

@@ -1,3 +1,6 @@
+server:
+    listen: ":8091"
+
 headers:
   - statusCodes: [200]
     values:
@@ -15,7 +18,8 @@ buckets:
           - accessKey: "acc"
             secretAccessKey: "sec"
         transform:
-            path: "\\/+(?:cache|resolve)\\/(?P<presetName>[a-z0-9_]+)\\/+[a-z]+\\/[a-zA-Z0-9]+\\/+(?P<parent>.*)"
+#            path: "\\/+(?:cache|resolve)\\/(?P<presetName>[a-z0-9_]+)\\/+[a-z]+\\/[a-zA-Z0-9]+\\/+(?P<parent>.*)"
+            path: "\\/(?P<parent>[a-zA-Z0-9-\\.]+)\\/(?P<presetName>[a-z0-9_]+).*"
             kind: "presets"
             order:
               presetName: 0
@@ -61,7 +65,7 @@ buckets:
             secretAccessKey: "sec"
         transform:
             path: "\\/(?P<parent>[a-zA-Z0-9-\\.]+)\\/(?P<presetName>[a-z0-9_]+).*"
-            kind: "presets"
+            kind: "presets-query"
             order:
               parent: 0
               presetName: 1
@@ -91,24 +95,15 @@ buckets:
                             mode: outbound
                         blur:
                           sigma: 5.0
-
-        storages:
-        storages:
-            api:
-                kind: "http"
-                url: "https://i.redd.it<item>" # Cnxpvwo7qqfwz.jpg
-            transform:
-                kind: "local-meta"
-                rootPath: "/tmp/mort-tests/"
-                pathPrefix: "transforms"
-            basic:
-                kind: "local-meta"
-                rootPath: "/tmp/mort-tests/"
-    remote-query:
-        transform:
-            kind: "query"
-            parentStorage: "api"
-            parentBucket: "remote-query"
+                watermark:
+                    filters:
+                        crop:
+                            width: 200
+                            height: 200
+                        watermark:
+                            opacity: 0.5
+                            image: "https://i.imgur.com/uomkVIL.png"
+                            position: "top-left"
         storages:
             api:
                 kind: "http"
