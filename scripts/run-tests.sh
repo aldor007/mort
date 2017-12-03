@@ -10,12 +10,12 @@ mkdir -p /tmp/mort-tests/remote/dir
 echo "test" > /tmp/mort-tests/local/file
 echo "test" > /tmp/mort-tests/remote/file
 
-MORT_PORT=$(( ( RANDOM % 1024 )  + 6012 ))
+MORT_PORT=8091
 export MORT_PORT
 
-go run cmd/mort/mort.go -listen ":${MORT_PORT}" -config tests-int/config.yml > mort.logs &
+go run cmd/mort/mort.go -config tests-int/config.yml  &
 pid=$!
-sleep 10
+sleep 15
 
 ./node_modules/.bin/mocha tests-int/*.Spec.js
 TEST_RESULT=$?

@@ -1,4 +1,6 @@
-# Mort [![Build Status](https://travis-ci.org/Aldor007/mort.png)](https://travis-ci.org/aldor007/mort) [![Docker](https://img.shields.io/badge/docker-aldor007/mort-blue.svg)](https://hub.docker.com/r/aldor007/mort/) [![Docker Registry](https://img.shields.io/docker/pulls/aldor007/mort.svg)](https://hub.docker.com/r/aldor007/mort/) [![Go Report Card](http://goreportcard.com/badge/aldor007/mort)](http://goreportcard.com/report/aldor007/mort) 
+# Mort 
+[![Build Status](https://travis-ci.org/Aldor007/mort.png)](https://travis-ci.org/aldor007/mort) [![Docker](https://img.shields.io/badge/docker-aldor007/mort-blue.svg)](https://hub.docker.com/r/aldor007/mort/pkg/) [![Docker Registry](https://img.shields.io/docker/pulls/aldor007/mort.svg)](https://hub.docker.com/r/aldor007/mort/pkg/) [![Go Report Card](http://goreportcard.com/badge/aldor007/mort)](http://goreportcard.com/report/aldor007/mort) [![Godoc](http://img.shields.io/badge/go-documentation-blue.svg?style=flat-square)](https://godoc.org/github.com/aldor007/mort) [![Releases](https://img.shields.io/github/release/aldor007/mort/all.svg?style=flat-square)](https://github.com/aldor007/mort/releases)  [![LICENSE](https://img.shields.io/github/license/aldor007/mort.svg?style=flat-square)](https://github.com/aldor007/mort/blob/master/LICENSE.md) 
+                                                                                                                                                                                                                                                                                                                                                                                                                                                           
 <img src="https://mort.mkaciuba.com/demo/medium/gopher.png" width="500px"/>
 
 S3 compatible image processing server written in Go. Still in active development.
@@ -18,7 +20,8 @@ S3 compatible image processing server written in Go. Still in active development
 
 # Demo
 -------
-[Original image 12 Mpix](https://mort.mkaciuba.com/demo/img.jpg)
+[Original image](https://mort.mkaciuba.com/demo/img.jpg)
+Click on result image to see it url. More examples can be found in [Image Operations list](doc/Image-operations.md)
 <table>
     <thead>
     <tr>
@@ -103,16 +106,14 @@ go get github.com/aldor007/mort/cmd/
 $ ./mort
 Usage of  mort
   -config string
-    	Path to configuration (default "configuration/config.yml")
-  -listen string
-    	Listen addr (default ":8080")
+    	Path to configuration (default "/etc/mort/mort.yml")
 ```
 
 ## Configuration
 Example configuration used for providing demo images:
 
 ```yaml
-headers: # overwritten all response headers of given status. This field is optional
+headers: #  add or overwrite all response headers of given status. This field is optional
   - statusCodes: [200]
     values:
       "cache-control": "max-age=84000, public"
@@ -124,7 +125,7 @@ buckets: # list of available buckets
             secretAccessKey: "random"
         transform: # config for transforms
             path: "\\/(?P<presetName>[a-z0-9_]+)\\/(?P<parent>[a-z0-9-\\.]+)" # regexp for transform path 
-            kind: "presets" #  type of transform or "query"
+            kind: "presets-query" #  type of transform or "query"
             presets: # list of presets
                 small:
                     quality: 75
@@ -150,8 +151,8 @@ buckets: # list of available buckets
                         thumbnail: 
                             width: 1300
                         watermark:
-                            image: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Imgur_logo.svg/150px-Imgur_logo.svg.png"
-                            position: "center-center"
+                            image: "https://i.imgur.com/uomkVIL.png"
+                            position: "top-left"
                             opacity: 0.5
                 smartcrop:
                     quality: 80
@@ -172,13 +173,17 @@ buckets: # list of available buckets
                  pathPrefix: "transform"
         
 ```
+List of all image operations can be found in [Image-Operations.md](doc/Image-Operations.md)
 
-
+More details about configuration can be found in [Configuration.md](doc/Configuration.md)
+ 
 ## Debian and Ubuntu
 
 I will provide Debian package when we will be completely stable ;)
 
 ## Docker
+See [Dockerfile](Dockerfile) for image details.
+
 Pull docker image
 
 ```bash
@@ -186,14 +191,23 @@ docker pull aldor007/mort
 
 ```
 
-Create Dockerfile
+### Create you custom docker deployment 
+
+Create Dockerfile or use Dockerfile.service
 ```
 FROM aldor007/mort:latest
-ADD config.yml /go/configuration/config.yml # add yours config
+ADD config.yml /etc/mort/mort.yml # add yours config
+```
+
+Build container
+```bash
+docker build -f Dockerfile.service -t myusername/mort
 ```
 
 Run docker 
-
+```
+docker run -p 8080:8080 myusername/mort
+```
 
 # Development
 1. Make sure you have a Go language compiler >= 1.9 (required) and git installed.
@@ -201,10 +215,10 @@ Run docker
 3. Ensure your GOPATH is properly set.
 4. Download it
 ```bash
-go get -d github.com/aldor007/mort
+git clone  https://github.com/aldor007/mort.git $GOPATH/src/github.com/aldor007/mort
 cd $GOPATH/src/github.com/aldor007/mort
 ```
-5, Install dependencies:
+5. Install dependencies:
 ```bash
 dep ensure
 ```

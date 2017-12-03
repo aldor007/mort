@@ -54,7 +54,7 @@ describe('Image processing', function () {
                     }
 
                     const body = res.body;
-                    expect(body.length).to.be.within(48203, 48209);
+                    expect(body.length).to.be.eql(30959);
 
                     expect(res.headers['x-amz-meta-public-width']).to.eql(width);
                     expect(res.headers['x-amz-meta-public-height']).to.eql(height);
@@ -89,7 +89,41 @@ describe('Image processing', function () {
                     }
 
                     const body = res.body;
-                    expect(body.length).to.be.eql(13559);
+                    expect(body.length).to.be.eql(10228);
+
+                    expect(res.headers['x-amz-meta-public-width']).to.eql(width);
+                    expect(res.headers['x-amz-meta-public-height']).to.eql(height);
+                    request.get(reqPath)
+                        .expect(200)
+                        .end(function (err2, res2) {
+                            if (err2) {
+                                return done(err2);
+                            }
+
+                            const body2 = res2.body;
+                            expect(body2.length).to.eql(body.length);
+
+                            expect(res2.headers['x-amz-meta-public-width']).to.eql(width);
+                            expect(res2.headers['x-amz-meta-public-height']).to.eql(height);
+                            done(err2)
+                        });
+                });
+        });
+
+        it('should create thumbnails with watermark from external source', function (done) {
+            this.timeout(5000);
+            const reqPath = '/remote/nxpvwo7qqfwz.jpg/watermark';
+            const width = '200';
+            const height = '200';
+            request.get(reqPath)
+                .expect(200)
+                .end(function(err, res) {
+                    if (err) {
+                        return done(err);
+                    }
+
+                    const body = res.body;
+                    expect(body.length).to.be.eql(4502);
 
                     expect(res.headers['x-amz-meta-public-width']).to.eql(width);
                     expect(res.headers['x-amz-meta-public-height']).to.eql(height);
@@ -111,7 +145,7 @@ describe('Image processing', function () {
         });
 
         it('should return 400 when invalid preset given', function (done) {
-            request.get('/remote/nxpvwo7qqfwz.jpg/default_smalaaal')
+            request.get('/local/nxpvwo7qqfwz.jpg/default_smalaaal')
                 .expect(400)
                 .end(function(err) {
                     done(err)
@@ -130,7 +164,7 @@ describe('Image processing', function () {
     describe('query', function ()  {
         it('should create thumbnails with width = 100 and format webp from external source', function (done) {
             this.timeout(5000);
-            const reqPath = '/remote-query/nxpvwo7qqfwz.jpg?width=100&format=webp';
+            const reqPath = '/remote/nxpvwo7qqfwz.jpg?width=100&format=webp';
             request.get(reqPath)
                 .expect(200)
                 .expect('Content-Type', 'image/webp')
@@ -163,7 +197,7 @@ describe('Image processing', function () {
 
         it('should create thumbnails with format width = 100, height = 100 and format webp from external source', function (done) {
             this.timeout(5000);
-            const reqPath = '/remote-query/nxpvwo7qqfwz.jpg?width=100&format=webp&height=100';
+            const reqPath = '/remote/nxpvwo7qqfwz.jpg?width=100&format=webp&height=100';
             request.get(reqPath)
                 .expect(200)
                 .expect('Content-Type', 'image/webp')
@@ -196,7 +230,7 @@ describe('Image processing', function () {
 
         it('should create thumbnails with many operations', function (done) {
             this.timeout(5000);
-            const reqPath = '/remote-query/nxpvwo7qqfwz.jpg?operation=resize&width=400&format=webp&height=100&operation=blur&sigma=5&grayscale=1';
+            const reqPath = '/remote/nxpvwo7qqfwz.jpg?operation=resize&width=400&format=webp&height=100&operation=blur&sigma=5&grayscale=1';
             request.get(reqPath)
                 .expect(200)
                 .expect('Content-Type', 'image/webp')
@@ -229,8 +263,76 @@ describe('Image processing', function () {
                 });
         });
 
+        it('should create thumbnails and rotate', function (done) {
+            this.timeout(5000);
+            const reqPath = '/remote/nxpvwo7qqfwz.jpg?operation=resize&width=400&operation=rotate&angle=90';
+            request.get(reqPath)
+                .expect(200)
+                .end(function(err, res) {
+                    if (err) {
+                        return done(err);
+                    }
+
+                    const body = res.body;
+                    const width = '400';
+                    const height = '320';
+                    expect(body.length).to.be.eql(18189);
+
+                    expect(res.headers['x-amz-meta-public-width']).to.eql(width);
+                    expect(res.headers['x-amz-meta-public-height']).to.eql(height);
+                    request.get(reqPath)
+                        .expect(200)
+                        .end(function (err2, res2) {
+                            if (err2) {
+                                return done(err2);
+                            }
+
+                            const body2 = res2.body;
+                            expect(body2.length).to.eql(body.length);
+
+                            expect(res2.headers['x-amz-meta-public-width']).to.eql(width);
+                            expect(res2.headers['x-amz-meta-public-height']).to.eql(height);
+                            done(err2)
+                        });
+                });
+        });
+
+        it('should create thumbnails with watermark', function (done) {
+            this.timeout(5000);
+            const reqPath = '/remote/nxpvwo7qqfwz.jpg?operation=resize&width=400&height=100&image=https://i.imgur.com/uomkVIL.png&opacity=0.5&position=top-left&operation=watermark';
+            request.get(reqPath)
+                .expect(200)
+                .end(function(err, res) {
+                    if (err) {
+                        return done(err);
+                    }
+
+                    const body = res.body;
+                    const width = '400';
+                    const height = '100';
+                    expect(body.length).to.be.eql(4505);
+
+                    expect(res.headers['x-amz-meta-public-width']).to.eql(width);
+                    expect(res.headers['x-amz-meta-public-height']).to.eql(height);
+                    request.get(reqPath)
+                        .expect(200)
+                        .end(function (err2, res2) {
+                            if (err2) {
+                                return done(err2);
+                            }
+
+                            const body2 = res2.body;
+                            expect(body2.length).to.eql(body.length);
+
+                            expect(res2.headers['x-amz-meta-public-width']).to.eql(width);
+                            expect(res2.headers['x-amz-meta-public-height']).to.eql(height);
+                            done(err2)
+                        });
+                });
+        });
+
         it('should return 404 when parent not found', function (done) {
-            request.get('/remote-query/path/a.png')
+            request.get('/remote/a.png')
                 .expect(404)
                 .end(function(err) {
                     done(err)

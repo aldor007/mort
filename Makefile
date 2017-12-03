@@ -4,6 +4,9 @@ install:
 unit:
 	@(go list ./... | grep -v "vendor/" | xargs -n1 go test -v -cover)
 
+coverage:
+	go test github.com/aldor007/mort/... -race -coverprofile=coverage.txt -covermode=atomic
+
 integrations:
 	npm install
 	./scripts/run-tests.sh
@@ -21,7 +24,7 @@ docker-push:
 	docker push aldor007/mort:latest
 
 run-server:
-	go run cmd/mort/mort.go
+	go run cmd/mort/mort.go -config configuration/config.yml
 	
 run-test-server:
 	mkdir -p /tmp/mort-tests/remote

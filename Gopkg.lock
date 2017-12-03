@@ -55,10 +55,10 @@
   revision = "0b12d6b5"
 
 [[projects]]
+  branch = "master"
   name = "github.com/karlseguin/ccache"
   packages = ["."]
-  revision = "a2d62155777b39595c825ed3824279e642a5db3c"
-  version = "v2.0.2"
+  revision = "b425c9ca005a2050ebe723f6a0cddcb907354ab7"
 
 [[projects]]
   name = "github.com/pkg/errors"
@@ -141,6 +141,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "b260006820d07df44bcae558530bdaa291660fa75b7f22e72911dda5a7b9bc93"
+  inputs-digest = "9087665595fa925737a35e1b1447af266d3126e302ce79735065229e745a7ec1"
   solver-name = "gps-cdcl"
   solver-version = 1

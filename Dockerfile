@@ -1,38 +1,33 @@
-# Start from a Debian image with the latest version of Go installed
-# and a workspace (GOPATH) configured at /go.
-FROM golang:1.9.2-stretch
+FROM ubuntu:16.04 as builder
+
 
 ENV LIBVIPS_VERSION 8.5.9
 ENV DEP_VERSION v0.3.2
+ENV GOLANG_VERSION 1.9.2
+
 
 # Installs libvips + required libraries
 RUN \
-  # Install dependencies
-  apt-get update && \
-  DEBIAN_FRONTEND=noninteractive apt-get install -y \
-  automake build-essential curl \
-  gobject-introspection gtk-doc-tools libglib2.0-dev libjpeg-dev libpng-dev \
-  libwebp-dev libtiff5-dev libgif-dev libexif-dev libxml2-dev libpoppler-glib-dev \
-  swig libmagickwand-dev libpango1.0-dev libmatio-dev libopenslide-dev libcfitsio-dev \
-  libgsf-1-dev fftw3-dev liborc-0.4-dev librsvg2-dev && \
-  # Build libvips
-  cd /tmp && \
-  curl -OL https://github.com/jcupitt/libvips/releases/download/v${LIBVIPS_VERSION}/vips-${LIBVIPS_VERSION}.tar.gz && \
-  tar zvxf vips-${LIBVIPS_VERSION}.tar.gz && \
-  cd /tmp/vips-${LIBVIPS_VERSION} && \
-  ./configure --enable-debug=no --without-python $1 && \
-  make && \
-  make install && \
-  ldconfig && \
-  # Clean up
-  apt-get remove -y curl automake build-essential && \
-  apt-get autoremove -y && \
-  apt-get autoclean && \
-  apt-get clean && \
-  rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-# Server port to listen
-ENV PORT 8080
+    apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    automake build-essential curl \
+    gobject-introspection gtk-doc-tools libglib2.0-dev libjpeg-turbo8-dev libpng12-dev \
+    libwebp-dev libtiff5-dev libgif-dev libexif-dev libxml2-dev libpoppler-glib-dev \
+    swig libmagickwand-dev libpango1.0-dev libmatio-dev libopenslide-dev libcfitsio-dev \
+    libgsf-1-dev fftw3-dev liborc-0.4-dev librsvg2-dev && \
+    cd /tmp && \
+    curl -OL https://github.com/jcupitt/libvips/releases/download/v${LIBVIPS_VERSION}/vips-${LIBVIPS_VERSION}.tar.gz && \
+    tar zvxf vips-${LIBVIPS_VERSION}.tar.gz && \
+    cd /tmp/vips-${LIBVIPS_VERSION} && \
+    ./configure --enable-debug=no --without-python $1 && \
+    make && \
+    make install && \
+    ldconfig && \
+    apt-get remove -y curl automake build-essential && \
+    apt-get autoremove -y && \
+    apt-get autoclean && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # gcc for cgo
 RUN apt-get update && apt-get install -y \
@@ -40,8 +35,15 @@ RUN apt-get update && apt-get install -y \
     --no-install-recommends \
   && rm -rf /var/lib/apt/lists/*
 
+ENV GOLANG_DOWNLOAD_URL https://golang.org/dl/go$GOLANG_VERSION.linux-amd64.tar.gz
+
+RUN curl -fsSL --insecure "$GOLANG_DOWNLOAD_URL" -o golang.tar.gz \
+  && tar -C /usr/local -xzf golang.tar.gz \
+  && rm golang.tar.gz
+
 ENV GOPATH /go
 ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
+# ENV GOROOT /go:$GOROOT
 
 RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH"
 WORKDIR $GOPATH
@@ -49,10 +51,35 @@ RUN curl -fsSL -o /usr/local/bin/dep https://github.com/golang/dep/releases/down
 ADD . /go/src/github.com/aldor007/mort
 
 RUN cd /go/src/github.com/aldor007/mort &&  dep ensure -vendor-only
-# RUN build
-RUN cd /go/src/github.com/aldor007/mort; go build cmd/mort/mort.go; cp mort /go/mort; cp -r /go/src/github.com/aldor007/mort/configuration /go/
+RUN cd /go/src/github.com/aldor007/mort; go build -o /go/mort cmd/mort/mort.go;
+
+FROM ubuntu:16.04
+
+RUN \
+    # Install runtime dependencies
+    apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
+    libglib2.0-0 libjpeg-turbo8 libpng12-0 libopenexr22 \
+    libwebp5 libtiff5 libgif7 libexif12 libxml2 libpoppler-glib8 \
+    libmagickwand-6.q16-2 libpango1.0-0 libmatio2 libopenslide0 \
+    libgsf-1-114 fftw3 liborc-0.4 librsvg2-2 libcfitsio2 && \
+    apt-get install -y ca-certificates && \
+    # Clean up
+    apt-get autoremove -y && \
+    apt-get autoclean && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+RUN mkdir -p /etc/mort/
 # clean up
-# RUN rm -rf /go/src; rm -rf /go/pkg; rm -rf /usr/share/; rm -rf /usr/include/
+RUN rm -rf /go/src; rm -rf /usr/share/; rm -rf /usr/include/
+
+COPY --from=builder /usr/local/lib /usr/local/lib
+RUN ldconfig
+COPY --from=builder /go/mort /go/mort
+COPY --from=builder /go/src/github.com/aldor007/mort/configuration/config.yml /etc/mort/mort.yml
+# add mime types
+ADD http://svn.apache.org/viewvc/httpd/httpd/branches/2.2.x/docs/conf/mime.types?view=co /etc/mime.types
 
 # Run the outyet command by default when the container starts.
 ENTRYPOINT ["/go/mort"]
