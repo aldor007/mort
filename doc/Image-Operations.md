@@ -191,15 +191,15 @@ Paramters:
 * image: url or path to image for adding
 * opacity: choose transparency of image
 * position:  anchor point of image to combine with. Can be one of:
- + top-left
- + top-center
- + top-right
- + center-left
- + center-center
- + center-right
- + bottom-left
- + bottom-center
- + bottom-right
+  + top-left
+  + top-center
+  + top-right
+  + center-left
+  + center-center
+  + center-right
+  + bottom-left
+  + bottom-center
+  + bottom-right
 
 ### Preset 
 
