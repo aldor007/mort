@@ -209,7 +209,8 @@ Example definition
       "x-mort": 1
 ```
 
-**url** - remote address, in url you should provide placeholders for bucket name (<conatiner>) and item path (<item>)
+**url** - remote address, in url you should provide placeholders for bucket name (conatiner) and item path (item)
+ 
 **headers** - additional request headers (optional)
 
 #### s3
