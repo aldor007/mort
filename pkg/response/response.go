@@ -124,10 +124,12 @@ func (r *Response) CopyBody() ([]byte, error) {
 func (r *Response) Close() {
 	if r.reader != nil {
 		r.reader.Close()
+		r.reader = nil
 	}
 
 	if r.bodyReader != nil {
 		r.bodyReader.Close()
+		r.bodyReader = nil
 	}
 
 	if r.resStream != nil && r.hasParent == false {
@@ -199,7 +201,7 @@ func (r *Response) CopyHeadersFrom(src *Response) {
 	r.errorValue = src.errorValue
 }
 
-// Copy create copmlete response copy with headers and body
+// Copy create complete response copy with headers and body
 func (r *Response) Copy() (*Response, error) {
 	if r == nil {
 		return nil, nil

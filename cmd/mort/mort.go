@@ -20,6 +20,7 @@ import (
 	"github.com/aldor007/mort/pkg/throttler"
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
 )
 
@@ -45,7 +46,7 @@ func debugListener(mortConfig *config.Config) {
 	}
 
 	router := chi.NewRouter()
-	router.Mount("/", middleware.Profiler())
+	router.Mount("/debug", middleware.Profiler())
 	s := &http.Server{
 		Addr:         mortConfig.Server.DebugListen,
 		ReadTimeout:  2 * time.Minute,
@@ -126,6 +127,17 @@ func main() {
 
 	signal_chan := make(chan os.Signal, 1)
 	signal.Notify(signal_chan, syscall.SIGUSR2)
+
+	go func() {
+		for {
+			// FIXME: move it to prometheus
+			var m runtime.MemStats
+			runtime.ReadMemStats(&m)
+			log.Log().Info("Runtime stats", zap.Uint64("alloc", m.Alloc/1024), zap.Uint64("total-alloc", m.TotalAlloc/1024),
+				zap.Uint64("sys", m.Sys/1021), zap.Uint32("numGC", m.NumGC), zap.Uint64("last-gc-pause", m.PauseNs[(m.NumGC+255)%256]))
+			time.Sleep(300 * time.Second)
+		}
+	}()
 
 	go func() {
 		for {
