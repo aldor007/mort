@@ -27,7 +27,7 @@ Click on result image to see it url. More examples can be found in [Image Operat
     <thead>
     <tr>
         <th>Description</th>
-        <th>Result</th> 
+        <th>Result (to see result click on image)</th> 
      </tr>
     </thead>
     <tbody>
