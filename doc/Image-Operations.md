@@ -82,7 +82,7 @@ Parameters:
 
 ### Query string
 
-<a href="https://mort.mkaciuba.com/demo/img.jpd?operation=blur&sigma=10">
+<a href="https://mort.mkaciuba.com/demo/img.jpg?operation=blur&sigma=10">
 <figure>
 <img align="center" src="https://mort.mkaciuba.com/demo/img.jpg?operation=blur&sigma=10">
 <figcaption><br/>Blur image sigma 10</figcaption>
@@ -190,17 +190,16 @@ Add watermark to image
 Paramters:
 * image: url or path to image for adding
 * opacity: choose transparency of image
-* position:  anchor point of image to combine with. 
-Can be one of:
- + top-left
- + top-center
- + top-right
- + center-left
- + center-center
- + center-right
- + bottom-left
- + bottom-center
- + bottom-right
+* position:  anchor point of image to combine with. Can be one of:
+  + top-left
+  + top-center
+  + top-right
+  + center-left
+  + center-center
+  + center-right
+  + bottom-left
+  + bottom-center
+  + bottom-right
 
 ### Preset 
 

@@ -58,7 +58,7 @@ Server section describe configuration for HTTP server and some runtime variables
 
 ```yaml
 server:
-    debugListener: "0.0.0.0:8081" # default debug listner run on signla
+    debugListener: "0.0.0.0:8081" # default internal listener for debug and metrics
     listener: "0.0.0.0:8080" # default traffic listener
     cacheSize: 10 # default size of cache used for new images
     requestTimeout: 70 # default request timeout in seconds
@@ -158,7 +158,9 @@ kind: "presets-query"
 ```
 
 This kind merge presets and query in one kind. It will try to match regexp for path it will not match then it try to parse query string.
-Like in prests kind regexp is required.
+Like in presets kind regexp is required.
+
+Other options:
 
 **parentBucket** - this key will add defined name to path of parent when parsing
 
@@ -166,6 +168,8 @@ Like in prests kind regexp is required.
 
 **parentStorage** - change storage from with mort should fetch originals of image
 
+
+**checkParent** - flag indicated that mort should always check if original object exists before returning transformation to client 
 
 ### Storage
 
@@ -209,7 +213,8 @@ Example definition
       "x-mort": 1
 ```
 
-**url** - remote address, in url you should provide placeholders for bucket name (<conatiner>) and item path (<item>)
+**url** - remote address, in url you should provide placeholders for bucket name (conatiner) and item path (item)
+ 
 **headers** - additional request headers (optional)
 
 #### s3

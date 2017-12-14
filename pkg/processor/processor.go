@@ -43,7 +43,7 @@ type RequestProcessor struct {
 	queue          chan requestMessage // request queue
 	cache          *ccache.Cache       // cache for created image transformations
 	processTimeout time.Duration       // request processing timeout
-	lockTimeout    time.Duration       // lock timeout for collapsed request it equal processTimeout - 10 s
+	lockTimeout    time.Duration       // lock timeout for collapsed request it equal processTimeout - 1 s
 }
 
 type requestMessage struct {
@@ -149,10 +149,19 @@ func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) 
 
 	cacheValue := r.cache.Get(obj.Key)
 	if cacheValue != nil {
-		res := cacheValue.Value().(*response.Response)
-		resCp, err := res.Copy()
-		if err == nil {
-			return resCp
+		if cacheValue.Expired() == false {
+			log.Log().Info("Handle Get cache", zap.String("cache", "hit"), zap.String("obj.Key", obj.Key))
+			res := cacheValue.Value().(*response.Response)
+			resCp, err := res.Copy()
+			if err == nil {
+				return resCp
+			}
+
+		} else {
+			log.Log().Info("Handle Get cache", zap.String("cache", "expired"), zap.String("obj.Key", obj.Key))
+			res := cacheValue.Value().(*response.Response)
+			res.Close()
+			r.cache.Delete(obj.Key)
 		}
 	}
 
@@ -231,6 +240,7 @@ resLoop:
 
 		if obj.HasTransform() && parentRes.StatusCode == 200 && strings.Contains(parentRes.Headers.Get(response.HeaderContentType), "image/") {
 			defer res.Close()
+			parentRes.Close()
 			parentRes = storage.Get(parentObj)
 
 			defer parentRes.Close()
@@ -244,6 +254,7 @@ resLoop:
 			log.Log().Info("Performing transforms", zap.String("obj.Bucket", obj.Bucket), zap.String("obj.Key", obj.Key), zap.Int("transformsLen", len(transforms)))
 			return r.processImage(ctx, obj, parentRes, transforms)
 		} else if obj.HasTransform() {
+			parentRes.Close()
 			log.Log().Warn("Not performing transforms", zap.String("obj.Bucket", obj.Bucket), zap.String("obj.Key", obj.Key),
 				zap.Int("parent.sc", parentRes.StatusCode), zap.String("parent.ContentType", parentRes.Headers.Get(response.HeaderContentType)), zap.Error(parentRes.Error()))
 		}

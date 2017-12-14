@@ -55,7 +55,7 @@ buckets:
                   "x--key": "sec"
             transform:
                 kind: "local-meta"
-                rootPath: "/Users/aldor/workspace/mkaciubacom/web"
+                rootPath: "/tmp/mort"
                 pathPrefix: "transforms"
 
     query:
@@ -74,5 +74,5 @@ buckets:
                   "x--key": "sec"
             transform:
                 kind: "local-meta"
-                rootPath: "/Users/aldor/workspace/mkaciubacom/web"
+                rootPath: "/tmp/mort/"
                 pathPrefix: "transforms"

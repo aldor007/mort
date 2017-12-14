@@ -18,7 +18,7 @@ type FileObject struct {
 	Transforms  transforms.Transforms `json:"transforms"` // list of transform that should be performed
 	Storage     config.Storage        `json:"storage"`    // selected storage that should be used
 	Parent      *FileObject           // original image for transformed image
-	CheckParent bool                  // boolen if we should always check if parent exists
+	CheckParent bool                  // boolean if we should always check if parent exists
 }
 
 // NewFileObjectFromPath create new instance of FileObject
