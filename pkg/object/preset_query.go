@@ -10,11 +10,11 @@ func init() {
 	RegisterParser("presets-query", decodePreseQuery)
 }
 
-func decodePreseQuery(url *url.URL, mortConfig *config.Config, bucketConfig config.Bucket, obj *FileObject) (bool, error) {
-	run, err := decodePreset(url, mortConfig, bucketConfig, obj)
-	if run == false || err != nil {
-		run, err = decodeQuery(url, mortConfig, bucketConfig, obj)
+func decodePreseQuery(url *url.URL, bucketConfig config.Bucket, obj *FileObject) (string, error) {
+	parent, err := decodePreset(url, bucketConfig, obj)
+	if parent == "" || err != nil {
+		parent, err = decodeQuery(url, bucketConfig, obj)
 	}
 
-	return run, err
+	return parent, err
 }

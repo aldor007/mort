@@ -27,7 +27,10 @@ type Config struct {
 
 var instance *Config
 var once sync.Once
+// storageKinds is list of available storage kinds
 var storageKinds = []string{"local", "local-meta", "s3", "http", "noop"}
+// transformKind is list of available kinds of transforms
+var transformKinds = []string{"query", "presets", "presets-query"}
 
 // GetInstance return single instance of Config object
 func GetInstance() *Config {
@@ -35,6 +38,16 @@ func GetInstance() *Config {
 		instance = &Config{}
 	})
 	return instance
+}
+
+func RegisterTransformKind(kind string) {
+	for _, k :=  range transformKinds {
+		if k == kind {
+			return
+		}
+	}
+
+	transformKinds = append(transformKinds, kind)
 }
 
 // Load reads config data from file
@@ -160,7 +173,16 @@ func (c *Config) validateTransform(bucketName string, bucket Bucket) error {
 	transform := bucket.Transform
 	var err error
 	errorMsgPrefix := fmt.Sprintf("%s has invalid transform config", bucketName)
-	if transform.Kind != "presets" && transform.Kind != "query" && transform.Kind != "presets-query" {
+
+	var validTransfromKind bool
+	for _, kind := range transformKinds {
+		if kind == transform.Kind {
+			validTransfromKind = true
+			break
+		}
+	}
+
+	if validTransfromKind == false {
 		return configInvalidError(fmt.Sprintf("%s - unknown kind %s", errorMsgPrefix, transform.Kind))
 	}
 

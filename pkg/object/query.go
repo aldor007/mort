@@ -12,28 +12,23 @@ func init() {
 	RegisterParser("query", decodeQuery)
 }
 
-func decodeQuery(url *url.URL, mortConfig *config.Config, bucketConfig config.Bucket, obj *FileObject) (bool, error) {
+func decodeQuery(url *url.URL, bucketConfig config.Bucket, obj *FileObject) (string, error) {
 	trans := bucketConfig.Transform
 
 	var err error
 	obj.Transforms, err = queryToTransform(url.Query())
 
 	if obj.HasTransform() {
-		parentBucket := obj.Bucket
+		parent := url.Path
 		if trans.ParentBucket != "" {
-			parentBucket = trans.ParentBucket
+			parent = "/" + path.Join(trans.ParentBucket, obj.Key)
 		}
 
-		parent := "/" + path.Join(parentBucket, obj.Key)
-		obj.Key = hashKey(obj.Transforms.Hash(), obj.key)
-		parentObj, err := NewFileObjectFromPath(parent, mortConfig)
-		parentObj.Storage = bucketConfig.Storages.Get(trans.ParentStorage)
-		obj.Parent = parentObj
-		obj.CheckParent = trans.CheckParent
-		return true, err
+		obj.Key = hashKey(obj.Transforms.Hash(), parent)
+		return parent, err
 	}
 
-	return false, err
+	return "", err
 }
 
 func queryToTransform(query url.Values) (transforms.Transforms, error) {
@@ -100,7 +95,10 @@ func queryToTransform(query url.Values) (transforms.Transforms, error) {
 	var q int
 	q, err = queryToInt(query, "quality")
 	err = trans.Quality(q)
-	err = trans.Format(query.Get("format"))
+	if format, ok := query["format"]; ok {
+		err = trans.Format(format[0])
+	}
+
 	if _, ok := query["grayscale"]; ok {
 		trans.Grayscale()
 	}

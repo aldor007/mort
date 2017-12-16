@@ -132,13 +132,35 @@ func (r *RequestProcessor) collapseGET(req *http.Request, obj *object.FileObject
 			lockResult.Cancel <- true
 			return response.NewString(504, "timeout")
 		default:
-			cacheValue := r.cache.Get(obj.Key)
-			if cacheValue != nil {
+			if cacheRes := r.fetchResponseFromCache(obj.Key); cacheRes != nil {
 				lockResult.Cancel <- true
-				return cacheValue.Value().(*response.Response)
+				return cacheRes
 			}
 		}
 	}
+
+}
+
+func (r *RequestProcessor) fetchResponseFromCache(key string) *response.Response{
+	cacheValue := r.cache.Get(key)
+	if cacheValue != nil {
+		if cacheValue.Expired() == false {
+			log.Log().Info("Handle Get cache", zap.String("cache", "hit"), zap.String("obj.Key", key))
+			res := cacheValue.Value().(*response.Response)
+			resCp, err := res.Copy()
+			if err == nil {
+				return resCp
+			}
+
+		} else {
+			log.Log().Info("Handle Get cache", zap.String("cache", "expired"), zap.String("obj.Key", key))
+			res := cacheValue.Value().(*response.Response)
+			res.Close()
+			r.cache.Delete(key)
+		}
+	}
+
+	return nil
 
 }
 
@@ -147,22 +169,8 @@ func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) 
 		return handleS3Get(req, obj)
 	}
 
-	cacheValue := r.cache.Get(obj.Key)
-	if cacheValue != nil {
-		if cacheValue.Expired() == false {
-			log.Log().Info("Handle Get cache", zap.String("cache", "hit"), zap.String("obj.Key", obj.Key))
-			res := cacheValue.Value().(*response.Response)
-			resCp, err := res.Copy()
-			if err == nil {
-				return resCp
-			}
-
-		} else {
-			log.Log().Info("Handle Get cache", zap.String("cache", "expired"), zap.String("obj.Key", obj.Key))
-			res := cacheValue.Value().(*response.Response)
-			res.Close()
-			r.cache.Delete(obj.Key)
-		}
+	if cacheRes := r.fetchResponseFromCache(obj.Key); cacheRes != nil {
+		return cacheRes
 	}
 
 	var currObj *object.FileObject = obj
@@ -245,10 +253,14 @@ resLoop:
 
 			defer parentRes.Close()
 
-			// revers order of transforms
-			for i := 0; i < len(transforms)/2; i++ {
-				j := len(transforms) - i - 1
-				transforms[i], transforms[j] = transforms[j], transforms[i]
+			transLen := len(transforms)
+			if transLen > 1 {
+				// revers order of transforms
+				for i := 0; i < len(transforms)/2; i++ {
+					j := len(transforms) - i - 1
+					transforms[i], transforms[j] = transforms[j], transforms[i]
+				}
+
 			}
 
 			log.Log().Info("Performing transforms", zap.String("obj.Bucket", obj.Bucket), zap.String("obj.Key", obj.Key), zap.Int("transformsLen", len(transforms)))

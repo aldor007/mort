@@ -27,7 +27,7 @@ func TestNewRequestProcessor(t *testing.T) {
 
 	assert.Equal(t, res.StatusCode, 200)
 	assert.Equal(t, res.Headers.Get("x-amz-meta-public-width"), "150")
-	assert.Equal(t, res.Headers.Get("ETag"), "7eaa484e8c841e7e")
+	assert.Equal(t, res.Headers.Get("ETag"), "W/\"7eaa484e8c841e7e\"")
 }
 
 func BenchmarkNewRequestProcessorMemoryLock(b *testing.B) {

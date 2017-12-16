@@ -25,3 +25,4 @@ if [[ $TEST_RESULT -eq 0 ]]; then
     rm -rf /tmp/mort-tests
 fi
 unset MORT_PORT
+exit ${TEST_RESULT}

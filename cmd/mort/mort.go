@@ -26,7 +26,7 @@ import (
 
 const (
 	// Version of mort
-	Version = "0.1.0"
+	Version = "0.2.0"
 	// BANNER just fancy command line banner
 	BANNER = `
   /\/\   ___  _ __| |_
@@ -68,7 +68,6 @@ func main() {
 	zap.ReplaceGlobals(logger)
 	log.RegisterLogger(logger)
 	router := chi.NewRouter()
-
 	imgConfig := config.GetInstance()
 	err := imgConfig.Load(*configPath)
 
@@ -111,7 +110,7 @@ func main() {
 
 	router.HandleFunc("/", http.HandlerFunc(func(resWriter http.ResponseWriter, req *http.Request) {
 		resWriter.WriteHeader(400)
-		log.Log().Warn("github.com/aldor007/mort error request shouldn't go here")
+		log.Log().Warn("Mort error request shouldn't go here")
 	}))
 
 	s := &http.Server{
