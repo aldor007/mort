@@ -29,7 +29,7 @@ func Parse(url *url.URL, mortConfig *config.Config, obj *FileObject) error {
 	elements := strings.SplitN(url.Path, "/", 3)
 	lenElements := len(elements)
 	if lenElements < 2 {
-		return errors.New("invalid path "  + url.Path )
+		return errors.New("invalid path " + url.Path)
 	}
 
 	obj.Bucket = elements[1]
@@ -48,7 +48,7 @@ func Parse(url *url.URL, mortConfig *config.Config, obj *FileObject) error {
 			}
 
 			if err != nil {
-				return  err
+				return err
 			}
 
 			if parent == "" {
@@ -69,9 +69,9 @@ func Parse(url *url.URL, mortConfig *config.Config, obj *FileObject) error {
 			} else {
 				obj.Storage = bucketConfig.Storages.Basic()
 			}
-	} else {
-		obj.Storage = bucketConfig.Storages.Basic()
-	}
+		} else {
+			obj.Storage = bucketConfig.Storages.Basic()
+		}
 
 		return err
 

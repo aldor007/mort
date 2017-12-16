@@ -141,7 +141,7 @@ func (r *RequestProcessor) collapseGET(req *http.Request, obj *object.FileObject
 
 }
 
-func (r *RequestProcessor) fetchResponseFromCache(key string) *response.Response{
+func (r *RequestProcessor) fetchResponseFromCache(key string) *response.Response {
 	cacheValue := r.cache.Get(key)
 	if cacheValue != nil {
 		if cacheValue.Expired() == false {

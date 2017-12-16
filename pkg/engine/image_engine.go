@@ -10,12 +10,12 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/h2non/bimg.v1"
 
+	"bytes"
 	"github.com/aldor007/mort/pkg/log"
 	"github.com/aldor007/mort/pkg/object"
 	"github.com/aldor007/mort/pkg/response"
 	"github.com/aldor007/mort/pkg/transforms"
 	"sync"
-	"bytes"
 )
 
 // bufPool for string concatenations
