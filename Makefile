@@ -36,3 +36,6 @@ clean-prof:
 	find . -name ".test" -depth -exec rm {} \;
 	find . -name ".cpu" -depth -exec rm {} \;
 	find . -name ".mem" -depth -exec rm {} \;
+
+release:
+	docker build . -f Dockerfile.build --build-arg GITHUB_TOKEN=${GITHUB_TOKEN}
