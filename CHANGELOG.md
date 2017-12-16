@@ -1,3 +1,5 @@
+* 0.2.1
+    * Bugfix: Fixed regression in calculating parent in presets parser
 * 0.2.0
     * Feature: Allow register custom url parser 
     * Bugfix: Change ETag to weak ETag

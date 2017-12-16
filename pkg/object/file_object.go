@@ -11,14 +11,15 @@ import (
 
 // FileObject is representing parsed request for image or file
 type FileObject struct {
-	Uri         *url.URL `json:"uri"`    // original request path
-	Bucket      string   `json:"bucket"` // request matched bucket
-	Key         string   `json:"key"`    // storage path for file with leading slash
-	key         string
-	Transforms  transforms.Transforms `json:"transforms"` // list of transform that should be performed
-	Storage     config.Storage        `json:"storage"`    // selected storage that should be used
-	Parent      *FileObject           // original image for transformed image
-	CheckParent bool                  // boolean if we should always check if parent exists
+	Uri            *url.URL `json:"uri"`    // original request path
+	Bucket         string   `json:"bucket"` // request matched bucket
+	Key            string   `json:"key"`    // storage path for file with leading slash
+	key            string
+	Transforms     transforms.Transforms `json:"transforms"` // list of transform that should be performed
+	Storage        config.Storage        `json:"storage"`    // selected storage that should be used
+	Parent         *FileObject           // original image for transformed image
+	CheckParent    bool                  // boolean if we should always check if parent exists
+	allowChangeKey bool                  // parser can allow or not changing key by this flag
 }
 
 // NewFileObjectFromPath create new instance of FileObject
@@ -31,6 +32,7 @@ func NewFileObjectFromPath(path string, mortConfig *config.Config) (*FileObject,
 
 	//obj.uriBytes = []byte(uri)
 	obj.CheckParent = false
+	obj.allowChangeKey = true
 
 	err := Parse(obj.Uri, mortConfig, &obj)
 
@@ -47,6 +49,7 @@ func NewFileObject(uri *url.URL, mortConfig *config.Config) (*FileObject, error)
 	obj.Uri = uri
 	//obj.uriBytes = []byte(uri)
 	obj.CheckParent = false
+	obj.allowChangeKey = true
 
 	err := Parse(uri, mortConfig, &obj)
 

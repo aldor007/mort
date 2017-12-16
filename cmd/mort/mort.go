@@ -26,7 +26,7 @@ import (
 
 const (
 	// Version of mort
-	Version = "0.2.0"
+	Version = "0.2.1"
 	// BANNER just fancy command line banner
 	BANNER = `
   /\/\   ___  _ __| |_

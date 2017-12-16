@@ -63,7 +63,7 @@ func Parse(url *url.URL, mortConfig *config.Config, obj *FileObject) error {
 			obj.CheckParent = bucketConfig.Transform.CheckParent
 			if obj.Transforms.NotEmpty {
 				obj.Storage = bucketConfig.Storages.Transform()
-				if bucketConfig.Transform.ResultKey == "hash" {
+				if obj.allowChangeKey == true && bucketConfig.Transform.ResultKey == "hash" {
 					obj.Key = hashKey(obj.Transforms.Hash(), parentObj.key)
 				}
 			} else {

@@ -60,6 +60,11 @@ func decodePreset(url *url.URL, bucketConfig config.Bucket, obj *FileObject) (st
 		parent = "/" + parent
 	}
 
+	if bucketConfig.Transform.ResultKey == "hash" {
+		obj.Key = hashKey(obj.Transforms.Hash(), subMatchMap["parent"])
+		obj.allowChangeKey = false
+	}
+
 	return parent, err
 }
 

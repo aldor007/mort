@@ -20,7 +20,7 @@ tests: unit integrations
 docker-build:
 	docker build -t aldo007/mort -f Dockerfile .
 
-docker-push:
+docker-push: docker-build
 	docker push aldor007/mort:latest
 
 run-server:
@@ -39,3 +39,4 @@ clean-prof:
 
 release:
 	docker build . -f Dockerfile.build --build-arg GITHUB_TOKEN=${GITHUB_TOKEN}
+	docker build . -t aldor007/mort:$(git descibe)}; docker push  aldor007/mort:$(git descibe)
