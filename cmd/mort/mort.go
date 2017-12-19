@@ -104,7 +104,7 @@ func main() {
 				log.Log().Warn("Mort process error", zap.String("obj.Key", obj.Key), zap.Error(res.Error()))
 			}
 
-			res.Send(resWriter)
+			res.SendContent(req, resWriter)
 		})
 	})
 

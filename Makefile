@@ -1,3 +1,5 @@
+tag := $(shell git describe)
+
 install:
 	dep ensure
 
@@ -38,5 +40,5 @@ clean-prof:
 	find . -name ".mem" -depth -exec rm {} \;
 
 release:
-	docker build . -f Dockerfile.build --build-arg GITHUB_TOKEN=${GITHUB_TOKEN}
-	docker build . -t aldor007/mort:$(git descibe)}; docker push  aldor007/mort:$(git descibe)
+	#docker build . -f Dockerfile.build --build-arg GITHUB_TOKEN=${GITHUB_TOKEN}
+	docker build . -t aldor007/mort:${tag}; docker push aldor007/mort:${tag}

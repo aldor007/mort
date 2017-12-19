@@ -1,3 +1,5 @@
+* 0.3.0
+    * Feature: Handle Range and condition request
 * 0.2.1
     * Bugfix: Fixed regression in calculating parent in presets parser
 * 0.2.0

@@ -285,17 +285,11 @@ func prepareResponse(obj *object.FileObject, stream io.ReadCloser, item stow.Ite
 		return response.NewError(500, err)
 	}
 
-	size, err := item.Size()
-	if err != nil {
-		log.Log().Warn("Storage/prepareResponse read size error", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 500), zap.Error(err))
-		return response.NewError(500, err)
-	}
 
 	if etag != "" {
 		res.Set("ETag", etag)
 	}
 	res.Set("Last-Modified", lastMod.Format(http.TimeFormat))
-	res.ContentLength = size
 
 	if contentType, ok := metadata["Content-Type"]; ok {
 		res.SetContentType(contentType.(string))
