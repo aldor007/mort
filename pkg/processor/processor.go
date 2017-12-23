@@ -92,6 +92,8 @@ func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *r
 		return updateHeaders(r.handleGET(req, obj))
 	case "PUT":
 		return handlePUT(req, obj)
+	case "DELETE":
+		return storage.Delete(obj)
 
 	default:
 		return response.NewError(405, errors.New("method not allowed"))

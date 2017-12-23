@@ -5,13 +5,13 @@
   branch = "master"
   name = "github.com/aldor007/go-aws-auth"
   packages = ["."]
-  revision = "a311e63fcbecebfb250403327210949e3bf5c565"
+  revision = "479c2853d1f8aec2969767928ce68b116e537cbc"
 
 [[projects]]
   branch = "develop"
   name = "github.com/aldor007/stow"
   packages = [".","http","local","local-meta","noop","s3"]
-  revision = "85a3450a695accabfc091d372280d48a2a5ac17b"
+  revision = "0e7119399512a08376730c40ffc5d86c59ceff9c"
 
 [[projects]]
   name = "github.com/aws/aws-sdk-go"
@@ -85,12 +85,6 @@
   version = "v1.1.4"
 
 [[projects]]
-  name = "github.com/tj/go-debug"
-  packages = ["."]
-  revision = "ff4a55a20a86994118644bbddc6a216da193cc13"
-  version = "v2.0.0"
-
-[[projects]]
   name = "github.com/vmihailenco/msgpack"
   packages = [".","codes"]
   revision = "df5e5d20905d833657b92cafe6f6341ca1378083"
@@ -129,8 +123,8 @@
 [[projects]]
   name = "gopkg.in/h2non/bimg.v1"
   packages = ["."]
-  revision = "8aff78e4ec8e8b66c753bafb27374488009cfb36"
-  version = "v1.0.17"
+  revision = "02e621739c77c791d8c153f240b7a1f75b07816f"
+  version = "v1.0.18"
 
 [[projects]]
   branch = "v2"

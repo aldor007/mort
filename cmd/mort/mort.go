@@ -26,7 +26,7 @@ import (
 
 const (
 	// Version of mort
-	Version = "0.3.0"
+	Version = "0.4.0"
 	// BANNER just fancy command line banner
 	BANNER = `
   /\/\   ___  _ __| |_
@@ -89,12 +89,16 @@ func main() {
 			obj, err := object.NewFileObject(req.URL, imgConfig)
 			if err != nil {
 				logger.Sugar().Errorf("Unable to create file object err = %s", err)
-				response.NewError(400, err).SetDebug(debug).Send(resWriter)
+				response.NewError(400, err).SetDebug(debug, nil).Send(resWriter)
 				return
 			}
 
 			res := rp.Process(req, obj)
-			res.SetDebug(debug)
+			res.SetDebug(debug, obj)
+			if debug {
+				res.Set("X-Mort-Version", Version)
+			}
+
 			// FIXME
 			res.Set("Access-Control-Allow-Headers", "Content-Type, X-Amz-Public-Width, X-Amz-Public-Height")
 			res.Set("Access-Control-Expose-Headers", "Content-Type, X-Amz-Public-Width, X-Amz-Public-Height")

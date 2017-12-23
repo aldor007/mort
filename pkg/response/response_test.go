@@ -87,7 +87,7 @@ func TestNewError(t *testing.T) {
 	assert.NotNil(t, err, "Should return error when reading body")
 	assert.Nil(t, buf)
 
-	res.SetDebug(true)
+	res.SetDebug(true, nil)
 	buf, err = res.ReadBody()
 	assert.Nil(t, err)
 	assert.NotNil(t, buf, "Should return error when reading body")

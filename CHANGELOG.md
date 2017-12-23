@@ -1,3 +1,6 @@
+* 0.4.0
+    * Feature: Implement delete object from storage
+    * Bugfix: Fixed handling AWS Auth header from aws-php-sdk
 * 0.3.0
     * Feature: Handle Range and condition request
 * 0.2.1

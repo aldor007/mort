@@ -8,9 +8,11 @@ import (
 	"time"
 
 	"github.com/aldor007/mort/pkg/config"
+	"github.com/aldor007/mort/pkg/log"
 	"github.com/aldor007/mort/pkg/response"
 
 	"github.com/aldor007/go-aws-auth"
+	"go.uber.org/zap"
 )
 
 // authHeaderRegexpv4 regular expression for AWS Auth v4 header mode
@@ -65,6 +67,7 @@ func (s *S3Auth) Handler(next http.Handler) http.Handler {
 		pathSlice := strings.Split(path, "/")
 		pathSliceLen := len(pathSlice)
 		if pathSliceLen < 2 {
+			log.Log().Warn("S3Auth invalid path")
 			res := response.NewString(400, "invalid path")
 			res.Send(resWriter)
 			return
@@ -83,6 +86,7 @@ func (s *S3Auth) Handler(next http.Handler) http.Handler {
 			authAlg = "v4"
 			alg := matches[1]
 			if alg != "AWS4-HMAC-SHA256" {
+				log.Log().Warn("S3Auth invalid algorithm", zap.String("alg", alg))
 				res := response.NewString(400, "invalid algorithm")
 				res.Send(resWriter)
 				return
@@ -103,6 +107,7 @@ func (s *S3Auth) Handler(next http.Handler) http.Handler {
 		if !ok {
 			buckets := mortConfig.BucketsByAccessKey(accessKey)
 			if len(buckets) == 0 {
+				log.Log().Warn("S3Auth no bucket for access key")
 				res := response.NewString(403, "")
 				res.Send(resWriter)
 				return
@@ -122,6 +127,7 @@ func (s *S3Auth) Handler(next http.Handler) http.Handler {
 		}
 		if credential.AccessKeyID == "" {
 			res := response.NewString(401, "")
+			log.Log().Warn("S3Auth invalid bucket config no access key or invalid", zap.String("bucket", bucketName))
 			res.Send(resWriter)
 			return
 		}
@@ -129,6 +135,7 @@ func (s *S3Auth) Handler(next http.Handler) http.Handler {
 		validiatonReq, err := http.NewRequest(req.Method, req.RequestURI, req.Body)
 		if err != nil {
 			res := response.NewString(401, "")
+			log.Log().Error("S3Auth unable to create validation req", zap.Error(err))
 			res.Send(resWriter)
 			return
 		}
@@ -157,7 +164,7 @@ func (s *S3Auth) Handler(next http.Handler) http.Handler {
 		if authAlg == "s3" {
 			awsauth.SignS3(validiatonReq, credential)
 		} else {
-			awsauth.Sign4ForRegion(validiatonReq, "mort", "s3", credential)
+			awsauth.Sign4ForRegion(validiatonReq, "mort", "s3", signedHeaders, credential)
 		}
 
 		if auth == validiatonReq.Header.Get("Authorization") {
@@ -172,6 +179,7 @@ func (s *S3Auth) Handler(next http.Handler) http.Handler {
 
 		}
 
+		log.Log().Warn("S3Auth signature mismatch")
 		response.NewNoContent(403).Send(resWriter)
 		return
 	}

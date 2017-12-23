@@ -65,7 +65,6 @@ buckets:
         transform:
             kind: "query"
             resultKey: "hash"
-            presets:
         storages:
             basic:
                 kind: "http"

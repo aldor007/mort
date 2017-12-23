@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/aldor007/mort/pkg/log"
+	"github.com/aldor007/mort/pkg/object"
 	"github.com/djherbis/stream"
 	"go.uber.org/zap"
 	"io"
@@ -55,14 +56,15 @@ type Response struct {
 // New create response object with io.ReadCloser
 func New(statusCode int, body io.ReadCloser) *Response {
 	res := Response{StatusCode: statusCode, reader: body}
+	res.ContentLength = -1
 	if body != nil {
 		seeker, ok := body.(io.ReadSeeker)
 		if ok {
 			res.bodySeeker = seeker
 		}
+		res.ContentLength = 0
 	}
 	res.Headers = make(http.Header)
-	res.ContentLength = -1
 	return &res
 }
 
@@ -174,10 +176,24 @@ func (r *Response) Close() {
 }
 
 // SetDebug set flag indicating that response can including debug information
-func (r *Response) SetDebug(debug bool) *Response {
+func (r *Response) SetDebug(debug bool, obj *object.FileObject) *Response {
 	if debug == true {
 		r.debug = true
-		r.Headers.Set("Cache-Control", "no-cache")
+		if obj != nil {
+			r.Headers.Set("Cache-Control", "no-cache")
+			r.Headers.Set("x-mort-key", obj.Key)
+			r.Headers.Set("x-mort-storage", obj.Storage.Kind)
+
+			if obj.HasTransform() {
+				r.Headers.Set("x-mort-transform", "true")
+			}
+
+			if obj.HasParent() {
+				r.Headers.Set("x-mort-parent-key", obj.Parent.Key)
+				r.Headers.Set("x-mort-parent-bucket", obj.Parent.Bucket)
+				r.Headers.Set("x-mort-parent-storage", obj.Parent.Storage.Kind)
+			}
+		}
 		r.writeDebug()
 		return r
 	}
@@ -206,10 +222,6 @@ func (r *Response) Send(w http.ResponseWriter) error {
 	var resStream io.Reader
 	if r.ContentLength != 0 {
 		resStream = r.Stream()
-		if resStream == nil {
-			r.StatusCode = 500
-		}
-
 	}
 
 	w.WriteHeader(r.StatusCode)
