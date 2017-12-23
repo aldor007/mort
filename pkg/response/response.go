@@ -56,13 +56,13 @@ type Response struct {
 // New create response object with io.ReadCloser
 func New(statusCode int, body io.ReadCloser) *Response {
 	res := Response{StatusCode: statusCode, reader: body}
-	res.ContentLength = -1
+	res.ContentLength = 0
 	if body != nil {
 		seeker, ok := body.(io.ReadSeeker)
 		if ok {
 			res.bodySeeker = seeker
 		}
-		res.ContentLength = 0
+		res.ContentLength = -1
 	}
 	res.Headers = make(http.Header)
 	return &res
@@ -222,6 +222,9 @@ func (r *Response) Send(w http.ResponseWriter) error {
 	var resStream io.Reader
 	if r.ContentLength != 0 {
 		resStream = r.Stream()
+		if resStream == nil {
+			r.StatusCode = 500
+		}
 	}
 
 	w.WriteHeader(r.StatusCode)
@@ -339,12 +342,12 @@ func (r *Response) Stream() io.ReadCloser {
 		return ioutil.NopCloser(r)
 	}
 
-	if r.reader != nil {
-		return r.reader
-	}
-
 	if r.body != nil {
 		return ioutil.NopCloser(bytes.NewReader(r.body))
+	}
+
+	if r.reader != nil {
+		return r.reader
 	}
 
 	return nil

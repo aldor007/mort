@@ -1,3 +1,5 @@
+* 0.4.1
+    * Bugfix: Update stow (fixed serving range response for object with local-meta adapter) 
 * 0.4.0
     * Feature: Implement delete object from storage
     * Bugfix: Fixed handling AWS Auth header from aws-php-sdk
