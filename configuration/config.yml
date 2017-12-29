@@ -75,3 +75,11 @@ buckets:
                 kind: "local-meta"
                 rootPath: "/tmp/mort/"
                 pathPrefix: "transforms"
+    local:
+        keys:
+          - accessKey: "acc"
+            secretAccessKey: "sec"
+        storages:
+            basic:
+                kind: "local-meta"
+                rootPath: "/tmp/mort/"

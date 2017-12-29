@@ -155,7 +155,7 @@ func List(obj *object.FileObject, maxKeys int, delimeter string, prefix string, 
 	type contentXML struct {
 		Key          string    `xml:"Key"`
 		StorageClass string    `xml:"StorageClass"`
-		LastModified time.Time `xml:"LastModified"`
+		LastModified string    `xml:"LastModified"`
 		ETag         string    `xml:"ETag"`
 		Size         int64     `xml:"Size"`
 	}
@@ -214,7 +214,7 @@ func List(obj *object.FileObject, maxKeys int, delimeter string, prefix string, 
 		}
 
 		if key != "" {
-			result.Contents = append(result.Contents, contentXML{Key: key, LastModified: lastMod, Size: size, ETag: etag, StorageClass: "STANDARD"})
+			result.Contents = append(result.Contents, contentXML{Key: key, LastModified: lastMod.Format(time.RFC3339), Size: size, ETag: etag, StorageClass: "STANDARD"})
 		}
 
 		if commonPrefix != "" {

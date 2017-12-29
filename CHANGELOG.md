@@ -1,3 +1,5 @@
+* 0.4.2
+    * Bugfix: Update stow (fixed removing dir) 
 * 0.4.1
     * Bugfix: Update stow (fixed serving range response for object with local-meta adapter) 
 * 0.4.0

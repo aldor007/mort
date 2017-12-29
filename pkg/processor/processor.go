@@ -85,6 +85,10 @@ func (r *RequestProcessor) processChan() {
 func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *response.Response {
 	switch req.Method {
 	case "GET", "HEAD":
+		if obj.Key == "" {
+			return handleS3Get(req, obj)
+		}
+
 		if obj.HasTransform() {
 			return updateHeaders(r.collapseGET(req, obj))
 		}
@@ -167,10 +171,6 @@ func (r *RequestProcessor) fetchResponseFromCache(key string) *response.Response
 }
 
 func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) *response.Response {
-	if obj.Key == "" {
-		return handleS3Get(req, obj)
-	}
-
 	if cacheRes := r.fetchResponseFromCache(obj.Key); cacheRes != nil {
 		return cacheRes
 	}

@@ -179,7 +179,7 @@ func (s *S3Auth) Handler(next http.Handler) http.Handler {
 
 		}
 
-		log.Log().Warn("S3Auth signature mismatch")
+		log.Log().Warn("S3Auth signature mismatch", zap.String("req.path", req.URL.Path))
 		response.NewNoContent(403).Send(resWriter)
 		return
 	}
