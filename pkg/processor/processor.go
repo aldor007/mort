@@ -272,6 +272,10 @@ resLoop:
 			log.Log().Warn("Not performing transforms", zap.String("obj.Bucket", obj.Bucket), zap.String("obj.Key", obj.Key),
 				zap.String("parent.Key", parentObj.Key), zap.Int("parent.sc", parentRes.StatusCode), zap.String("parent.ContentType", parentRes.Headers.Get(response.HeaderContentType)), zap.Error(parentRes.Error()))
 		}
+
+		if parentRes.StatusCode != 200 && parentRes.StatusCode != 404 {
+			return parentRes
+		}
 	}
 
 	return res
