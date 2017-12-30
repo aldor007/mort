@@ -19,11 +19,11 @@ func init() {
 var presetCache = make(map[string]transforms.Transforms)
 
 // decodePreset parse given url by matching user defined regexp with request path
-func decodePreset(url *url.URL, mortConfig *config.Config, bucketConfig config.Bucket, obj *FileObject) (bool, error) {
+func decodePreset(url *url.URL, bucketConfig config.Bucket, obj *FileObject) (string, error) {
 	trans := bucketConfig.Transform
 	matches := trans.PathRegexp.FindStringSubmatch(obj.Key)
 	if matches == nil {
-		return false, nil
+		return "", nil
 	}
 
 	subMatchMap := make(map[string]string, 2)
@@ -40,7 +40,7 @@ func decodePreset(url *url.URL, mortConfig *config.Config, bucketConfig config.B
 	if _, ok := trans.Presets[presetName]; !ok {
 		log.Log().Warn("FileObject decodePreset unknown preset", zap.String("obj.Key", obj.Key), zap.String("parent", parent), zap.String("presetName", presetName),
 			zap.String("regexp", trans.Path))
-		return true, errors.New("unknown preset " + presetName)
+		return "", errors.New("unknown preset " + presetName)
 	}
 
 	var err error
@@ -49,7 +49,7 @@ func decodePreset(url *url.URL, mortConfig *config.Config, bucketConfig config.B
 	} else {
 		obj.Transforms, err = presetToTransform(trans.Presets[presetName])
 		if err != nil {
-			return true, err
+			return parent, err
 		}
 		presetCache[presetName] = obj.Transforms
 	}
@@ -60,16 +60,12 @@ func decodePreset(url *url.URL, mortConfig *config.Config, bucketConfig config.B
 		parent = "/" + parent
 	}
 
-	parentObj, err := NewFileObjectFromPath(parent, mortConfig)
-	parentObj.Storage = bucketConfig.Storages.Get(trans.ParentStorage)
-
-	if parentObj != nil && bucketConfig.Transform.ResultKey == "hash" {
+	if bucketConfig.Transform.ResultKey == "hash" {
 		obj.Key = hashKey(obj.Transforms.Hash(), subMatchMap["parent"])
+		obj.allowChangeKey = false
 	}
 
-	obj.Parent = parentObj
-	obj.CheckParent = trans.CheckParent
-	return true, err
+	return parent, err
 }
 
 func presetToTransform(preset config.Preset) (transforms.Transforms, error) {

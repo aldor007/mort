@@ -4,17 +4,37 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"github.com/aldor007/mort/pkg/log"
+	"github.com/aldor007/mort/pkg/object"
 	"github.com/djherbis/stream"
+	"go.uber.org/zap"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
 )
 
 const (
 	// HeaderContentType name of Content-Type header
 	HeaderContentType = "content-type"
 )
+
+func isRangeOrCondition(req *http.Request) bool {
+	if req.Header.Get("Range") != "" || req.Header.Get("if-range") != "" {
+		return true
+	}
+
+	if req.Header.Get("If-match") != "" || req.Header.Get("If-none-match") != "" {
+		return true
+	}
+
+	if req.Header.Get("If-Unmodified-Since") != "" || req.Header.Get("If-Modified-Since") != "" {
+		return true
+	}
+
+	return false
+}
 
 // Response is helper struct for wrapping different storage response
 type Response struct {
@@ -24,18 +44,27 @@ type Response struct {
 	debug         bool        // debug flag
 	errorValue    error       // error value
 
-	reader     io.ReadCloser  // reader for response body
-	body       []byte         // response body for buffered value
-	bodyReader io.ReadCloser  // original response buffer
-	resStream  *stream.Stream // response stream dispatcher
-	hasParent  bool           // flag indicated that response is a copy
+	reader     io.ReadCloser // reader for response body
+	body       []byte        // response body for buffered value
+	bodyReader io.ReadCloser // original response buffer
+	bodySeeker io.ReadSeeker
+
+	resStream *stream.Stream // response stream dispatcher
+	hasParent bool           // flag indicated that response is a copy
 }
 
 // New create response object with io.ReadCloser
 func New(statusCode int, body io.ReadCloser) *Response {
 	res := Response{StatusCode: statusCode, reader: body}
+	res.ContentLength = 0
+	if body != nil {
+		seeker, ok := body.(io.ReadSeeker)
+		if ok {
+			res.bodySeeker = seeker
+		}
+		res.ContentLength = -1
+	}
 	res.Headers = make(http.Header)
-	res.ContentLength = -1
 	return &res
 }
 
@@ -48,14 +77,20 @@ func NewNoContent(statusCode int) *Response {
 
 // NewString create response object from string
 func NewString(statusCode int, body string) *Response {
-	r := New(statusCode, ioutil.NopCloser(strings.NewReader(body)))
-	r.Headers.Set(HeaderContentType, "text/plain")
-	return r
+	res := Response{StatusCode: statusCode}
+	res.bodySeeker = strings.NewReader(body)
+	res.reader = ioutil.NopCloser(res.bodySeeker)
+	res.ContentLength = int64(len(body))
+	res.Headers = make(http.Header)
+	res.Headers.Set(HeaderContentType, "text/plain")
+	return &res
 }
 
 // NewBuf create response object from []byte
 func NewBuf(statusCode int, body []byte) *Response {
-	res := Response{StatusCode: statusCode, reader: ioutil.NopCloser(bytes.NewReader(body))}
+	res := Response{StatusCode: statusCode}
+	res.bodySeeker = bytes.NewReader(body)
+	res.reader = ioutil.NopCloser(res.bodySeeker)
 	res.ContentLength = int64(len(body))
 	res.body = body
 	res.Headers = make(http.Header)
@@ -141,10 +176,24 @@ func (r *Response) Close() {
 }
 
 // SetDebug set flag indicating that response can including debug information
-func (r *Response) SetDebug(debug bool) *Response {
+func (r *Response) SetDebug(debug bool, obj *object.FileObject) *Response {
 	if debug == true {
 		r.debug = true
-		r.Headers.Set("Cache-Control", "no-cache")
+		if obj != nil {
+			r.Headers.Set("Cache-Control", "no-cache")
+			r.Headers.Set("x-mort-key", obj.Key)
+			r.Headers.Set("x-mort-storage", obj.Storage.Kind)
+
+			if obj.HasTransform() {
+				r.Headers.Set("x-mort-transform", "true")
+			}
+
+			if obj.HasParent() {
+				r.Headers.Set("x-mort-parent-key", obj.Parent.Key)
+				r.Headers.Set("x-mort-parent-bucket", obj.Parent.Bucket)
+				r.Headers.Set("x-mort-parent-storage", obj.Parent.Storage.Kind)
+			}
+		}
 		r.writeDebug()
 		return r
 	}
@@ -163,7 +212,7 @@ func (r *Response) Error() error {
 	return r.errorValue
 }
 
-// Send write response to client
+// Send write response to client using streaming
 func (r *Response) Send(w http.ResponseWriter) error {
 	for headerName, headerValue := range r.Headers {
 		w.Header().Set(headerName, headerValue[0])
@@ -176,7 +225,6 @@ func (r *Response) Send(w http.ResponseWriter) error {
 		if resStream == nil {
 			r.StatusCode = 500
 		}
-
 	}
 
 	w.WriteHeader(r.StatusCode)
@@ -184,6 +232,29 @@ func (r *Response) Send(w http.ResponseWriter) error {
 	if resStream != nil {
 		io.Copy(w, resStream)
 	}
+
+	return nil
+}
+
+// SendContent use http.ServeContent to return response to client
+// It can handle range and condition requests
+func (r *Response) SendContent(req *http.Request, w http.ResponseWriter) error {
+	if r.StatusCode != 200 || r.bodySeeker == nil || isRangeOrCondition(req) == false {
+		log.Log().Info("Response SendContent streaming response", zap.Int("sc", r.StatusCode), zap.Bool("bodySeeker", r.bodySeeker != nil), zap.Bool("rangeOrConditionReq", isRangeOrCondition(req)))
+		return r.Send(w)
+	}
+
+	defer r.Close()
+	for headerName, headerValue := range r.Headers {
+		w.Header().Set(headerName, headerValue[0])
+	}
+
+	lastMod, err := time.Parse(http.TimeFormat, r.Headers.Get("Last-Modified"))
+	if err != nil {
+		lastMod = time.Now()
+	}
+
+	http.ServeContent(w, req, "", lastMod, r.bodySeeker)
 
 	return nil
 }
@@ -216,13 +287,15 @@ func (r *Response) Copy() (*Response, error) {
 	if r.body != nil {
 		c.ContentLength = int64(len(r.body))
 		c.body = r.body
+		c.bodySeeker = bytes.NewReader(c.body)
 	} else if r.reader != nil {
 		buf, err := r.CopyBody()
 		if err != nil {
 			return nil, err
 		}
 
-		c.reader = ioutil.NopCloser(bytes.NewReader(buf))
+		c.bodySeeker = bytes.NewReader(buf)
+		c.reader = ioutil.NopCloser(c.bodySeeker)
 		c.ContentLength = int64(len(buf))
 		c.body = buf
 
@@ -269,12 +342,12 @@ func (r *Response) Stream() io.ReadCloser {
 		return ioutil.NopCloser(r)
 	}
 
-	if r.reader != nil {
-		return r.reader
-	}
-
 	if r.body != nil {
 		return ioutil.NopCloser(bytes.NewReader(r.body))
+	}
+
+	if r.reader != nil {
+		return r.reader
 	}
 
 	return nil

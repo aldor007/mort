@@ -10,11 +10,20 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/h2non/bimg.v1"
 
+	"bytes"
 	"github.com/aldor007/mort/pkg/log"
 	"github.com/aldor007/mort/pkg/object"
 	"github.com/aldor007/mort/pkg/response"
 	"github.com/aldor007/mort/pkg/transforms"
+	"sync"
 )
+
+// bufPool for string concatenations
+var bufPool = sync.Pool{
+	New: func() interface{} {
+		return &bytes.Buffer{}
+	},
+}
 
 // ImageEngine is main struct that is responding for image processing
 type ImageEngine struct {
@@ -64,7 +73,7 @@ func (c *ImageEngine) Process(obj *object.FileObject, trans []transforms.Transfo
 	res.SetContentType("image/" + bimg.DetermineImageTypeName(buf))
 	//res.Set("cache-control", "max-age=6000, public")
 	res.Set("Last-Modified", time.Now().Format(http.TimeFormat))
-	res.Set("ETag", strconv.FormatUint(hash.Sum64(), 16))
+	res.Set("ETag", createWeakEtag(strconv.FormatUint(hash.Sum64(), 16)))
 	meta, err := bimg.Metadata(buf)
 	if err == nil {
 		res.Set("x-amz-meta-public-width", strconv.Itoa(meta.Size.Width))
@@ -75,4 +84,16 @@ func (c *ImageEngine) Process(obj *object.FileObject, trans []transforms.Transfo
 	}
 
 	return res, nil
+}
+
+func createWeakEtag(transHash string) string {
+	buf := bufPool.Get().(*bytes.Buffer)
+	buf.Reset()
+	buf.WriteByte('W')
+	buf.WriteByte('/')
+	buf.WriteByte('"')
+	buf.WriteString(transHash)
+	buf.WriteByte('"')
+	defer bufPool.Put(buf)
+	return buf.String()
 }

@@ -26,7 +26,7 @@ import (
 
 const (
 	// Version of mort
-	Version = "0.1.0"
+	Version = "0.4.2"
 	// BANNER just fancy command line banner
 	BANNER = `
   /\/\   ___  _ __| |_
@@ -68,7 +68,6 @@ func main() {
 	zap.ReplaceGlobals(logger)
 	log.RegisterLogger(logger)
 	router := chi.NewRouter()
-
 	imgConfig := config.GetInstance()
 	err := imgConfig.Load(*configPath)
 
@@ -90,12 +89,16 @@ func main() {
 			obj, err := object.NewFileObject(req.URL, imgConfig)
 			if err != nil {
 				logger.Sugar().Errorf("Unable to create file object err = %s", err)
-				response.NewError(400, err).SetDebug(debug).Send(resWriter)
+				response.NewError(400, err).SetDebug(debug, nil).Send(resWriter)
 				return
 			}
 
 			res := rp.Process(req, obj)
-			res.SetDebug(debug)
+			res.SetDebug(debug, obj)
+			if debug {
+				res.Set("X-Mort-Version", Version)
+			}
+
 			// FIXME
 			res.Set("Access-Control-Allow-Headers", "Content-Type, X-Amz-Public-Width, X-Amz-Public-Height")
 			res.Set("Access-Control-Expose-Headers", "Content-Type, X-Amz-Public-Width, X-Amz-Public-Height")
@@ -105,13 +108,13 @@ func main() {
 				log.Log().Warn("Mort process error", zap.String("obj.Key", obj.Key), zap.Error(res.Error()))
 			}
 
-			res.Send(resWriter)
+			res.SendContent(req, resWriter)
 		})
 	})
 
 	router.HandleFunc("/", http.HandlerFunc(func(resWriter http.ResponseWriter, req *http.Request) {
 		resWriter.WriteHeader(400)
-		log.Log().Warn("github.com/aldor007/mort error request shouldn't go here")
+		log.Log().Warn("Mort error request shouldn't go here")
 	}))
 
 	s := &http.Server{

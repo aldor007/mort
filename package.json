@@ -11,7 +11,7 @@
     "mocha": "^4.0.1"
   },
   "scripts": {
-    "test": "mocha"
+    "test": "mocha tests/*Spec.js"
   },
   "repository": {
     "type": "git"

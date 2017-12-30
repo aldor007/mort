@@ -40,7 +40,7 @@ func Get(obj *object.FileObject) *response.Response {
 	item, err := client.Item(key)
 	if err != nil {
 		if err == stow.ErrNotFound {
-			log.Log().Info("Storage/Get item response", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 404))
+			log.Log().Info("Storage/Get item response", zap.String("obj.Key", obj.Key), zap.String("key", key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 404))
 			return response.NewString(404, notFound)
 		}
 
@@ -48,13 +48,19 @@ func Get(obj *object.FileObject) *response.Response {
 		return response.NewError(500, err)
 	}
 
-	reader, err := item.Open()
-	if err != nil {
-		log.Logs().Warnw("Storage/Get open item", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 500), zap.Error(err))
-		return response.NewError(500, err)
+	var reader io.ReadCloser
+	if isDir(item) == false {
+		reader, err = item.Open()
+		if err != nil {
+			log.Logs().Warnw("Storage/Get open item", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 500), zap.Error(err))
+			return response.NewError(500, err)
+		}
+		return prepareResponse(obj, reader, item)
 	}
 
-	return prepareResponse(obj, reader, item)
+	res := response.NewNoContent(404)
+	res.SetContentType("application/xml")
+	return res
 }
 
 // Head retrieve obj from given storage and returns its wrapped in response (but only headers, content of object is omitted)
@@ -80,7 +86,7 @@ func Head(obj *object.FileObject) *response.Response {
 	return prepareResponse(obj, nil, item)
 }
 
-// Set create object on storage wit givent body and headers
+// Set create object on storage wit given body and headers
 func Set(obj *object.FileObject, metaHeaders http.Header, contentLen int64, body io.Reader) *response.Response {
 	client, err := getClient(obj)
 	if err != nil {
@@ -100,23 +106,56 @@ func Set(obj *object.FileObject, metaHeaders http.Header, contentLen int64, body
 	return res
 }
 
+// Delete remove object from given storage
+func Delete(obj *object.FileObject) *response.Response {
+	client, err := getClient(obj)
+	if err != nil {
+		log.Logs().Warnw("Storage/Delete create client", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 503), zap.Error(err))
+		return response.NewError(503, err)
+	}
+
+	resHead := Head(obj)
+	if resHead.StatusCode == 200 {
+		err = client.RemoveItem(getKey(obj))
+
+		if err != nil {
+			log.Logs().Warnw("Storage/Delete cannot delete", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 500), zap.Error(err))
+			return response.NewError(500, err)
+		}
+	}
+
+	res := response.NewNoContent(200)
+	return res
+}
+
 // List returns list of object in given path in S3 format
 func List(obj *object.FileObject, maxKeys int, delimeter string, prefix string, marker string) *response.Response {
 	client, err := getClient(obj)
 	if err != nil {
-		log.Logs().Warnw("Storage/Set create client", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 503), zap.Error(err))
+		log.Logs().Warnw("Storage/List", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 503), zap.Error(err))
 		return response.NewError(503, err)
+	}
+
+	if prefix != "" && prefix != "/" {
+		_, err = client.Item(prefix)
+		if err != nil {
+			if err == stow.ErrNotFound {
+				log.Logs().Infow("Storage/List item not fountresponse", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 404))
+				return response.NewString(404, obj.Key)
+			}
+		}
 	}
 
 	items, resultMarker, err := client.Items(prefix, marker, maxKeys)
 	if err != nil {
+		log.Logs().Warnw("Storage/List", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 500), zap.Error(err))
 		return response.NewError(500, err)
 	}
 
 	type contentXML struct {
 		Key          string    `xml:"Key"`
 		StorageClass string    `xml:"StorageClass"`
-		LastModified time.Time `xml:"LastModified"`
+		LastModified string    `xml:"LastModified"`
 		ETag         string    `xml:"ETag"`
 		Size         int64     `xml:"Size"`
 	}
@@ -143,7 +182,8 @@ func List(obj *object.FileObject, maxKeys int, delimeter string, prefix string, 
 		lastMod, _ := item.LastMod()
 		size, _ := item.Size()
 		etag, _ := item.ETag()
-		filePath := strings.Split(item.ID(), "/")
+		itemID := item.ID()
+		filePath := strings.Split(itemID, "/")
 		prefixPath := strings.Split(prefix, "/")
 		var commonPrefix string
 		var key string
@@ -158,19 +198,23 @@ func List(obj *object.FileObject, maxKeys int, delimeter string, prefix string, 
 			} else {
 				commonPrefix = ""
 			}
-			key = ""
 		} else {
 			key = item.Name()
 			_, ok := commonPrefixes[key]
 			if isDir(item) && !ok {
 				commonPrefix = key
 				commonPrefixes[key] = true
-				key = ""
+				//key = key + "/"
 			}
 		}
 
+		if itemID[len(itemID)-1] == '/' {
+			key = key + "/"
+			size = 0
+		}
+
 		if key != "" {
-			result.Contents = append(result.Contents, contentXML{Key: key, LastModified: lastMod, Size: size, ETag: etag, StorageClass: "STANDARD"})
+			result.Contents = append(result.Contents, contentXML{Key: key, LastModified: lastMod.Format(time.RFC3339), Size: size, ETag: etag, StorageClass: "STANDARD"})
 		}
 
 		if commonPrefix != "" {
@@ -266,12 +310,13 @@ func prepareResponse(obj *object.FileObject, stream io.ReadCloser, item stow.Ite
 	res := response.New(200, stream)
 
 	metadata, err := item.Metadata()
-	parseMetadata(obj, metadata, res)
 
 	if err != nil {
 		log.Log().Warn("Storage/prepareResponse read metadata error", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 500), zap.Error(err))
 		return response.NewError(500, err)
 	}
+
+	parseMetadata(obj, metadata, res)
 
 	etag, err := item.ETag()
 	if err != nil {
@@ -285,22 +330,22 @@ func prepareResponse(obj *object.FileObject, stream io.ReadCloser, item stow.Ite
 		return response.NewError(500, err)
 	}
 
-	size, err := item.Size()
-	if err != nil {
-		log.Log().Warn("Storage/prepareResponse read size error", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 500), zap.Error(err))
-		return response.NewError(500, err)
-	}
-
 	if etag != "" {
 		res.Set("ETag", etag)
 	}
 	res.Set("Last-Modified", lastMod.Format(http.TimeFormat))
-	res.ContentLength = size
 
 	if contentType, ok := metadata["Content-Type"]; ok {
 		res.SetContentType(contentType.(string))
 	} else {
-		res.SetContentType(mime.TypeByExtension(path.Ext(obj.Uri.Path)))
+		ct := mime.TypeByExtension(path.Ext(obj.Uri.Path))
+		if ct != "" {
+			res.SetContentType(ct)
+		} else {
+			if isDir(item) {
+				res.SetContentType("application/directory")
+			}
+		}
 	}
 
 	return res
@@ -316,7 +361,10 @@ func prepareMetadata(obj *object.FileObject, metaHeaders http.Header) map[string
 				metadata[strings.Replace(strings.ToLower(k), "x-amz-meta-", "", 1)] = v[0]
 			}
 		default:
-			metadata[k] = v[0]
+			keyLower := strings.ToLower(k)
+			if strings.HasPrefix(keyLower, "x-amz-meta") || keyLower == "content-type" || keyLower == "etag" {
+				metadata[k] = v[0]
+			}
 		}
 	}
 

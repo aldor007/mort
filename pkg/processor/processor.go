@@ -85,6 +85,10 @@ func (r *RequestProcessor) processChan() {
 func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *response.Response {
 	switch req.Method {
 	case "GET", "HEAD":
+		if obj.Key == "" {
+			return handleS3Get(req, obj)
+		}
+
 		if obj.HasTransform() {
 			return updateHeaders(r.collapseGET(req, obj))
 		}
@@ -92,6 +96,8 @@ func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *r
 		return updateHeaders(r.handleGET(req, obj))
 	case "PUT":
 		return handlePUT(req, obj)
+	case "DELETE":
+		return storage.Delete(obj)
 
 	default:
 		return response.NewError(405, errors.New("method not allowed"))
@@ -132,25 +138,20 @@ func (r *RequestProcessor) collapseGET(req *http.Request, obj *object.FileObject
 			lockResult.Cancel <- true
 			return response.NewString(504, "timeout")
 		default:
-			cacheValue := r.cache.Get(obj.Key)
-			if cacheValue != nil {
+			if cacheRes := r.fetchResponseFromCache(obj.Key); cacheRes != nil {
 				lockResult.Cancel <- true
-				return cacheValue.Value().(*response.Response)
+				return cacheRes
 			}
 		}
 	}
 
 }
 
-func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) *response.Response {
-	if obj.Key == "" {
-		return handleS3Get(req, obj)
-	}
-
-	cacheValue := r.cache.Get(obj.Key)
+func (r *RequestProcessor) fetchResponseFromCache(key string) *response.Response {
+	cacheValue := r.cache.Get(key)
 	if cacheValue != nil {
 		if cacheValue.Expired() == false {
-			log.Log().Info("Handle Get cache", zap.String("cache", "hit"), zap.String("obj.Key", obj.Key))
+			log.Log().Info("Handle Get cache", zap.String("cache", "hit"), zap.String("obj.Key", key))
 			res := cacheValue.Value().(*response.Response)
 			resCp, err := res.Copy()
 			if err == nil {
@@ -158,11 +159,20 @@ func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) 
 			}
 
 		} else {
-			log.Log().Info("Handle Get cache", zap.String("cache", "expired"), zap.String("obj.Key", obj.Key))
+			log.Log().Info("Handle Get cache", zap.String("cache", "expired"), zap.String("obj.Key", key))
 			res := cacheValue.Value().(*response.Response)
 			res.Close()
-			r.cache.Delete(obj.Key)
+			r.cache.Delete(key)
 		}
+	}
+
+	return nil
+
+}
+
+func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) *response.Response {
+	if cacheRes := r.fetchResponseFromCache(obj.Key); cacheRes != nil {
+		return cacheRes
 	}
 
 	var currObj *object.FileObject = obj
@@ -245,10 +255,14 @@ resLoop:
 
 			defer parentRes.Close()
 
-			// revers order of transforms
-			for i := 0; i < len(transforms)/2; i++ {
-				j := len(transforms) - i - 1
-				transforms[i], transforms[j] = transforms[j], transforms[i]
+			transLen := len(transforms)
+			if transLen > 1 {
+				// revers order of transforms
+				for i := 0; i < len(transforms)/2; i++ {
+					j := len(transforms) - i - 1
+					transforms[i], transforms[j] = transforms[j], transforms[i]
+				}
+
 			}
 
 			log.Log().Info("Performing transforms", zap.String("obj.Bucket", obj.Bucket), zap.String("obj.Key", obj.Key), zap.Int("transformsLen", len(transforms)))
@@ -256,7 +270,11 @@ resLoop:
 		} else if obj.HasTransform() {
 			parentRes.Close()
 			log.Log().Warn("Not performing transforms", zap.String("obj.Bucket", obj.Bucket), zap.String("obj.Key", obj.Key),
-				zap.Int("parent.sc", parentRes.StatusCode), zap.String("parent.ContentType", parentRes.Headers.Get(response.HeaderContentType)), zap.Error(parentRes.Error()))
+				zap.String("parent.Key", parentObj.Key), zap.Int("parent.sc", parentRes.StatusCode), zap.String("parent.ContentType", parentRes.Headers.Get(response.HeaderContentType)), zap.Error(parentRes.Error()))
+		}
+
+		if parentRes.StatusCode != 200 && parentRes.StatusCode != 404 {
+			return parentRes
 		}
 	}
 

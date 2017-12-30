@@ -64,7 +64,7 @@ func TestSet(t *testing.T) {
 	obj, _ := object.NewFileObjectFromPath("/bucket/file-set", &mortConfig)
 
 	headers := make(http.Header)
-	headers["X-Header"] = []string{"val"}
+	headers["X-Amz-Meta-Header"] = []string{"val"}
 	buf := make([]byte, 1000)
 	res := Set(obj, headers, int64(len(buf)), ioutil.NopCloser(bytes.NewReader(buf)))
 
@@ -72,13 +72,13 @@ func TestSet(t *testing.T) {
 
 	resGet := Get(obj)
 
-	assert.Equal(t, resGet.Headers.Get("X-Header"), "val")
+	assert.Equal(t, resGet.Headers.Get("X-Amz-Meta-Header"), "val")
 	assert.Equal(t, resGet.StatusCode, 200)
 
 	resHead := Head(obj)
 
 	assert.Equal(t, resHead.StatusCode, 200)
-	assert.Equal(t, resHead.Headers.Get("X-Header"), "val")
+	assert.Equal(t, resHead.Headers.Get("X-Amz-Meta-Header"), "val")
 }
 
 func BenchmarkGet(b *testing.B) {
