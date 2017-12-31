@@ -12,9 +12,6 @@ import (
 	"github.com/aldor007/mort/pkg/log"
 )
 
-// DefaultServerConfig contain mort default config for server. useful for tests purpose
-var DefaultServerConfig = Server{":8081", ":8080", 10, 70, 3}
-
 // Config contains configuration for buckets etc
 //
 // Config should be used like singleton
@@ -213,16 +210,22 @@ func (c *Config) validateTransform(bucketName string, bucket Bucket) error {
 }
 
 func (c *Config) validateServer() error {
-	if c.Server.Listen == "" {
-		c.Server.Listen = ":8080"
+	if c.Server.SingleListen == "" {
+		c.Server.SingleListen = ":8080"
+	}
+
+	if len(c.Server.Listen) == 0 {
+		c.Server.Listen = append(c.Server.Listen, c.Server.SingleListen)
 	}
 
 	if c.Server.DebugListen == "" {
 		c.Server.DebugListen = ":8081"
 	}
 
-	if c.Server.DebugListen == c.Server.Listen {
-		return configInvalidError("Server has invalid configuration debugListener and listener should have same address")
+	for _, l := range c.Server.Listen {
+		if c.Server.DebugListen == l {
+			return configInvalidError("Server has invalid configuration debugListener and listener should have same address")
+		}
 	}
 
 	if c.Server.CacheSize == 0 {
