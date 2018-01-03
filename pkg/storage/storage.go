@@ -20,13 +20,17 @@ import (
 	"github.com/aldor007/mort/pkg/response"
 	"go.uber.org/zap"
 	"strings"
+	"sync"
 	"time"
 )
 
 const notFound = "{\"error\":\"item not found\"}"
 
-// map for used storage client instances
+// storageCache map for used storage client instances
 var storageCache = make(map[string]stow.Container)
+
+// storageCacheLock lock for writing to storageCache
+var storageCacheLock = sync.RWMutex{}
 
 // Get retrieve obj from given storage and returns its wrapped in response
 func Get(obj *object.FileObject) *response.Response {
@@ -153,11 +157,11 @@ func List(obj *object.FileObject, maxKeys int, delimeter string, prefix string, 
 	}
 
 	type contentXML struct {
-		Key          string    `xml:"Key"`
-		StorageClass string    `xml:"StorageClass"`
-		LastModified string    `xml:"LastModified"`
-		ETag         string    `xml:"ETag"`
-		Size         int64     `xml:"Size"`
+		Key          string `xml:"Key"`
+		StorageClass string `xml:"StorageClass"`
+		LastModified string `xml:"LastModified"`
+		ETag         string `xml:"ETag"`
+		Size         int64  `xml:"Size"`
 	}
 
 	type commonPrefixXML struct {
@@ -234,10 +238,13 @@ func List(obj *object.FileObject, maxKeys int, delimeter string, prefix string, 
 }
 
 func getClient(obj *object.FileObject) (stow.Container, error) {
+	storageCacheLock.RLock()
 	storageCfg := obj.Storage
 	if c, ok := storageCache[storageCfg.Hash]; ok {
+		storageCacheLock.RUnlock()
 		return c, nil
 	}
+	storageCacheLock.RUnlock()
 
 	var config stow.Config
 	var client stow.Location
@@ -298,7 +305,9 @@ func getClient(obj *object.FileObject) (stow.Container, error) {
 		return nil, err
 	}
 
+	storageCacheLock.Lock()
 	storageCache[storageCfg.Hash] = container
+	storageCacheLock.Unlock()
 	return container, nil
 }
 

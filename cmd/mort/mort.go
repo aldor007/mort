@@ -18,15 +18,18 @@ import (
 	"github.com/aldor007/mort/pkg/processor"
 	"github.com/aldor007/mort/pkg/response"
 	"github.com/aldor007/mort/pkg/throttler"
+	"net"
 	"os"
 	"os/signal"
 	"runtime"
+	"strings"
+	"sync"
 	"syscall"
 )
 
 const (
 	// Version of mort
-	Version = "0.4.2"
+	Version = "0.5.0"
 	// BANNER just fancy command line banner
 	BANNER = `
   /\/\   ___  _ __| |_
@@ -56,6 +59,49 @@ func debugListener(mortConfig *config.Config) {
 
 	debugServer = s
 	s.ListenAndServe()
+}
+
+func handleSignals(servers []*http.Server, socketPaths []string, wg *sync.WaitGroup) {
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, syscall.SIGUSR2, syscall.SIGKILL, syscall.SIGINT, syscall.SIGTERM)
+	imgConfig := config.GetInstance()
+	for {
+		sig := <-signalChan
+		switch sig {
+		// kill -SIGHUP XXXX
+		case syscall.SIGUSR2:
+			if debugServer != nil {
+				log.Log().Info("Stop debug server on port 8081")
+			} else {
+				log.Log().Info("Start debug server on port 8081")
+			}
+			go debugListener(imgConfig)
+			break
+
+		case syscall.SIGTERM:
+		case syscall.SIGKILL:
+		case syscall.SIGINT:
+			for _, s := range servers {
+				s.Close()
+				wg.Done()
+			}
+
+			for _, socketPath := range socketPaths {
+				os.Remove(socketPath)
+			}
+			wg.Done()
+			return
+		default:
+		}
+	}
+}
+
+func startServer(s *http.Server, ln net.Listener) {
+	err := s.Serve(ln)
+	if err != nil {
+		fmt.Println("Error listen", err)
+		panic(err)
+	}
 }
 
 func main() {
@@ -117,19 +163,34 @@ func main() {
 		log.Log().Warn("Mort error request shouldn't go here")
 	}))
 
-	s := &http.Server{
-		Addr:         imgConfig.Server.Listen,
-		ReadTimeout:  2 * time.Minute,
-		WriteTimeout: 2 * time.Minute,
-		Handler:      router,
+	servers := make([]*http.Server, len(imgConfig.Server.Listen))
+	netListeners := make([]net.Listener, len(imgConfig.Server.Listen))
+	var socketPaths []string
+	for i, l := range imgConfig.Server.Listen {
+		servers[i] = &http.Server{
+			ReadTimeout:  2 * time.Minute,
+			WriteTimeout: 2 * time.Minute,
+			Handler:      router,
+		}
+
+		network := "tcp"
+		address := l
+		if strings.HasPrefix(l, "unix:") {
+			network = "unix"
+			address = strings.Replace(l, "unix:", "", 1)
+			socketPaths = append(socketPaths, address)
+		}
+
+		ln, err := net.Listen(network, address)
+		if err != nil {
+			panic(err)
+		}
+		netListeners[i] = ln
 	}
 
 	if debug != nil && *debug {
 		go debugListener(imgConfig)
 	}
-
-	signal_chan := make(chan os.Signal, 1)
-	signal.Notify(signal_chan, syscall.SIGUSR2)
 
 	go func() {
 		for {
@@ -142,23 +203,16 @@ func main() {
 		}
 	}()
 
-	go func() {
-		for {
-			sig := <-signal_chan
-			switch sig {
-			// kill -SIGHUP XXXX
-			case syscall.SIGUSR2:
-				if debugServer != nil {
-					log.Log().Info("Stop debug server on port 8081")
-				} else {
-					log.Log().Info("Start debug server on port 8081")
-				}
-				go debugListener(imgConfig)
-			default:
-			}
-		}
-	}()
+	var wg sync.WaitGroup
 
-	s.ListenAndServe()
+	wg.Add(1)
+	go handleSignals(servers, socketPaths, &wg)
 
+	for i, s := range servers {
+		wg.Add(1)
+		go startServer(s, netListeners[i])
+	}
+
+	wg.Wait()
+	fmt.Println("Bye...")
 }

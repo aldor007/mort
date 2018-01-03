@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 	"net/url"
 	"path"
+	"sync"
 )
 
 func init() {
@@ -17,6 +18,9 @@ func init() {
 
 // presetCache cache used presets because we don't need create it always new for each request
 var presetCache = make(map[string]transforms.Transforms)
+
+// presetCacheLock lock for presetCache
+var presetCacheLock = sync.RWMutex{}
 
 // decodePreset parse given url by matching user defined regexp with request path
 func decodePreset(url *url.URL, bucketConfig config.Bucket, obj *FileObject) (string, error) {
@@ -44,14 +48,20 @@ func decodePreset(url *url.URL, bucketConfig config.Bucket, obj *FileObject) (st
 	}
 
 	var err error
+	presetCacheLock.RLock()
 	if t, ok := presetCache[presetName]; ok {
 		obj.Transforms = t
+		presetCacheLock.RUnlock()
 	} else {
+		presetCacheLock.RUnlock()
 		obj.Transforms, err = presetToTransform(trans.Presets[presetName])
 		if err != nil {
 			return parent, err
 		}
+
+		presetCacheLock.Lock()
 		presetCache[presetName] = obj.Transforms
+		presetCacheLock.Unlock()
 	}
 
 	if trans.ParentBucket != "" {

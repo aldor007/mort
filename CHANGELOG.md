@@ -1,3 +1,6 @@
+* 0.5.0
+    * Feature: Allow to have multiple listeners
+    * Bugfix: Add locking for storage and preset cache
 * 0.4.2
     * Bugfix: Update stow (fixed removing dir) 
 * 0.4.1

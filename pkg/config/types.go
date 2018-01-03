@@ -104,9 +104,10 @@ type HeaderYaml struct {
 
 // Server configure HTTP server
 type Server struct {
-	DebugListen    string `yaml:"debugListen"`
-	Listen         string `yaml:"listen"`
-	CacheSize      int64  `yaml:"cacheSize"`
-	RequestTimeout int    `yaml:"requestTimeout"`
-	QueueLen       int    `yaml:"queueLen"`
+	DebugListen    string   `yaml:"debugListen"`
+	SingleListen   string   `yaml:"listen"`
+	CacheSize      int64    `yaml:"cacheSize"`
+	RequestTimeout int      `yaml:"requestTimeout"`
+	QueueLen       int      `yaml:"queueLen"`
+	Listen         []string `yaml:"listens"`
 }
