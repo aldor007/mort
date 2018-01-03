@@ -158,10 +158,10 @@ func (t *Transforms) Resize(width, height int, enlarge bool) error {
 	t.height = height
 	t.enlarge = enlarge
 
-	t.transHash.Write(1111, uint64(t.width)*7, uint64(t.height)*3)
+	t.transHash.write(1111, uint64(t.width)*7, uint64(t.height)*3)
 
 	if t.enlarge {
-		t.transHash.Write(12311)
+		t.transHash.write(12311)
 	}
 
 	t.NotEmpty = true
@@ -181,7 +181,7 @@ func (t *Transforms) Crop(width, height int, gravity string, enlarge bool) error
 		t.gravity = bimg.GravitySmart
 	}
 
-	t.transHash.Write(1212, uint64(t.width)*5, uint64(t.height), uint64(t.gravity))
+	t.transHash.write(1212, uint64(t.width)*5, uint64(t.height), uint64(t.gravity))
 	return nil
 }
 
@@ -189,7 +189,7 @@ func (t *Transforms) Crop(width, height int, gravity string, enlarge bool) error
 func (t *Transforms) Interlace() error {
 	t.interlace = true
 	t.NotEmpty = true
-	t.transHash.Write(1311, 71)
+	t.transHash.write(1311, 71)
 	return nil
 }
 
@@ -197,7 +197,7 @@ func (t *Transforms) Interlace() error {
 func (t *Transforms) Quality(quality int) error {
 	t.quality = quality
 	t.NotEmpty = true
-	t.transHash.Write(1401, uint64(t.quality))
+	t.transHash.write(1401, uint64(t.quality))
 	return nil
 }
 
@@ -205,7 +205,7 @@ func (t *Transforms) Quality(quality int) error {
 func (t *Transforms) StripMetadata() error {
 	t.stripMetadata = true
 	t.NotEmpty = true
-	t.transHash.Write(1999)
+	t.transHash.write(1999)
 	return nil
 }
 
@@ -214,7 +214,7 @@ func (t *Transforms) Blur(sigma, minAmpl float64) error {
 	t.NotEmpty = true
 	t.blur.sigma = sigma
 	t.blur.minAmpl = minAmpl
-	t.transHash.Write(19121, uint64(t.blur.sigma), uint64(t.blur.minAmpl))
+	t.transHash.write(19121, uint64(t.blur.sigma*1000), uint64(t.blur.minAmpl*1000))
 	return nil
 }
 
@@ -222,7 +222,7 @@ func (t *Transforms) Blur(sigma, minAmpl float64) error {
 func (t *Transforms) Hash() hash.Hash64 {
 	hash := murmur3.New64WithSeed(20171108)
 	transHashB := make([]byte, 8)
-	binary.LittleEndian.PutUint64(transHashB, t.transHash.Value())
+	binary.LittleEndian.PutUint64(transHashB, t.transHash.value())
 	hash.Write(transHashB)
 	return hash
 }
@@ -235,7 +235,7 @@ func (t *Transforms) Format(format string) error {
 		return err
 	}
 	t.format = f
-	t.transHash.Write(1122121, uint64(f))
+	t.transHash.write(1122121, uint64(f))
 	return nil
 }
 
@@ -263,7 +263,7 @@ func (t *Transforms) Watermark(image string, position string, opacity float32) e
 	}
 
 	t.NotEmpty = true
-	t.transHash.Write(171200, uint64(len(image)), uint64(len(position)), uint64(opacity*100))
+	t.transHash.write(171200, uint64(len(image)), uint64(len(position)), uint64(opacity*100))
 	t.watermark = watermark{image: image, xPos: p[1], yPos: p[0], opacity: opacity}
 	return nil
 }
@@ -271,7 +271,7 @@ func (t *Transforms) Watermark(image string, position string, opacity float32) e
 // Grayscale convert image to B&W
 func (t *Transforms) Grayscale() {
 	t.interpretation = bimg.InterpretationBW
-	t.transHash.Write(32309)
+	t.transHash.write(32309)
 	t.NotEmpty = true
 }
 
@@ -279,7 +279,7 @@ func (t *Transforms) Grayscale() {
 func (t *Transforms) Rotate(angle int) error {
 	a := int(angle / 90)
 	if v, ok := angleMap[a]; ok {
-		t.transHash.Write(32941, uint64(a))
+		t.transHash.write(32941, uint64(a))
 		t.rotate = v
 		t.NotEmpty = true
 		return nil
@@ -375,7 +375,7 @@ func (t *Transforms) BimgOptions(imageInfo ImageInfo) (bimg.Options, error) {
 //  FNV  for uint64
 type fnvI64 uint64
 
-func (f *fnvI64) Write(data ...uint64) {
+func (f *fnvI64) write(data ...uint64) {
 	hash := *f
 
 	if hash == 0 {
@@ -390,6 +390,6 @@ func (f *fnvI64) Write(data ...uint64) {
 	*f = hash
 }
 
-func (f fnvI64) Value() uint64 {
+func (f fnvI64) value() uint64 {
 	return uint64(f)
 }
