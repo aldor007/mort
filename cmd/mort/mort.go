@@ -18,6 +18,8 @@ import (
 	"github.com/aldor007/mort/pkg/processor"
 	"github.com/aldor007/mort/pkg/response"
 	"github.com/aldor007/mort/pkg/throttler"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net"
 	"os"
 	"os/signal"
@@ -40,25 +42,32 @@ const (
 `
 )
 
-var debugServer *http.Server
 
-func debugListener(mortConfig *config.Config) {
-	if debugServer != nil {
-		debugServer.Close()
-		return
-	}
-
+func debugListener(mortConfig *config.Config) (s *http.Server, ln net.Listener, socketPath string) {
 	router := chi.NewRouter()
 	router.Mount("/debug", middleware.Profiler())
-	s := &http.Server{
-		Addr:         mortConfig.Server.DebugListen,
+	router.HandleFunc("/metrics", promhttp.Handler())
+	s = &http.Server{
 		ReadTimeout:  2 * time.Minute,
 		WriteTimeout: 2 * time.Minute,
 		Handler:      router,
 	}
 
-	debugServer = s
-	s.ListenAndServe()
+	network := "tcp"
+	address := mortConfig.Server.InternalListener
+	socketPath = ""
+	if strings.HasPrefix(address, "unix:") {
+		network = "unix"
+		socketPath = address
+		address = strings.Replace(address, "unix:", "", 1)
+	}
+
+	ln, err := net.Listen(network, address)
+	if err != nil {
+		panic(err)
+	}
+
+	return
 }
 
 func handleSignals(servers []*http.Server, socketPaths []string, wg *sync.WaitGroup) {
@@ -68,16 +77,6 @@ func handleSignals(servers []*http.Server, socketPaths []string, wg *sync.WaitGr
 	for {
 		sig := <-signalChan
 		switch sig {
-		// kill -SIGHUP XXXX
-		case syscall.SIGUSR2:
-			if debugServer != nil {
-				log.Log().Info("Stop debug server on port 8081")
-			} else {
-				log.Log().Info("Start debug server on port 8081")
-			}
-			go debugListener(imgConfig)
-			break
-
 		case syscall.SIGTERM:
 		case syscall.SIGKILL:
 		case syscall.SIGINT:
@@ -164,9 +163,11 @@ func main() {
 		log.Log().Warn("Mort error request shouldn't go here")
 	}))
 
-	servers := make([]*http.Server, len(imgConfig.Server.Listen))
-	netListeners := make([]net.Listener, len(imgConfig.Server.Listen))
+	serversCount := len(imgConfig.Server.Listen) + 1
+	servers := make([]*http.Server, serversCount)
+	netListeners := make([]net.Listener, serversCount)
 	var socketPaths []string
+
 	for i, l := range imgConfig.Server.Listen {
 		servers[i] = &http.Server{
 			ReadTimeout:  2 * time.Minute,
@@ -189,8 +190,10 @@ func main() {
 		netListeners[i] = ln
 	}
 
-	if debug != nil && *debug {
-		go debugListener(imgConfig)
+	var internalSocketPath string
+	servers[serversCount - 1], netListeners[serversCount - 1], internalSocketPath = debugListener(imgConfig)
+	if internalSocketPath != "" {
+		socketPaths = append(socketPaths, internalSocketPath)
 	}
 
 	go func() {

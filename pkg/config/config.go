@@ -218,13 +218,13 @@ func (c *Config) validateServer() error {
 		c.Server.Listen = append(c.Server.Listen, c.Server.SingleListen)
 	}
 
-	if c.Server.DebugListen == "" {
-		c.Server.DebugListen = ":8081"
+	if c.Server.InternalListen == "" {
+		c.Server.InternalListen = ":8081"
 	}
 
 	for _, l := range c.Server.Listen {
-		if c.Server.DebugListen == l {
-			return configInvalidError("Server has invalid configuration debugListener and listener should have same address")
+		if c.Server.InternalListen == l {
+			return configInvalidError("Server has invalid configuration internalLstener and listener should have same address")
 		}
 	}
 
