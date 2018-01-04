@@ -63,7 +63,7 @@ func debugListener(mortConfig *config.Config) {
 
 func handleSignals(servers []*http.Server, socketPaths []string, wg *sync.WaitGroup) {
 	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, syscall.SIGUSR2, syscall.SIGKILL, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(signalChan, syscall.SIGUSR2, syscall.SIGKILL, syscall.SIGINT, syscall.SIGTERM, os.Kill)
 	imgConfig := config.GetInstance()
 	for {
 		sig := <-signalChan
@@ -81,6 +81,7 @@ func handleSignals(servers []*http.Server, socketPaths []string, wg *sync.WaitGr
 		case syscall.SIGTERM:
 		case syscall.SIGKILL:
 		case syscall.SIGINT:
+		case os.Kill:
 			for _, s := range servers {
 				s.Close()
 				wg.Done()

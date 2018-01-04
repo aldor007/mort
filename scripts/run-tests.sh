@@ -10,6 +10,8 @@ mkdir -p /tmp/mort-tests/remote/dir
 echo "test" > /tmp/mort-tests/local/file
 echo "test" > /tmp/mort-tests/remote/file
 
+cp -r pkg/processor/benchmark/local/* /tmp/mort-tests/local/
+
 MORT_PORT=8091
 export MORT_PORT
 
@@ -20,7 +22,7 @@ sleep 15
 ./node_modules/.bin/mocha tests-int/*.Spec.js
 TEST_RESULT=$?
 echo
-kill -9 $pid
+kill -9  $pid
 if [[ $TEST_RESULT -eq 0 ]]; then
     rm -rf /tmp/mort-tests
 fi

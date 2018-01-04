@@ -240,7 +240,6 @@ func (r *Response) Send(w http.ResponseWriter) error {
 // It can handle range and condition requests
 func (r *Response) SendContent(req *http.Request, w http.ResponseWriter) error {
 	if r.StatusCode != 200 || r.bodySeeker == nil || isRangeOrCondition(req) == false {
-		log.Log().Info("Response SendContent streaming response", zap.Int("sc", r.StatusCode), zap.Bool("bodySeeker", r.bodySeeker != nil), zap.Bool("rangeOrConditionReq", isRangeOrCondition(req)))
 		return r.Send(w)
 	}
 
@@ -251,6 +250,7 @@ func (r *Response) SendContent(req *http.Request, w http.ResponseWriter) error {
 
 	lastMod, err := time.Parse(http.TimeFormat, r.Headers.Get("Last-Modified"))
 	if err != nil {
+		log.Log().Error("Unable to parse last-modified", zap.Error(err))
 		lastMod = time.Now()
 	}
 

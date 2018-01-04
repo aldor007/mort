@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http/httptest"
 	"testing"
+	"net/http"
 )
 
 func TestResponse_Copy(t *testing.T) {
@@ -146,6 +147,24 @@ func TestResponse_Send_and_Copy(t *testing.T) {
 	assert.Nil(t, err, "Shouldn't return error when reading body")
 	assert.Equal(t, len(body), 1000)
 }
+
+func TestResponse_SendContentNotRangeOrCondition(t *testing.T) {
+	buf := make([]byte, 1000)
+	res := New(200, ioutil.NopCloser(bytes.NewReader(buf)))
+	res.Headers.Set("X-Header", "1")
+	res.SetContentType("text/html")
+
+	req, _ := http.NewRequest("GET", "/bucket/local.jpg", nil)
+	recorder := httptest.NewRecorder()
+	res.SendContent(req, recorder)
+
+	result := recorder.Result()
+	assert.Equal(t, result.StatusCode, 200)
+	assert.Equal(t, result.Header.Get("X-Header"), "1")
+	body, _ := ioutil.ReadAll(result.Body)
+	assert.Equal(t, len(body), 1000)
+}
+
 
 func BenchmarkNewBuf(b *testing.B) {
 	buf := make([]byte, 1000)
