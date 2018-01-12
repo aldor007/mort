@@ -110,4 +110,5 @@ type Server struct {
 	RequestTimeout int      `yaml:"requestTimeout"`
 	QueueLen       int      `yaml:"queueLen"`
 	Listen         []string `yaml:"listens"`
+	Monitoring     string   `yaml:"monitoring"`
 }

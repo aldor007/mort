@@ -12,17 +12,17 @@ import (
 
 	"github.com/aldor007/mort/pkg/config"
 	"github.com/aldor007/mort/pkg/lock"
-	"github.com/aldor007/mort/pkg/monitoring"
 	mortMiddleware "github.com/aldor007/mort/pkg/middleware"
+	"github.com/aldor007/mort/pkg/monitoring"
 	"github.com/aldor007/mort/pkg/object"
 	"github.com/aldor007/mort/pkg/processor"
 	"github.com/aldor007/mort/pkg/response"
 	"github.com/aldor007/mort/pkg/throttler"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net"
 	"os"
 	"os/signal"
-	"runtime"
 	"strings"
 	"sync"
 	"syscall"
@@ -96,11 +96,38 @@ func handleSignals(servers []*http.Server, socketPaths []string, wg *sync.WaitGr
 	}
 }
 
+func configureMonitoring(mortConfig *config.Config) {
+	logger, _ := zap.NewProduction()
+	//logger, _ := zap.NewDevelopment()
+	zap.ReplaceGlobals(logger)
+	monitoring.RegisterLogger(logger)
+	if mortConfig.Server.Monitoring == "prometheus" {
+		p := monitoring.NewPrometheusReporter()
+		p.RegisterCounterVec("cache_ratio", prometheus.NewCounterVec(prometheus.CounterOpts{
+			Name: "mort_cache_ratio",
+			Help: "mort cache ratio",
+		},
+			[]string{"status"},
+		))
+
+		p.RegisterCounter("throttled_count", prometheus.NewCounter(prometheus.CounterOpts{
+			Name: "mort_request_throttled_count",
+			Help: "mort count of throttled requests",
+		}))
+
+		p.RegisterCounter("collaped_count", prometheus.NewCounter(prometheus.CounterOpts{
+			Name: "mort_request_collapsed_count",
+			Help: "mort count of collapsed requests",
+		}))
+
+		monitoring.RegisterReporter(p)
+	}
+}
+
 func startServer(s *http.Server, ln net.Listener) {
 	err := s.Serve(ln)
-	if err != nil {
+	if err != nil && err != http.ErrServerClosed {
 		fmt.Println("Error listen", err)
-		panic(err)
 	}
 }
 
@@ -109,13 +136,10 @@ func main() {
 	debug := flag.Bool("debug", false, "enable debug mode")
 	flag.Parse()
 
-	logger, _ := zap.NewProduction()
-	//logger, _ := zap.NewDevelopment()
-	zap.ReplaceGlobals(logger)
-	monitoring.RegisterLogger(logger)
 	router := chi.NewRouter()
 	imgConfig := config.GetInstance()
 	err := imgConfig.Load(*configPath)
+	configureMonitoring(imgConfig)
 
 	if err != nil {
 		panic(err)
@@ -134,7 +158,7 @@ func main() {
 			debug := req.Header.Get("X-Mort-Debug") != ""
 			obj, err := object.NewFileObject(req.URL, imgConfig)
 			if err != nil {
-				logger.Sugar().Errorf("Unable to create file object err = %s", err)
+				monitoring.Logs().Errorf("Unable to create file object err = %s", err)
 				response.NewError(400, err).SetDebug(debug, nil).Send(resWriter)
 				return
 			}
@@ -149,7 +173,7 @@ func main() {
 			res.Set("Access-Control-Allow-Headers", "Content-Type, X-Amz-Public-Width, X-Amz-Public-Height")
 			res.Set("Access-Control-Expose-Headers", "Content-Type, X-Amz-Public-Width, X-Amz-Public-Height")
 			res.Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, HEAD")
-			defer logger.Sync() // flushes buffer, if any
+			defer monitoring.Log().Sync() // flushes buffer, if any
 			if res.HasError() {
 				monitoring.Log().Warn("Mort process error", zap.String("obj.Key", obj.Key), zap.Error(res.Error()))
 			}
@@ -195,17 +219,6 @@ func main() {
 	if internalSocketPath != "" {
 		socketPaths = append(socketPaths, internalSocketPath)
 	}
-
-	go func() {
-		for {
-			// FIXME: move it to prometheus
-			var m runtime.MemStats
-			runtime.ReadMemStats(&m)
-			monitoring.Log().Info("Runtime stats", zap.Uint64("alloc", m.Alloc/1024), zap.Uint64("total-alloc", m.TotalAlloc/1024),
-				zap.Uint64("sys", m.Sys/1021), zap.Uint32("numGC", m.NumGC), zap.Uint64("last-gc-pause", m.PauseNs[(m.NumGC+255)%256]))
-			time.Sleep(300 * time.Second)
-		}
-	}()
 
 	var wg sync.WaitGroup
 

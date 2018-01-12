@@ -1,23 +1,22 @@
 package monitoring
 
-
 import (
 	"github.com/prometheus/client_golang/prometheus"
-"strings"
+	"strings"
 )
 
 type PrometheusReporter struct {
-	countersVec map[string]prometheus.CounterVec
-	counters  map[string]prometheus.Counter
-	gaugesVec map[string]prometheus.GaugeVec
-	gauges map[string]prometheus.Gauge
-	histograms map[string] prometheus.Histogram
-	histogramsVec map[string] prometheus.HistogramVec
+	countersVec   map[string]*prometheus.CounterVec
+	counters      map[string]prometheus.Counter
+	gaugesVec     map[string]prometheus.GaugeVec
+	gauges        map[string]prometheus.Gauge
+	histograms    map[string]prometheus.Histogram
+	histogramsVec map[string]prometheus.HistogramVec
 }
 
-func NewPrometheusReporter()  *PrometheusReporter {
+func NewPrometheusReporter() *PrometheusReporter {
 	p := PrometheusReporter{}
-	p.countersVec = make(map[string]prometheus.CounterVec)
+	p.countersVec = make(map[string]*prometheus.CounterVec)
 	p.counters = make(map[string]prometheus.Counter)
 	p.gaugesVec = make(map[string]prometheus.GaugeVec)
 	p.gauges = make(map[string]prometheus.Gauge)
@@ -26,9 +25,8 @@ func NewPrometheusReporter()  *PrometheusReporter {
 	return &p
 }
 
-
 // metric - status_codes;sc:200
-func (p *PrometheusReporter) Inc(metric string)  {
+func (p *PrometheusReporter) Inc(metric string) {
 	parts := strings.Split(metric, ";")
 	name := parts[0]
 	if len(parts) == 1 {
@@ -41,7 +39,6 @@ func (p *PrometheusReporter) Inc(metric string)  {
 
 	}
 }
-
 
 func (p *PrometheusReporter) Counter(metric string, val float64) {
 	parts := strings.Split(metric, ";")
@@ -57,7 +54,7 @@ func (p *PrometheusReporter) Counter(metric string, val float64) {
 	}
 }
 
-func (p *PrometheusReporter) Gauage(metric string, val float64)  {
+func (p *PrometheusReporter) Gauge(metric string, val float64) {
 	parts := strings.Split(metric, ";")
 	name := parts[0]
 	if len(parts) == 1 {
@@ -70,7 +67,7 @@ func (p *PrometheusReporter) Gauage(metric string, val float64)  {
 	}
 }
 
-func(p *PrometheusReporter) Histogram(metric string, val float64) {
+func (p *PrometheusReporter) Histogram(metric string, val float64) {
 	parts := strings.Split(metric, ";")
 	name := parts[0]
 	if len(parts) == 1 {
@@ -83,70 +80,36 @@ func(p *PrometheusReporter) Histogram(metric string, val float64) {
 	}
 }
 
-func (p *PrometheusReporter) RegisterCounter(name string, c prometheus.Counter)  error {
-	err := prometheus.Register(c)
-	if err != nil {
-		return err
-	}
-
+func (p *PrometheusReporter) RegisterCounter(name string, c prometheus.Counter) {
+	prometheus.MustRegister(c)
 	p.counters[name] = c
 
-	return nil
-
 }
 
-func (p *PrometheusReporter) RegisterCounterVec(name string, c prometheus.CounterVec)  error {
-	err := prometheus.Register(c)
-	if err != nil {
-		return err
-	}
+func (p *PrometheusReporter) RegisterCounterVec(name string, c *prometheus.CounterVec) {
+	prometheus.MustRegister(c)
 	p.countersVec[name] = c
-
-	return nil
 }
 
-func (p *PrometheusReporter) RegisterGauge(name string, c prometheus.Gauge)  error {
-	err := prometheus.Register(c)
-	if err != nil {
-		return err
-	}
-
+func (p *PrometheusReporter) RegisterGauge(name string, c prometheus.Gauge) {
+	prometheus.MustRegister(c)
 	p.gauges[name] = c
 
-	return nil
-
 }
 
-func (p *PrometheusReporter) RegisterGaugeVec(name string, c prometheus.GaugeVec)  error {
-	err := prometheus.Register(c)
-	if err != nil {
-		return err
-	}
+func (p *PrometheusReporter) RegisterGaugeVec(name string, c prometheus.GaugeVec) {
+	prometheus.MustRegister(c)
 	p.gaugesVec[name] = c
-
-	return nil
 }
 
-func (p *PrometheusReporter) RegisterHistogram(name string, c prometheus.Histogram)  error {
-	err := prometheus.Register(c)
-	if err != nil {
-		return err
-	}
-
+func (p *PrometheusReporter) RegisterHistogram(name string, c prometheus.Histogram) {
+	prometheus.MustRegister(c)
 	p.histograms[name] = c
-
-	return nil
-
 }
 
-func (p *PrometheusReporter) RegisterHistogramVec(name string, c prometheus.HistogramVec)  error {
-	err := prometheus.Register(c)
-	if err != nil {
-		return err
-	}
+func (p *PrometheusReporter) RegisterHistogramVec(name string, c prometheus.HistogramVec) {
+	prometheus.MustRegister(c)
 	p.histogramsVec[name] = c
-
-	return nil
 }
 
 func getLabels(label string) prometheus.Labels {
@@ -154,11 +117,11 @@ func getLabels(label string) prometheus.Labels {
 	partsLen := len(parts)
 	labels := make(prometheus.Labels)
 	for i, p := range parts {
-		if i + 1 == partsLen {
+		if i+1 == partsLen {
 			break
 		}
 
-		labels[p] = parts[i + 1]
+		labels[p] = parts[i+1]
 	}
 
 	return labels

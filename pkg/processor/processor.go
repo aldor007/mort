@@ -119,6 +119,7 @@ func (r *RequestProcessor) collapseGET(req *http.Request, obj *object.FileObject
 		return res
 	}
 
+	monitoring.Report().Inc("collapsed_count")
 	monitoring.Log().Info("Lock not acquired", zap.String("obj.Key", obj.Key))
 	timer := time.NewTimer(r.lockTimeout)
 
@@ -152,6 +153,7 @@ func (r *RequestProcessor) fetchResponseFromCache(key string) *response.Response
 	if cacheValue != nil {
 		if cacheValue.Expired() == false {
 			monitoring.Log().Info("Handle Get cache", zap.String("cache", "hit"), zap.String("obj.Key", key))
+			monitoring.Report().Inc("cache_ratio;status:hit")
 			res := cacheValue.Value().(*response.Response)
 			resCp, err := res.Copy()
 			if err == nil {
@@ -160,6 +162,7 @@ func (r *RequestProcessor) fetchResponseFromCache(key string) *response.Response
 
 		} else {
 			monitoring.Log().Info("Handle Get cache", zap.String("cache", "expired"), zap.String("obj.Key", key))
+			monitoring.Report().Inc("cache_ratio;status:expired")
 			res := cacheValue.Value().(*response.Response)
 			res.Close()
 			r.cache.Delete(key)
@@ -317,6 +320,7 @@ func (r *RequestProcessor) processImage(ctx context.Context, obj *object.FileObj
 	taked := r.throttler.Take(ctx)
 	if !taked {
 		monitoring.Log().Warn("Processor/processImage", zap.String("obj.Key", obj.Key), zap.String("error", "throttled"))
+		monitoring.Report().Inc("throttled_count")
 		return response.NewNoContent(503)
 	}
 	defer r.throttler.Release()
