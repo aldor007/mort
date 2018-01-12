@@ -18,7 +18,6 @@ import (
 	"github.com/aldor007/mort/pkg/processor"
 	"github.com/aldor007/mort/pkg/response"
 	"github.com/aldor007/mort/pkg/throttler"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net"
 	"os"
@@ -31,7 +30,7 @@ import (
 
 const (
 	// Version of mort
-	Version = "0.5.0"
+	Version = "0.6.0"
 	// BANNER just fancy command line banner
 	BANNER = `
   /\/\   ___  _ __| |_
@@ -42,11 +41,10 @@ const (
 `
 )
 
-
 func debugListener(mortConfig *config.Config) (s *http.Server, ln net.Listener, socketPath string) {
 	router := chi.NewRouter()
 	router.Mount("/debug", middleware.Profiler())
-	router.HandleFunc("/metrics", promhttp.Handler())
+	router.Handle("/metrics", promhttp.Handler())
 	s = &http.Server{
 		ReadTimeout:  2 * time.Minute,
 		WriteTimeout: 2 * time.Minute,
@@ -54,7 +52,7 @@ func debugListener(mortConfig *config.Config) (s *http.Server, ln net.Listener, 
 	}
 
 	network := "tcp"
-	address := mortConfig.Server.InternalListener
+	address := mortConfig.Server.InternalListen
 	socketPath = ""
 	if strings.HasPrefix(address, "unix:") {
 		network = "unix"
@@ -73,13 +71,15 @@ func debugListener(mortConfig *config.Config) (s *http.Server, ln net.Listener, 
 func handleSignals(servers []*http.Server, socketPaths []string, wg *sync.WaitGroup) {
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, syscall.SIGUSR2, syscall.SIGKILL, syscall.SIGINT, syscall.SIGTERM, os.Kill)
-	imgConfig := config.GetInstance()
 	for {
 		sig := <-signalChan
 		switch sig {
 		case syscall.SIGTERM:
+			fallthrough
 		case syscall.SIGKILL:
+			fallthrough
 		case syscall.SIGINT:
+			fallthrough
 		case os.Kill:
 			for _, s := range servers {
 				s.Close()
@@ -191,7 +191,7 @@ func main() {
 	}
 
 	var internalSocketPath string
-	servers[serversCount - 1], netListeners[serversCount - 1], internalSocketPath = debugListener(imgConfig)
+	servers[serversCount-1], netListeners[serversCount-1], internalSocketPath = debugListener(imgConfig)
 	if internalSocketPath != "" {
 		socketPaths = append(socketPaths, internalSocketPath)
 	}

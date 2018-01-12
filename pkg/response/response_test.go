@@ -6,9 +6,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"net/http/httptest"
 	"testing"
-	"net/http"
 )
 
 func TestResponse_Copy(t *testing.T) {
@@ -164,7 +164,6 @@ func TestResponse_SendContentNotRangeOrCondition(t *testing.T) {
 	body, _ := ioutil.ReadAll(result.Body)
 	assert.Equal(t, len(body), 1000)
 }
-
 
 func BenchmarkNewBuf(b *testing.B) {
 	buf := make([]byte, 1000)
