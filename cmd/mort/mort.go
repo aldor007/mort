@@ -12,7 +12,7 @@ import (
 
 	"github.com/aldor007/mort/pkg/config"
 	"github.com/aldor007/mort/pkg/lock"
-	"github.com/aldor007/mort/pkg/log"
+	"github.com/aldor007/mort/pkg/monitoring"
 	mortMiddleware "github.com/aldor007/mort/pkg/middleware"
 	"github.com/aldor007/mort/pkg/object"
 	"github.com/aldor007/mort/pkg/processor"
@@ -112,7 +112,7 @@ func main() {
 	logger, _ := zap.NewProduction()
 	//logger, _ := zap.NewDevelopment()
 	zap.ReplaceGlobals(logger)
-	log.RegisterLogger(logger)
+	monitoring.RegisterLogger(logger)
 	router := chi.NewRouter()
 	imgConfig := config.GetInstance()
 	err := imgConfig.Load(*configPath)
@@ -151,7 +151,7 @@ func main() {
 			res.Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, HEAD")
 			defer logger.Sync() // flushes buffer, if any
 			if res.HasError() {
-				log.Log().Warn("Mort process error", zap.String("obj.Key", obj.Key), zap.Error(res.Error()))
+				monitoring.Log().Warn("Mort process error", zap.String("obj.Key", obj.Key), zap.Error(res.Error()))
 			}
 
 			res.SendContent(req, resWriter)
@@ -160,7 +160,7 @@ func main() {
 
 	router.HandleFunc("/", http.HandlerFunc(func(resWriter http.ResponseWriter, req *http.Request) {
 		resWriter.WriteHeader(400)
-		log.Log().Warn("Mort error request shouldn't go here")
+		monitoring.Log().Warn("Mort error request shouldn't go here")
 	}))
 
 	serversCount := len(imgConfig.Server.Listen) + 1
@@ -201,7 +201,7 @@ func main() {
 			// FIXME: move it to prometheus
 			var m runtime.MemStats
 			runtime.ReadMemStats(&m)
-			log.Log().Info("Runtime stats", zap.Uint64("alloc", m.Alloc/1024), zap.Uint64("total-alloc", m.TotalAlloc/1024),
+			monitoring.Log().Info("Runtime stats", zap.Uint64("alloc", m.Alloc/1024), zap.Uint64("total-alloc", m.TotalAlloc/1024),
 				zap.Uint64("sys", m.Sys/1021), zap.Uint32("numGC", m.NumGC), zap.Uint64("last-gc-pause", m.PauseNs[(m.NumGC+255)%256]))
 			time.Sleep(300 * time.Second)
 		}

@@ -11,7 +11,7 @@ import (
 	"gopkg.in/h2non/bimg.v1"
 
 	"bytes"
-	"github.com/aldor007/mort/pkg/log"
+	"github.com/aldor007/mort/pkg/monitoring"
 	"github.com/aldor007/mort/pkg/object"
 	"github.com/aldor007/mort/pkg/response"
 	"github.com/aldor007/mort/pkg/transforms"
@@ -80,7 +80,7 @@ func (c *ImageEngine) Process(obj *object.FileObject, trans []transforms.Transfo
 		res.Set("x-amz-meta-public-height", strconv.Itoa(meta.Size.Height))
 
 	} else {
-		log.Log().Warn("ImageEngine/process unable to get metadata", zap.String("obj.key", obj.Key), zap.Error(err))
+		monitoring.Log().Warn("ImageEngine/process unable to get metadata", zap.String("obj.key", obj.Key), zap.Error(err))
 	}
 
 	return res, nil

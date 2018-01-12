@@ -11,7 +11,7 @@ import (
 	"github.com/aldor007/mort/pkg/config"
 	"github.com/aldor007/mort/pkg/engine"
 	"github.com/aldor007/mort/pkg/lock"
-	"github.com/aldor007/mort/pkg/log"
+	"github.com/aldor007/mort/pkg/monitoring"
 	"github.com/aldor007/mort/pkg/object"
 	"github.com/aldor007/mort/pkg/response"
 	"github.com/aldor007/mort/pkg/storage"
@@ -65,12 +65,12 @@ func (r *RequestProcessor) Process(req *http.Request, obj *object.FileObject) *r
 	timer := time.NewTimer(r.processTimeout)
 	select {
 	case <-ctx.Done():
-		log.Log().Warn("Process timeout", zap.String("obj.Key", obj.Key), zap.String("error", "Context.timeout"))
+		monitoring.Log().Warn("Process timeout", zap.String("obj.Key", obj.Key), zap.String("error", "Context.timeout"))
 		return response.NewNoContent(499)
 	case res := <-msg.responseChan:
 		return res
 	case <-timer.C:
-		log.Log().Warn("Process timeout", zap.String("obj.Key", obj.Key), zap.String("error", "timeout"))
+		monitoring.Log().Warn("Process timeout", zap.String("obj.Key", obj.Key), zap.String("error", "timeout"))
 		return response.NewString(504, "timeout")
 	}
 
@@ -113,13 +113,13 @@ func (r *RequestProcessor) collapseGET(req *http.Request, obj *object.FileObject
 	ctx := req.Context()
 	lockResult, locked := r.collapse.Lock(obj.Key)
 	if locked {
-		log.Log().Info("Lock acquired", zap.String("obj.Key", obj.Key))
+		monitoring.Log().Info("Lock acquired", zap.String("obj.Key", obj.Key))
 		res := r.handleGET(req, obj)
 		r.collapse.NotifyAndRelease(obj.Key, res)
 		return res
 	}
 
-	log.Log().Info("Lock not acquired", zap.String("obj.Key", obj.Key))
+	monitoring.Log().Info("Lock not acquired", zap.String("obj.Key", obj.Key))
 	timer := time.NewTimer(r.lockTimeout)
 
 	for {
@@ -151,7 +151,7 @@ func (r *RequestProcessor) fetchResponseFromCache(key string) *response.Response
 	cacheValue := r.cache.Get(key)
 	if cacheValue != nil {
 		if cacheValue.Expired() == false {
-			log.Log().Info("Handle Get cache", zap.String("cache", "hit"), zap.String("obj.Key", key))
+			monitoring.Log().Info("Handle Get cache", zap.String("cache", "hit"), zap.String("obj.Key", key))
 			res := cacheValue.Value().(*response.Response)
 			resCp, err := res.Copy()
 			if err == nil {
@@ -159,7 +159,7 @@ func (r *RequestProcessor) fetchResponseFromCache(key string) *response.Response
 			}
 
 		} else {
-			log.Log().Info("Handle Get cache", zap.String("cache", "expired"), zap.String("obj.Key", key))
+			monitoring.Log().Info("Handle Get cache", zap.String("cache", "expired"), zap.String("obj.Key", key))
 			res := cacheValue.Value().(*response.Response)
 			res.Close()
 			r.cache.Delete(key)
@@ -265,11 +265,11 @@ resLoop:
 
 			}
 
-			log.Log().Info("Performing transforms", zap.String("obj.Bucket", obj.Bucket), zap.String("obj.Key", obj.Key), zap.Int("transformsLen", len(transforms)))
+			monitoring.Log().Info("Performing transforms", zap.String("obj.Bucket", obj.Bucket), zap.String("obj.Key", obj.Key), zap.Int("transformsLen", len(transforms)))
 			return r.processImage(ctx, obj, parentRes, transforms)
 		} else if obj.HasTransform() {
 			parentRes.Close()
-			log.Log().Warn("Not performing transforms", zap.String("obj.Bucket", obj.Bucket), zap.String("obj.Key", obj.Key),
+			monitoring.Log().Warn("Not performing transforms", zap.String("obj.Bucket", obj.Bucket), zap.String("obj.Key", obj.Key),
 				zap.String("parent.Key", parentObj.Key), zap.Int("parent.sc", parentRes.StatusCode), zap.String("parent.ContentType", parentRes.Headers.Get(response.HeaderContentType)), zap.Error(parentRes.Error()))
 		}
 
@@ -316,7 +316,7 @@ func handleS3Get(req *http.Request, obj *object.FileObject) *response.Response {
 func (r *RequestProcessor) processImage(ctx context.Context, obj *object.FileObject, parent *response.Response, transforms []transforms.Transforms) *response.Response {
 	taked := r.throttler.Take(ctx)
 	if !taked {
-		log.Log().Warn("Processor/processImage", zap.String("obj.Key", obj.Key), zap.String("error", "throttled"))
+		monitoring.Log().Warn("Processor/processImage", zap.String("obj.Key", obj.Key), zap.String("error", "throttled"))
 		return response.NewNoContent(503)
 	}
 	defer r.throttler.Release()
@@ -336,7 +336,7 @@ func (r *RequestProcessor) processImage(ctx context.Context, obj *object.FileObj
 			resS.Close()
 		}(*obj, resCpy)
 	} else {
-		log.Log().Warn("Processor/processImage", zap.String("obj.Key", obj.Key), zap.Error(err))
+		monitoring.Log().Warn("Processor/processImage", zap.String("obj.Key", obj.Key), zap.Error(err))
 	}
 
 	return res

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/aldor007/mort/pkg/log"
+	"github.com/aldor007/mort/pkg/monitoring"
 )
 
 // Config contains configuration for buckets etc
@@ -115,7 +115,7 @@ func (c *Config) BucketsByAccessKey(accessKey string) []Bucket {
 }
 
 func configInvalidError(msg string) error {
-	log.Logs().Warnw(msg)
+	monitoring.Logs().Warnw(msg)
 	return errors.New(msg)
 }
 

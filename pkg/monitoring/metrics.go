@@ -1,4 +1,4 @@
-package log
+package monitoring
 
 import (
 )
@@ -26,4 +26,18 @@ func (n NopReporter) Inc(_ string)  {
 
 func (n NopReporter) Histogram(_ string, _ float64)  {
 
+}
+
+func (n NopReporter) Gauge(_ string, _ float64)  {
+
+}
+
+var reporter Reporter = &NopReporter{}
+
+func Report() Reporter {
+	return reporter
+}
+
+func RegisterReporter(r Reporter)  {
+	reporter = r
 }
