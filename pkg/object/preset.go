@@ -3,7 +3,7 @@ package object
 import (
 	"errors"
 	"github.com/aldor007/mort/pkg/config"
-	"github.com/aldor007/mort/pkg/log"
+	"github.com/aldor007/mort/pkg/monitoring"
 	"github.com/aldor007/mort/pkg/transforms"
 	//"github.com/aldor007/mort/pkg/object"
 	"go.uber.org/zap"
@@ -42,7 +42,7 @@ func decodePreset(url *url.URL, bucketConfig config.Bucket, obj *FileObject) (st
 	parent := subMatchMap["parent"]
 
 	if _, ok := trans.Presets[presetName]; !ok {
-		log.Log().Warn("FileObject decodePreset unknown preset", zap.String("obj.Key", obj.Key), zap.String("parent", parent), zap.String("presetName", presetName),
+		monitoring.Log().Warn("FileObject decodePreset unknown preset", zap.String("obj.Key", obj.Key), zap.String("parent", parent), zap.String("presetName", presetName),
 			zap.String("regexp", trans.Path))
 		return "", errors.New("unknown preset " + presetName)
 	}

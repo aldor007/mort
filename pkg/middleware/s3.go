@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/aldor007/mort/pkg/config"
-	"github.com/aldor007/mort/pkg/log"
+	"github.com/aldor007/mort/pkg/monitoring"
 	"github.com/aldor007/mort/pkg/response"
 
 	"github.com/aldor007/go-aws-auth"
@@ -67,7 +67,7 @@ func (s *S3Auth) Handler(next http.Handler) http.Handler {
 		pathSlice := strings.Split(path, "/")
 		pathSliceLen := len(pathSlice)
 		if pathSliceLen < 2 {
-			log.Log().Warn("S3Auth invalid path")
+			monitoring.Log().Warn("S3Auth invalid path")
 			res := response.NewString(400, "invalid path")
 			res.Send(resWriter)
 			return
@@ -86,7 +86,7 @@ func (s *S3Auth) Handler(next http.Handler) http.Handler {
 			authAlg = "v4"
 			alg := matches[1]
 			if alg != "AWS4-HMAC-SHA256" {
-				log.Log().Warn("S3Auth invalid algorithm", zap.String("alg", alg))
+				monitoring.Log().Warn("S3Auth invalid algorithm", zap.String("alg", alg))
 				res := response.NewString(400, "invalid algorithm")
 				res.Send(resWriter)
 				return
@@ -107,7 +107,7 @@ func (s *S3Auth) Handler(next http.Handler) http.Handler {
 		if !ok {
 			buckets := mortConfig.BucketsByAccessKey(accessKey)
 			if len(buckets) == 0 {
-				log.Log().Warn("S3Auth no bucket for access key")
+				monitoring.Log().Warn("S3Auth no bucket for access key")
 				res := response.NewString(403, "")
 				res.Send(resWriter)
 				return
@@ -127,7 +127,7 @@ func (s *S3Auth) Handler(next http.Handler) http.Handler {
 		}
 		if credential.AccessKeyID == "" {
 			res := response.NewString(401, "")
-			log.Log().Warn("S3Auth invalid bucket config no access key or invalid", zap.String("bucket", bucketName))
+			monitoring.Log().Warn("S3Auth invalid bucket config no access key or invalid", zap.String("bucket", bucketName))
 			res.Send(resWriter)
 			return
 		}
@@ -135,7 +135,7 @@ func (s *S3Auth) Handler(next http.Handler) http.Handler {
 		validiatonReq, err := http.NewRequest(req.Method, req.RequestURI, req.Body)
 		if err != nil {
 			res := response.NewString(401, "")
-			log.Log().Error("S3Auth unable to create validation req", zap.Error(err))
+			monitoring.Log().Error("S3Auth unable to create validation req", zap.Error(err))
 			res.Send(resWriter)
 			return
 		}
@@ -179,7 +179,7 @@ func (s *S3Auth) Handler(next http.Handler) http.Handler {
 
 		}
 
-		log.Log().Warn("S3Auth signature mismatch", zap.String("req.path", req.URL.Path))
+		monitoring.Log().Warn("S3Auth signature mismatch", zap.String("req.path", req.URL.Path))
 		response.NewNoContent(403).Send(resWriter)
 		return
 	}

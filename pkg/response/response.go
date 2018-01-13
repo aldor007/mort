@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"github.com/aldor007/mort/pkg/log"
+	"github.com/aldor007/mort/pkg/monitoring"
 	"github.com/aldor007/mort/pkg/object"
 	"github.com/djherbis/stream"
 	"go.uber.org/zap"
@@ -250,7 +250,7 @@ func (r *Response) SendContent(req *http.Request, w http.ResponseWriter) error {
 
 	lastMod, err := time.Parse(http.TimeFormat, r.Headers.Get("Last-Modified"))
 	if err != nil {
-		log.Log().Error("Unable to parse last-modified", zap.Error(err))
+		monitoring.Log().Error("Unable to parse last-modified", zap.Error(err))
 		lastMod = time.Now()
 	}
 

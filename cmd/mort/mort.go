@@ -12,16 +12,17 @@ import (
 
 	"github.com/aldor007/mort/pkg/config"
 	"github.com/aldor007/mort/pkg/lock"
-	"github.com/aldor007/mort/pkg/log"
 	mortMiddleware "github.com/aldor007/mort/pkg/middleware"
+	"github.com/aldor007/mort/pkg/monitoring"
 	"github.com/aldor007/mort/pkg/object"
 	"github.com/aldor007/mort/pkg/processor"
 	"github.com/aldor007/mort/pkg/response"
 	"github.com/aldor007/mort/pkg/throttler"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net"
 	"os"
 	"os/signal"
-	"runtime"
 	"strings"
 	"sync"
 	"syscall"
@@ -29,7 +30,7 @@ import (
 
 const (
 	// Version of mort
-	Version = "0.5.0"
+	Version = "0.6.0"
 	// BANNER just fancy command line banner
 	BANNER = `
   /\/\   ___  _ __| |_
@@ -40,47 +41,45 @@ const (
 `
 )
 
-var debugServer *http.Server
-
-func debugListener(mortConfig *config.Config) {
-	if debugServer != nil {
-		debugServer.Close()
-		return
-	}
-
+func debugListener(mortConfig *config.Config) (s *http.Server, ln net.Listener, socketPath string) {
 	router := chi.NewRouter()
 	router.Mount("/debug", middleware.Profiler())
-	s := &http.Server{
-		Addr:         mortConfig.Server.DebugListen,
+	router.Handle("/metrics", promhttp.Handler())
+	s = &http.Server{
 		ReadTimeout:  2 * time.Minute,
 		WriteTimeout: 2 * time.Minute,
 		Handler:      router,
 	}
 
-	debugServer = s
-	s.ListenAndServe()
+	network := "tcp"
+	address := mortConfig.Server.InternalListen
+	socketPath = ""
+	if strings.HasPrefix(address, "unix:") {
+		network = "unix"
+		socketPath = address
+		address = strings.Replace(address, "unix:", "", 1)
+	}
+
+	ln, err := net.Listen(network, address)
+	if err != nil {
+		panic(err)
+	}
+
+	return
 }
 
 func handleSignals(servers []*http.Server, socketPaths []string, wg *sync.WaitGroup) {
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, syscall.SIGUSR2, syscall.SIGKILL, syscall.SIGINT, syscall.SIGTERM, os.Kill)
-	imgConfig := config.GetInstance()
 	for {
 		sig := <-signalChan
 		switch sig {
-		// kill -SIGHUP XXXX
-		case syscall.SIGUSR2:
-			if debugServer != nil {
-				log.Log().Info("Stop debug server on port 8081")
-			} else {
-				log.Log().Info("Start debug server on port 8081")
-			}
-			go debugListener(imgConfig)
-			break
-
 		case syscall.SIGTERM:
+			fallthrough
 		case syscall.SIGKILL:
+			fallthrough
 		case syscall.SIGINT:
+			fallthrough
 		case os.Kill:
 			for _, s := range servers {
 				s.Close()
@@ -97,11 +96,54 @@ func handleSignals(servers []*http.Server, socketPaths []string, wg *sync.WaitGr
 	}
 }
 
+func configureMonitoring(mortConfig *config.Config) {
+	logger, _ := zap.NewProduction()
+	//logger, _ := zap.NewDevelopment()
+	zap.ReplaceGlobals(logger)
+	monitoring.RegisterLogger(logger)
+	if mortConfig.Server.Monitoring == "prometheus" {
+		p := monitoring.NewPrometheusReporter()
+		p.RegisterCounterVec("cache_ratio", prometheus.NewCounterVec(prometheus.CounterOpts{
+			Name: "mort_cache_ratio",
+			Help: "mort cache ratio",
+		},
+			[]string{"status"},
+		))
+
+		p.RegisterCounter("throttled_count", prometheus.NewCounter(prometheus.CounterOpts{
+			Name: "mort_request_throttled_count",
+			Help: "mort count of throttled requests",
+		}))
+
+		p.RegisterCounter("collaped_count", prometheus.NewCounter(prometheus.CounterOpts{
+			Name: "mort_request_collapsed_count",
+			Help: "mort count of collapsed requests",
+		}))
+
+		p.RegisterHistogramVec("storage_time", prometheus.NewHistogramVec(prometheus.HistogramOpts{
+			Name:    "mort_storage_time",
+			Help:    "mort storage times",
+			Buckets: []float64{10, 50, 100, 200, 300, 400, 500, 1000, 2000, 3000, 4000, 5000, 6000, 10000, 30000, 60000},
+		},
+			[]string{"method", "storage"},
+		))
+
+		p.RegisterHistogramVec("response_time", prometheus.NewHistogramVec(prometheus.HistogramOpts{
+			Name:    "mort_response_time",
+			Help:    "mort reponse times",
+			Buckets: []float64{10, 50, 100, 200, 300, 400, 500, 1000, 2000, 3000, 4000, 5000, 6000, 10000, 30000, 60000},
+		},
+			[]string{"method"},
+		))
+
+		monitoring.RegisterReporter(p)
+	}
+}
+
 func startServer(s *http.Server, ln net.Listener) {
 	err := s.Serve(ln)
-	if err != nil {
+	if err != nil && err != http.ErrServerClosed {
 		fmt.Println("Error listen", err)
-		panic(err)
 	}
 }
 
@@ -110,13 +152,10 @@ func main() {
 	debug := flag.Bool("debug", false, "enable debug mode")
 	flag.Parse()
 
-	logger, _ := zap.NewProduction()
-	//logger, _ := zap.NewDevelopment()
-	zap.ReplaceGlobals(logger)
-	log.RegisterLogger(logger)
 	router := chi.NewRouter()
 	imgConfig := config.GetInstance()
 	err := imgConfig.Load(*configPath)
+	configureMonitoring(imgConfig)
 
 	if err != nil {
 		panic(err)
@@ -132,10 +171,13 @@ func main() {
 
 	router.Use(func(_ http.Handler) http.Handler {
 		return http.HandlerFunc(func(resWriter http.ResponseWriter, req *http.Request) {
+			metric := "response_time;method:" + req.Method
+			monitoring.Report().TimeStart(metric)
+			defer monitoring.Report().TimeEnd(metric)
 			debug := req.Header.Get("X-Mort-Debug") != ""
 			obj, err := object.NewFileObject(req.URL, imgConfig)
 			if err != nil {
-				logger.Sugar().Errorf("Unable to create file object err = %s", err)
+				monitoring.Logs().Errorf("Unable to create file object err = %s", err)
 				response.NewError(400, err).SetDebug(debug, nil).Send(resWriter)
 				return
 			}
@@ -150,9 +192,9 @@ func main() {
 			res.Set("Access-Control-Allow-Headers", "Content-Type, X-Amz-Public-Width, X-Amz-Public-Height")
 			res.Set("Access-Control-Expose-Headers", "Content-Type, X-Amz-Public-Width, X-Amz-Public-Height")
 			res.Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, HEAD")
-			defer logger.Sync() // flushes buffer, if any
+			defer monitoring.Log().Sync() // flushes buffer, if any
 			if res.HasError() {
-				log.Log().Warn("Mort process error", zap.String("obj.Key", obj.Key), zap.Error(res.Error()))
+				monitoring.Log().Warn("Mort process error", zap.String("obj.Key", obj.Key), zap.Error(res.Error()))
 			}
 
 			res.SendContent(req, resWriter)
@@ -161,12 +203,14 @@ func main() {
 
 	router.HandleFunc("/", http.HandlerFunc(func(resWriter http.ResponseWriter, req *http.Request) {
 		resWriter.WriteHeader(400)
-		log.Log().Warn("Mort error request shouldn't go here")
+		monitoring.Log().Warn("Mort error request shouldn't go here")
 	}))
 
-	servers := make([]*http.Server, len(imgConfig.Server.Listen))
-	netListeners := make([]net.Listener, len(imgConfig.Server.Listen))
+	serversCount := len(imgConfig.Server.Listen) + 1
+	servers := make([]*http.Server, serversCount)
+	netListeners := make([]net.Listener, serversCount)
 	var socketPaths []string
+
 	for i, l := range imgConfig.Server.Listen {
 		servers[i] = &http.Server{
 			ReadTimeout:  2 * time.Minute,
@@ -189,20 +233,11 @@ func main() {
 		netListeners[i] = ln
 	}
 
-	if debug != nil && *debug {
-		go debugListener(imgConfig)
+	var internalSocketPath string
+	servers[serversCount-1], netListeners[serversCount-1], internalSocketPath = debugListener(imgConfig)
+	if internalSocketPath != "" {
+		socketPaths = append(socketPaths, internalSocketPath)
 	}
-
-	go func() {
-		for {
-			// FIXME: move it to prometheus
-			var m runtime.MemStats
-			runtime.ReadMemStats(&m)
-			log.Log().Info("Runtime stats", zap.Uint64("alloc", m.Alloc/1024), zap.Uint64("total-alloc", m.TotalAlloc/1024),
-				zap.Uint64("sys", m.Sys/1021), zap.Uint32("numGC", m.NumGC), zap.Uint64("last-gc-pause", m.PauseNs[(m.NumGC+255)%256]))
-			time.Sleep(300 * time.Second)
-		}
-	}()
 
 	var wg sync.WaitGroup
 
