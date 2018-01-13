@@ -58,10 +58,11 @@ Server section describe configuration for HTTP server and some runtime variables
 
 ```yaml
 server:
-    debugListener: "0.0.0.0:8081" # default internal listener for debug and metrics
-    listener: "0.0.0.0:8080" # default traffic listener
+    listen: "0.0.0.0:8080" # default traffic listener
+    monitoring: "" # default no monitoring ( or prometheus)
     cacheSize: 10 # default size of cache used for new images
     requestTimeout: 70 # default request timeout in seconds
+    internalListen: "0.0.0.0:8081" # default listener for debug /debug and metrics /metrics
 ```
 
 ## Response Headers

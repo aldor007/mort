@@ -169,3 +169,7 @@
   name = "github.com/karlseguin/ccache"
   branch = "master"
 
+[[constraint]]
+  name = "github.com/prometheus/client_golang"
+  version = "v0.8.0"
+

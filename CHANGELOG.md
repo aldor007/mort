@@ -1,3 +1,6 @@
+* 0.6.0
+    * Feature: Add prometheus reporter
+    * Bugfix: Fix race condition when notifying waiting clients about response 
 * 0.5.0
     * Feature: Allow to have multiple listeners
     * Bugfix: Add locking for storage and preset cache

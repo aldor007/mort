@@ -120,6 +120,22 @@ func configureMonitoring(mortConfig *config.Config) {
 			Help: "mort count of collapsed requests",
 		}))
 
+		p.RegisterHistogramVec("storage_time", prometheus.NewHistogramVec(prometheus.HistogramOpts{
+			Name:    "mort_storage_time",
+			Help:    "mort storage times",
+			Buckets: []float64{10, 50, 100, 200, 300, 400, 500, 1000, 2000, 3000, 4000, 5000, 6000, 10000, 30000, 60000},
+		},
+			[]string{"method", "storage"},
+		))
+
+		p.RegisterHistogramVec("response_time", prometheus.NewHistogramVec(prometheus.HistogramOpts{
+			Name:    "mort_response_time",
+			Help:    "mort reponse times",
+			Buckets: []float64{10, 50, 100, 200, 300, 400, 500, 1000, 2000, 3000, 4000, 5000, 6000, 10000, 30000, 60000},
+		},
+			[]string{"method"},
+		))
+
 		monitoring.RegisterReporter(p)
 	}
 }
@@ -155,6 +171,9 @@ func main() {
 
 	router.Use(func(_ http.Handler) http.Handler {
 		return http.HandlerFunc(func(resWriter http.ResponseWriter, req *http.Request) {
+			metric := "response_time;method:" + req.Method
+			monitoring.Report().TimeStart(metric)
+			defer monitoring.Report().TimeEnd(metric)
 			debug := req.Header.Get("X-Mort-Debug") != ""
 			obj, err := object.NewFileObject(req.URL, imgConfig)
 			if err != nil {
