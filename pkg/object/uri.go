@@ -17,7 +17,7 @@ var bufPool = sync.Pool{
 	},
 }
 
-// ParserFnc is a function that create object from request url
+// ParseFnc is a function that create object from request url
 type ParseFnc func(url *url.URL, bucketConfig config.Bucket, obj *FileObject) (string, error)
 
 // parser list of available decoder function

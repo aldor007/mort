@@ -1,3 +1,5 @@
+* 0.6.1
+    * Bugfix: Add mutex for time monitoring map 
 * 0.6.0
     * Feature: Add prometheus reporter
     * Bugfix: Fix race condition when notifying waiting clients about response 

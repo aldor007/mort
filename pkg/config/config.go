@@ -39,6 +39,7 @@ func GetInstance() *Config {
 	return instance
 }
 
+// RegisterTransformKind register new transformation in config validator
 func RegisterTransformKind(kind string) {
 	for _, k := range transformKinds {
 		if k == kind {

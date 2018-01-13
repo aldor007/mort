@@ -4,6 +4,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"strings"
 	"time"
+	"sync"
 )
 
 // PrometheusReporter is a reporter that allow you to "send" metrics to
@@ -18,6 +19,7 @@ type PrometheusReporter struct {
 	histograms    map[string]prometheus.Histogram
 	histogramsVec map[string]*prometheus.HistogramVec
 	timers        map[string]time.Time
+	timersLock   sync.RWMutex
 }
 
 // NewPrometheusReporter create instance of reporter that allow you to report stats to prometheus
@@ -99,14 +101,17 @@ func (p *PrometheusReporter) Histogram(metric string, val float64) {
 // Result will be histogram of time
 // metric schema: metric_name;label:value,label1:value2
 func (p *PrometheusReporter) TimeStart(metric string) {
+	p.timersLock.Lock()
 	p.timers[metric] = time.Now()
+	p.timersLock.Unlock()
 }
 
 // TimeEnd - end time measure for given metric
 func (p *PrometheusReporter) TimeEnd(metric string) {
+	p.timersLock.RLock()
 	delta := time.Since(p.timers[metric])
+	p.timersLock.RUnlock()
 	p.Histogram(metric, float64(delta.Nanoseconds()/1000))
-	delete(p.timers, metric)
 }
 
 // RegisterCounter register counter in prometheus default registry

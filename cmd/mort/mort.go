@@ -30,7 +30,7 @@ import (
 
 const (
 	// Version of mort
-	Version = "0.6.0"
+	Version = "0.6.1"
 	// BANNER just fancy command line banner
 	BANNER = `
   /\/\   ___  _ __| |_
@@ -130,7 +130,7 @@ func configureMonitoring(mortConfig *config.Config) {
 
 		p.RegisterHistogramVec("response_time", prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Name:    "mort_response_time",
-			Help:    "mort reponse times",
+			Help:    "mort response times",
 			Buckets: []float64{10, 50, 100, 200, 300, 400, 500, 1000, 2000, 3000, 4000, 5000, 6000, 10000, 30000, 60000},
 		},
 			[]string{"method"},
