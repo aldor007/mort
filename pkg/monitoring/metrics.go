@@ -1,5 +1,7 @@
 package monitoring
 
+import "time"
+
 // Reporter is a interface for gather information and send
 // external monitoring tool
 type Reporter interface {
@@ -7,8 +9,16 @@ type Reporter interface {
 	Inc(label string)
 	Histogram(label string, val float64)
 	Gauge(label string, val float64)
-	TimeStart(label string)
-	TimeEnd(label string)
+	Timer(label string) Timer
+}
+
+type Timer struct {
+	start time.Time
+	done  func(start time.Time)
+}
+
+func (t Timer) Done() {
+	t.done(t.start)
 }
 
 // NopReporter is reporter that does nothing
@@ -35,14 +45,13 @@ func (n NopReporter) Gauge(_ string, _ float64) {
 
 }
 
-// TimeStart does nothing
-func (n NopReporter) TimeStart(_ string) {
+// Timer returns Timer object that measure time between its creation and calling Done Function
+func (n NopReporter) Timer(_ string) Timer {
+	t := Timer{}
+	t.done = func(_ time.Time) {
 
-}
-
-// TimeEnd does nothing
-func (n NopReporter) TimeEnd(_ string) {
-
+	}
+	return t
 }
 
 // reporter instance for use as singleton

@@ -35,8 +35,8 @@ var storageCacheLock = sync.RWMutex{}
 // Get retrieve obj from given storage and returns its wrapped in response
 func Get(obj *object.FileObject) *response.Response {
 	metric := "storage_time;method:get,storage:" + obj.Storage.Kind
-	monitoring.Report().TimeStart(metric)
-	defer monitoring.Report().TimeEnd(metric)
+	t := monitoring.Report().Timer(metric)
+	defer t.Done()
 	key := getKey(obj)
 	client, err := getClient(obj)
 	if err != nil {
@@ -73,8 +73,8 @@ func Get(obj *object.FileObject) *response.Response {
 // Head retrieve obj from given storage and returns its wrapped in response (but only headers, content of object is omitted)
 func Head(obj *object.FileObject) *response.Response {
 	metric := "storage_time;method:head,storage:" + obj.Storage.Kind
-	monitoring.Report().TimeStart(metric)
-	defer monitoring.Report().TimeEnd(metric)
+	t := monitoring.Report().Timer(metric)
+	defer t.Done()
 	key := getKey(obj)
 	client, err := getClient(obj)
 	if err != nil {
@@ -99,8 +99,8 @@ func Head(obj *object.FileObject) *response.Response {
 // Set create object on storage wit given body and headers
 func Set(obj *object.FileObject, metaHeaders http.Header, contentLen int64, body io.Reader) *response.Response {
 	metric := "storage_time;method:set,storage:" + obj.Storage.Kind
-	monitoring.Report().TimeStart(metric)
-	defer monitoring.Report().TimeEnd(metric)
+	t := monitoring.Report().Timer(metric)
+	defer t.Done()
 	client, err := getClient(obj)
 	if err != nil {
 		monitoring.Logs().Warnw("Storage/Set create client", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 503), zap.Error(err))
@@ -122,8 +122,8 @@ func Set(obj *object.FileObject, metaHeaders http.Header, contentLen int64, body
 // Delete remove object from given storage
 func Delete(obj *object.FileObject) *response.Response {
 	metric := "storage_time;method:delete,storage:" + obj.Storage.Kind
-	monitoring.Report().TimeStart(metric)
-	defer monitoring.Report().TimeEnd(metric)
+	t := monitoring.Report().Timer(metric)
+	defer t.Done()
 	client, err := getClient(obj)
 	if err != nil {
 		monitoring.Logs().Warnw("Storage/Delete create client", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 503), zap.Error(err))

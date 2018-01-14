@@ -1,3 +1,5 @@
+* 0.7.0
+    * Feature: Remove mutex from time monitoring 
 * 0.6.1
     * Bugfix: Add mutex for time monitoring map 
 * 0.6.0
