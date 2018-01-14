@@ -3,7 +3,6 @@ package monitoring
 import (
 	"github.com/prometheus/client_golang/prometheus"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -18,8 +17,6 @@ type PrometheusReporter struct {
 	gauges        map[string]prometheus.Gauge
 	histograms    map[string]prometheus.Histogram
 	histogramsVec map[string]*prometheus.HistogramVec
-	timers        map[string]time.Time
-	timersLock    sync.RWMutex
 }
 
 // NewPrometheusReporter create instance of reporter that allow you to report stats to prometheus
@@ -31,7 +28,6 @@ func NewPrometheusReporter() *PrometheusReporter {
 	p.gauges = make(map[string]prometheus.Gauge)
 	p.histograms = make(map[string]prometheus.Histogram)
 	p.histogramsVec = make(map[string]*prometheus.HistogramVec)
-	p.timers = make(map[string]time.Time)
 	return &p
 }
 

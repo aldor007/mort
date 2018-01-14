@@ -12,11 +12,13 @@ type Reporter interface {
 	Timer(label string) Timer
 }
 
+// Timer is used for time measurement
 type Timer struct {
 	start time.Time
 	done  func(start time.Time)
 }
 
+// Done end time measurement
 func (t Timer) Done() {
 	t.done(t.start)
 }
