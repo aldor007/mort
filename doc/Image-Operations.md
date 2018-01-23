@@ -1,6 +1,6 @@
 # List of image operations
 
-Table of content
+Table of contents
 
 - [List of image operations](#list-of-image-operations)
   * [Originals](#originals)

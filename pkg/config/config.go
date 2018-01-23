@@ -9,7 +9,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/aldor007/mort/pkg/log"
+	"github.com/aldor007/mort/pkg/monitoring"
 )
 
 // Config contains configuration for buckets etc
@@ -39,6 +39,7 @@ func GetInstance() *Config {
 	return instance
 }
 
+// RegisterTransformKind register new transformation in config validator
 func RegisterTransformKind(kind string) {
 	for _, k := range transformKinds {
 		if k == kind {
@@ -115,7 +116,7 @@ func (c *Config) BucketsByAccessKey(accessKey string) []Bucket {
 }
 
 func configInvalidError(msg string) error {
-	log.Logs().Warnw(msg)
+	monitoring.Logs().Warnw(msg)
 	return errors.New(msg)
 }
 
@@ -218,13 +219,13 @@ func (c *Config) validateServer() error {
 		c.Server.Listen = append(c.Server.Listen, c.Server.SingleListen)
 	}
 
-	if c.Server.DebugListen == "" {
-		c.Server.DebugListen = ":8081"
+	if c.Server.InternalListen == "" {
+		c.Server.InternalListen = ":8081"
 	}
 
 	for _, l := range c.Server.Listen {
-		if c.Server.DebugListen == l {
-			return configInvalidError("Server has invalid configuration debugListener and listener should have same address")
+		if c.Server.InternalListen == l {
+			return configInvalidError("Server has invalid configuration internalLstener and listener should have same address")
 		}
 	}
 

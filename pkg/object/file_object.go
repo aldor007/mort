@@ -2,7 +2,7 @@ package object
 
 import (
 	"github.com/aldor007/mort/pkg/config"
-	"github.com/aldor007/mort/pkg/log"
+	"github.com/aldor007/mort/pkg/monitoring"
 	"github.com/aldor007/mort/pkg/transforms"
 	//"github.com/aldor007/mort/pkg/uri"
 	"go.uber.org/zap"
@@ -36,7 +36,7 @@ func NewFileObjectFromPath(path string, mortConfig *config.Config) (*FileObject,
 
 	err := Parse(obj.Uri, mortConfig, &obj)
 
-	log.Log().Info("FileObject", zap.String("path", path), zap.String("key", obj.Key), zap.String("bucket", obj.Bucket), zap.String("storage", obj.Storage.Kind),
+	monitoring.Log().Info("FileObject", zap.String("path", path), zap.String("key", obj.Key), zap.String("bucket", obj.Bucket), zap.String("storage", obj.Storage.Kind),
 		zap.Bool("hasTransforms", obj.HasTransform()), zap.Bool("hasParent", obj.HasParent()))
 	return &obj, err
 }
@@ -53,7 +53,7 @@ func NewFileObject(uri *url.URL, mortConfig *config.Config) (*FileObject, error)
 
 	err := Parse(uri, mortConfig, &obj)
 
-	log.Log().Info("FileObject", zap.String("path", uri.Path), zap.String("key", obj.Key), zap.String("bucket", obj.Bucket), zap.String("storage", obj.Storage.Kind),
+	monitoring.Log().Info("FileObject", zap.String("path", uri.Path), zap.String("key", obj.Key), zap.String("bucket", obj.Bucket), zap.String("storage", obj.Storage.Kind),
 		zap.Bool("hasTransforms", obj.HasTransform()), zap.Bool("hasParent", obj.HasParent()))
 	return &obj, err
 }

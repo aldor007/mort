@@ -2,6 +2,7 @@ server:
   listens:
     - ":8080"
     - "unix:/tmp/mort.sock"
+  monitoring: "prometheus"
 
 
 headers:
