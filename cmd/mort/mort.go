@@ -115,7 +115,7 @@ func configureMonitoring(mortConfig *config.Config) {
 			Help: "mort count of throttled requests",
 		}))
 
-		p.RegisterCounter("collaped_count", prometheus.NewCounter(prometheus.CounterOpts{
+		p.RegisterCounter("collapsed_count", prometheus.NewCounter(prometheus.CounterOpts{
 			Name: "mort_request_collapsed_count",
 			Help: "mort count of collapsed requests",
 		}))
