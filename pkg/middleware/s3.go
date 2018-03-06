@@ -103,6 +103,11 @@ func (s *S3Auth) Handler(next http.Handler) http.Handler {
 			accessKey = matches[1]
 		}
 
+		if req.URL.Query().Get("X-Amz-Signature") != "" {
+			s.authByQuery(resWriter, req, bucketName, next)
+			return
+		}
+
 		bucket, ok := mortConfig.Buckets[bucketName]
 		if !ok {
 			buckets := mortConfig.BucketsByAccessKey(accessKey)
@@ -225,4 +230,64 @@ func (s *S3Auth) listAllMyBuckets(resWriter http.ResponseWriter, accessKey strin
 	res := response.NewBuf(200, b)
 	res.SetContentType("application/xml")
 	res.Send(resWriter)
+}
+
+func (s *S3Auth) authByQuery(resWriter http.ResponseWriter, r *http.Request, bucketName string, next http.Handler)  {
+	validationReq := *r
+	mortConfig := s.mortConfig
+
+	validationReq.URL.Query().Del("X-Amz-Signature")
+	var credential awsauth.Credentials
+	accessKey := strings.Split(validationReq.URL.Query().Get("X-Amz-Credential"), "/")[0]
+
+	bucket, ok := mortConfig.Buckets[bucketName]
+	if !ok {
+		buckets := mortConfig.BucketsByAccessKey(accessKey)
+		if len(buckets) == 0 {
+			monitoring.Log().Warn("S3Auth no bucket for access key")
+			res := response.NewString(403, "")
+			res.Send(resWriter)
+			return
+		}
+
+		bucket = buckets[0]
+	}
+
+	if r.URL.Query().Get("X-Amz-Credential") == "" {
+		res := response.NewString(401, "")
+		monitoring.Log().Warn("S3Auth invalid request no x-amz-credential in query string", zap.String("bucket", bucketName))
+		res.Send(resWriter)
+		return
+	}
+
+
+
+	keys := bucket.Keys
+	for _, key := range keys {
+		if accessKey == key.AccessKey {
+			credential.AccessKeyID = accessKey
+			credential.SecretAccessKey = key.SecretAccessKey
+			break
+		}
+
+	}
+
+	if credential.AccessKeyID == "" {
+		res := response.NewString(401, "")
+		monitoring.Log().Warn("S3Auth invalid bucket config no access key or invalid", zap.String("bucket", bucketName))
+		res.Send(resWriter)
+		return
+	}
+
+	awsauth.PreSign(&validationReq, "mort", "s3", strings.Split(validationReq.URL.Query().Get("X-Amz-SignedHeaders"), ","), credential)
+
+	if validationReq.URL.Query().Get("X-Amz-Signature") == r.URL.Query().Get("X-Amz-Signature") {
+		next.ServeHTTP(resWriter, r)
+		return
+	}
+
+	monitoring.Log().Warn("S3Auth signature mismatch", zap.String("req.path", r.URL.Path))
+	response.NewNoContent(403).Send(resWriter)
+	return
+
 }
