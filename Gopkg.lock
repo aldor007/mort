@@ -5,7 +5,7 @@
   branch = "master"
   name = "github.com/aldor007/go-aws-auth"
   packages = ["."]
-  revision = "479c2853d1f8aec2969767928ce68b116e537cbc"
+  revision = "5223cf5e46e666780a3fcdd4e13a0f6b3b00ae49"
 
 [[projects]]
   branch = "develop"
@@ -171,6 +171,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "299c127c9fd9da73e9ba96de823ab388a29390759da0e56c628948fdcc459182"
+  inputs-digest = "009e220a3cd6593aa45a5708b0655cbac7321410363b26bd8c9fdb75989bcc7a"
   solver-name = "gps-cdcl"
   solver-version = 1
