@@ -28,3 +28,4 @@ if [[ $TEST_RESULT -eq 0 ]]; then
 fi
 unset MORT_PORT
 exit ${TEST_RESULT}
+pkill -f 'tests-int/config.yml'

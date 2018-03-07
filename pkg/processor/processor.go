@@ -90,10 +90,10 @@ func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *r
 		}
 
 		if obj.HasTransform() {
-			return updateHeaders(r.collapseGET(req, obj))
+			return updateHeaders(req, r.collapseGET(req, obj))
 		}
 
-		return updateHeaders(r.handleGET(req, obj))
+		return updateHeaders(req, r.handleGET(req, obj))
 	case "PUT":
 		return handlePUT(req, obj)
 	case "DELETE":
@@ -347,7 +347,12 @@ func (r *RequestProcessor) processImage(ctx context.Context, obj *object.FileObj
 
 }
 
-func updateHeaders(res *response.Response) *response.Response {
+func updateHeaders(req *http.Request, res *response.Response) *response.Response {
+	ctx := req.Context()
+	if ctx.Value("auth") != nil {
+		return res;
+	}
+
 	headers := config.GetInstance().Headers
 	for _, headerPred := range headers {
 		for _, status := range headerPred.StatusCodes {

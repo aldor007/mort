@@ -10,6 +10,7 @@
   "devDependencies": {
     "mocha": "^4.0.1",
     "moment": "^2.20.1",
+    "request": "^2.83.0",
     "superagent-binary-parser": "^1.0.1"
   },
   "scripts": {
