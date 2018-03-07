@@ -2,6 +2,7 @@ const chai = require('chai');
 const expect = chai.expect;
 const AWS = require('aws-sdk');
 const supertest  = require('supertest');
+const makeRequest = require('request');
 
 const host = 'localhost:' + process.env.MORT_PORT;
 const request = supertest(`http://${host}`);
@@ -238,6 +239,45 @@ describe('S3 features', function () {
                 });
             });
 
+            it('should allow to upload when presinged', function (done) {
+                const params = {
+                    Bucket: 'local',
+                    Key: 'pre-sign',
+                };
+
+                this.s3.getSignedUrl('putObject', params, function (err, url) {
+                    makeRequest({
+                        url: url,
+                        method: 'PUT',
+                        body: 'aa'
+                    }, function (err, response) {
+                        expect(response.statusCode).to.eql(200);
+                        done();
+                    });
+                });
+            });
+
+            it('should return error when invalid access key', function (done) {
+                const params = {
+                    Bucket: 'local',
+                    Key: 'pre-sign',
+                };
+
+                const s3Opts = JSON.parse(JSON.stringify(this.s3opts));
+                s3Opts.accessKeyId = 'invalid';
+                const s3 = new AWS.S3(s3Opts);
+                s3.getSignedUrl('putObject', params, function (err, url) {
+                    makeRequest({
+                        url: url,
+                        method: 'PUT',
+                        body: 'aa'
+                    }, function (err, response) {
+                        expect(response.statusCode).to.eql(401);
+                        done();
+                    });
+                });
+            });
+
             it('should return valid metadata for uploaded file', function (done) {
                 request.get('/local/file.jpg')
                     .expect(200)
@@ -245,6 +285,37 @@ describe('S3 features', function () {
                         expect(res.headers['x-amz-meta-header']).to.eql('meta');
                         done(err)
                     });
+            });
+
+            it('should return error when invalid access key - presign', function (done) {
+                const params = {
+                    Bucket: 'local',
+                    Key: 'pre-sign',
+                };
+
+                const s3Opts = JSON.parse(JSON.stringify(this.s3opts));
+                s3Opts.accessKeyId = 'invalid';
+                const s3 = new AWS.S3(s3Opts);
+                s3.getSignedUrl('getObject', params, function (err, url) {
+                    makeRequest(url, function (err, response) {
+                        expect(response.statusCode).to.eql(401);
+                        done();
+                    });
+                });
+            });
+
+            it('should allow to get url with presign', function (done) {
+                const params = {
+                    Bucket: 'local',
+                    Key: 'pre-sign',
+                };
+
+                this.s3.getSignedUrl('getObject', params, function (err, url) {
+                    makeRequest(url, function (err, response) {
+                        expect(response.statusCode).to.eql(200);
+                        done();
+                    });
+                });
             });
 
             it('should delete file', function (done) {

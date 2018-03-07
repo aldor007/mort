@@ -13,6 +13,7 @@ import (
 
 	"github.com/aldor007/go-aws-auth"
 	"go.uber.org/zap"
+	"golang.org/x/net/context"
 )
 
 // authHeaderRegexpv4 regular expression for AWS Auth v4 header mode
@@ -21,7 +22,8 @@ var autHeaderRegexpv4 = regexp.MustCompile("^(:?[A-Za-z0-9-]+) Credential=(:?.+)
 // authHeaderRegexpv2 regular expression for Aws Auth v2 header mode
 var authHeaderRegexpv2 = regexp.MustCompile("^AWS ([A-Za-z0-9-]+):(.+)$")
 
-func isAuthRequired(method string, auth string, path string) bool {
+func isAuthRequired(req *http.Request, auth string, path string) bool {
+	method := req.Method
 	switch method {
 	case "GET", "HEAD", "OPTIONS":
 		if path == "/" {
@@ -29,6 +31,10 @@ func isAuthRequired(method string, auth string, path string) bool {
 		}
 
 		if auth != "" {
+			return true
+		}
+
+		if req.URL.Query().Get("X-Amz-Signature") != "" {
 			return true
 		}
 
@@ -59,7 +65,7 @@ func (s *S3Auth) Handler(next http.Handler) http.Handler {
 	fn := func(resWriter http.ResponseWriter, req *http.Request) {
 		path := req.URL.Path
 		auth := req.Header.Get("Authorization")
-		if !isAuthRequired(req.Method, auth, path) {
+		if !isAuthRequired(req,  auth, path) {
 			next.ServeHTTP(resWriter, req)
 			return
 		}
@@ -132,7 +138,7 @@ func (s *S3Auth) Handler(next http.Handler) http.Handler {
 		}
 		if credential.AccessKeyID == "" {
 			res := response.NewString(401, "")
-			monitoring.Log().Warn("S3Auth invalid bucket config no access key or invalid", zap.String("bucket", bucketName))
+			monitoring.Log().Warn("S3Auth invalid bucket config no access key or invalid", zap.String("bucket", bucketName), zap.String("req.method", req.Method), zap.String("req.path", req.URL.Path))
 			res.Send(resWriter)
 			return
 		}
@@ -179,12 +185,15 @@ func (s *S3Auth) Handler(next http.Handler) http.Handler {
 				s.listAllMyBuckets(resWriter, accessKey)
 				return
 			}
-			next.ServeHTTP(resWriter, req)
+
+			ctx := context.WithValue(req.Context(), "auth", true)
+
+			next.ServeHTTP(resWriter, req.WithContext(ctx))
 			return
 
 		}
 
-		monitoring.Log().Warn("S3Auth signature mismatch", zap.String("req.path", req.URL.Path))
+		monitoring.Log().Warn("S3Auth signature mismatch", zap.String("req.path", req.URL.Path), zap.String("req.method", req.Method))
 		response.NewNoContent(403).Send(resWriter)
 		return
 	}
@@ -282,7 +291,9 @@ func (s *S3Auth) authByQuery(resWriter http.ResponseWriter, r *http.Request, buc
 	awsauth.PreSign(&validationReq, "mort", "s3", strings.Split(validationReq.URL.Query().Get("X-Amz-SignedHeaders"), ","), credential)
 
 	if validationReq.URL.Query().Get("X-Amz-Signature") == r.URL.Query().Get("X-Amz-Signature") {
-		next.ServeHTTP(resWriter, r)
+		ctx := context.WithValue(r.Context(), "auth", true)
+
+		next.ServeHTTP(resWriter, r.WithContext(ctx))
 		return
 	}
 
