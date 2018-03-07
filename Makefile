@@ -19,11 +19,8 @@ format:
 
 tests: unit integrations
 
-docker-build:
-	docker build -t aldo007/mort -f Dockerfile .
-
-docker-push: docker-build
-	docker push aldor007/mort:latest
+docker-push:
+	docker build -t aldor007/mort -f Dockerfile . -t aldor007/mort:latest; docker push aldor007/mort:latest
 
 run-server:
 	mkdir -p /tmp/mort

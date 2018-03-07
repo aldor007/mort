@@ -150,7 +150,13 @@ func startServer(s *http.Server, ln net.Listener) {
 func main() {
 	configPath := flag.String("config", "/etc/mort/mort.yml", "Path to configuration")
 	debug := flag.Bool("debug", false, "enable debug mode")
+	version := flag.Bool("version", false,"get mort version")
 	flag.Parse()
+
+	if version != nil && *version == true {
+		fmt.Println(Version)
+		return
+	}
 
 	router := chi.NewRouter()
 	imgConfig := config.GetInstance()
