@@ -1,3 +1,5 @@
+* 0.9.0
+    * Feature: Allow to define placeholder for error response 
 * 0.8.0
     * Feature: Added support for AWS presigned url
     * Bugfix: Fixed reporting collaped reqeuest to promethues

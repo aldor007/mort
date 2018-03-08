@@ -17,11 +17,20 @@ import (
 	"github.com/aldor007/mort/pkg/storage"
 	"github.com/aldor007/mort/pkg/throttler"
 	"github.com/aldor007/mort/pkg/transforms"
+	"github.com/aldor007/mort/pkg/helpers"
 	"github.com/karlseguin/ccache"
 	"go.uber.org/zap"
 )
 
 const s3LocationStr = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><LocationConstraint xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">EU</LocationConstraint>"
+
+var (
+	ErrTimeout = errors.New("timeout")
+	ErrContextCancel = errors.New("context timeout")
+	ErrThrottled = errors.New("throttled")
+)
+
+
 
 // NewRequestProcessor create instance of request processor
 // It main component of mort it handle all of requests
@@ -33,6 +42,7 @@ func NewRequestProcessor(serverConfig config.Server, l lock.Lock, throttler thro
 	rp.cache = ccache.New(ccache.Configure().MaxSize(serverConfig.CacheSize))
 	rp.processTimeout = time.Duration(serverConfig.RequestTimeout) * time.Second
 	rp.lockTimeout = time.Duration(serverConfig.RequestTimeout-1) * time.Second
+	rp.serverConfig = serverConfig
 	return rp
 }
 
@@ -44,6 +54,7 @@ type RequestProcessor struct {
 	cache          *ccache.Cache       // cache for created image transformations
 	processTimeout time.Duration       // request processing timeout
 	lockTimeout    time.Duration       // lock timeout for collapsed request it equal processTimeout - 1 s
+	serverConfig    config.Server
 }
 
 type requestMessage struct {
@@ -66,12 +77,12 @@ func (r *RequestProcessor) Process(req *http.Request, obj *object.FileObject) *r
 	select {
 	case <-ctx.Done():
 		monitoring.Log().Warn("Process timeout", zap.String("obj.Key", obj.Key), zap.String("error", "Context.timeout"))
-		return response.NewNoContent(499)
+		return r.replyWithError(obj, 499, ErrContextCancel)
 	case res := <-msg.responseChan:
 		return res
 	case <-timer.C:
 		monitoring.Log().Warn("Process timeout", zap.String("obj.Key", obj.Key), zap.String("error", "timeout"))
-		return response.NewString(504, "timeout")
+		return r.replyWithError(obj, 504, ErrTimeout)
 	}
 
 }
@@ -81,6 +92,36 @@ func (r *RequestProcessor) processChan() {
 	res := r.process(msg.request, msg.obj)
 	msg.responseChan <- res
 }
+
+func (r *RequestProcessor) replyWithError(obj *object.FileObject, sc int, err error) *response.Response {
+	if !obj.HasTransform() || r.serverConfig.Placeholder == "" {
+		return response.NewError(sc, err)
+	}
+
+	key := r.serverConfig.Placeholder + strconv.FormatUint(obj.Transforms.Hash().Sum64(), 16) + strconv.FormatInt(int64(sc), 10)
+	if cacheRes := r.fetchResponseFromCache(key); cacheRes != nil {
+		return cacheRes
+	}
+
+	buf, err := helpers.FetchObject(r.serverConfig.Placeholder)
+	if err != nil {
+		return response.NewError(sc, err)
+	}
+
+	parent := response.NewBuf(sc, buf)
+	transformsTab := []transforms.Transforms{obj.Transforms}
+
+	eng := engine.NewImageEngine(parent)
+	res, err := eng.Process(obj, transformsTab)
+	res.StatusCode = sc
+	resCpy, errCpy := res.Copy()
+	if errCpy != nil {
+		r.cache.Set(key, resCpy, time.Minute * 10)
+	}
+
+	return res
+}
+
 
 func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *response.Response {
 	switch req.Method {
@@ -128,7 +169,7 @@ func (r *RequestProcessor) collapseGET(req *http.Request, obj *object.FileObject
 		select {
 		case <-ctx.Done():
 			lockResult.Cancel <- true
-			return response.NewNoContent(499)
+			return r.replyWithError(obj, 499, ErrContextCancel)
 		case res, ok := <-lockResult.ResponseChan:
 			if ok {
 				return res
@@ -137,7 +178,7 @@ func (r *RequestProcessor) collapseGET(req *http.Request, obj *object.FileObject
 			return r.handleGET(req, obj)
 		case <-timer.C:
 			lockResult.Cancel <- true
-			return response.NewString(504, "timeout")
+			return r.replyWithError(obj, 504, ErrTimeout)
 		default:
 			if cacheRes := r.fetchResponseFromCache(obj.Key); cacheRes != nil {
 				lockResult.Cancel <- true
@@ -180,7 +221,7 @@ func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) 
 
 	var currObj *object.FileObject = obj
 	var parentObj *object.FileObject
-	var transforms []transforms.Transforms
+	var transformsTab []transforms.Transforms
 	var res *response.Response
 	var parentRes *response.Response
 	ctx := req.Context()
@@ -188,7 +229,7 @@ func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) 
 	// search for last parent
 	for currObj.HasParent() {
 		if currObj.HasTransform() {
-			transforms = append(transforms, currObj.Transforms)
+			transformsTab = append(transformsTab, currObj.Transforms)
 		}
 		currObj = currObj.Parent
 
@@ -215,7 +256,7 @@ resLoop:
 	for {
 		select {
 		case <-ctx.Done():
-			return response.NewNoContent(499)
+			return r.replyWithError(obj, 499, ErrContextCancel)
 		case res = <-resChan:
 			if obj.CheckParent && parentObj != nil && (parentRes == nil || parentRes.StatusCode == 0) {
 				go func() {
@@ -258,18 +299,18 @@ resLoop:
 
 			defer parentRes.Close()
 
-			transLen := len(transforms)
+			transLen := len(transformsTab)
 			if transLen > 1 {
 				// revers order of transforms
-				for i := 0; i < len(transforms)/2; i++ {
-					j := len(transforms) - i - 1
-					transforms[i], transforms[j] = transforms[j], transforms[i]
+				for i := 0; i < len(transformsTab)/2; i++ {
+					j := len(transformsTab) - i - 1
+					transformsTab[i], transformsTab[j] = transformsTab[j], transformsTab[i]
 				}
 
 			}
 
-			monitoring.Log().Info("Performing transforms", zap.String("obj.Bucket", obj.Bucket), zap.String("obj.Key", obj.Key), zap.Int("transformsLen", len(transforms)))
-			return r.processImage(ctx, obj, parentRes, transforms)
+			monitoring.Log().Info("Performing transforms", zap.String("obj.Bucket", obj.Bucket), zap.String("obj.Key", obj.Key), zap.Int("transformsLen", len(transformsTab)))
+			return r.processImage(ctx, obj, parentRes, transformsTab)
 		} else if obj.HasTransform() {
 			parentRes.Close()
 			monitoring.Log().Warn("Not performing transforms", zap.String("obj.Bucket", obj.Bucket), zap.String("obj.Key", obj.Key),
@@ -321,12 +362,12 @@ func (r *RequestProcessor) processImage(ctx context.Context, obj *object.FileObj
 	if !taked {
 		monitoring.Log().Warn("Processor/processImage", zap.String("obj.Key", obj.Key), zap.String("error", "throttled"))
 		monitoring.Report().Inc("throttled_count")
-		return response.NewNoContent(503)
+		return r.replyWithError(obj, 503, ErrThrottled)
 	}
 	defer r.throttler.Release()
 
-	engine := engine.NewImageEngine(parent)
-	res, err := engine.Process(obj, transforms)
+	eng := engine.NewImageEngine(parent)
+	res, err := eng.Process(obj, transforms)
 	if err != nil {
 		return response.NewError(400, err)
 	}
@@ -349,9 +390,6 @@ func (r *RequestProcessor) processImage(ctx context.Context, obj *object.FileObj
 
 func updateHeaders(req *http.Request, res *response.Response) *response.Response {
 	ctx := req.Context()
-	if ctx.Value("auth") != nil {
-		return res;
-	}
 
 	headers := config.GetInstance().Headers
 	for _, headerPred := range headers {
@@ -364,5 +402,10 @@ func updateHeaders(req *http.Request, res *response.Response) *response.Response
 			}
 		}
 	}
+
+	if ctx.Value("auth") != nil {
+		res.Set("Cache-Control", "no-cache")
+	}
+
 	return res
 }

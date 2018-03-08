@@ -55,9 +55,8 @@ func Get(obj *object.FileObject) *response.Response {
 		return response.NewError(500, err)
 	}
 
-	var reader io.ReadCloser
 	if isDir(item) == false {
-		reader, err = item.Open()
+		reader, err := item.Open()
 		if err != nil {
 			monitoring.Logs().Warnw("Storage/Get open item", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 500), zap.Error(err))
 			return response.NewError(500, err)
