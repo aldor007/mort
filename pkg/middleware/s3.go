@@ -65,7 +65,7 @@ func (s *S3Auth) Handler(next http.Handler) http.Handler {
 	fn := func(resWriter http.ResponseWriter, req *http.Request) {
 		path := req.URL.Path
 		auth := req.Header.Get("Authorization")
-		if !isAuthRequired(req,  auth, path) {
+		if !isAuthRequired(req, auth, path) {
 			next.ServeHTTP(resWriter, req)
 			return
 		}
@@ -241,7 +241,7 @@ func (s *S3Auth) listAllMyBuckets(resWriter http.ResponseWriter, accessKey strin
 	res.Send(resWriter)
 }
 
-func (s *S3Auth) authByQuery(resWriter http.ResponseWriter, r *http.Request, bucketName string, next http.Handler)  {
+func (s *S3Auth) authByQuery(resWriter http.ResponseWriter, r *http.Request, bucketName string, next http.Handler) {
 	validationReq := *r
 	mortConfig := s.mortConfig
 
@@ -268,8 +268,6 @@ func (s *S3Auth) authByQuery(resWriter http.ResponseWriter, r *http.Request, buc
 		res.Send(resWriter)
 		return
 	}
-
-
 
 	keys := bucket.Keys
 	for _, key := range keys {

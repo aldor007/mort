@@ -6,9 +6,9 @@ import (
 	"hash"
 	"strings"
 
+	"github.com/aldor007/mort/pkg/helpers"
 	"github.com/spaolacci/murmur3"
 	"gopkg.in/h2non/bimg.v1"
-	"github.com/aldor007/mort/pkg/helpers"
 )
 
 var watermarkPosX = map[string]float32{

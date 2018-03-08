@@ -174,23 +174,21 @@ func (r *Response) Close() {
 }
 
 // SetDebug set flag indicating that response can including debug information
-func (r *Response) SetDebug(debug bool, obj *object.FileObject) *Response {
-	if debug == true {
+func (r *Response) SetDebug(obj *object.FileObject) *Response {
+	if obj.Debug == true {
 		r.debug = true
-		if obj != nil {
-			r.Headers.Set("Cache-Control", "no-cache")
-			r.Headers.Set("x-mort-key", obj.Key)
-			r.Headers.Set("x-mort-storage", obj.Storage.Kind)
+		r.Headers.Set("Cache-Control", "no-cache")
+		r.Headers.Set("x-mort-key", obj.Key)
+		r.Headers.Set("x-mort-storage", obj.Storage.Kind)
 
-			if obj.HasTransform() {
-				r.Headers.Set("x-mort-transform", "true")
-			}
+		if obj.HasTransform() {
+			r.Headers.Set("x-mort-transform", "true")
+		}
 
-			if obj.HasParent() {
-				r.Headers.Set("x-mort-parent-key", obj.Parent.Key)
-				r.Headers.Set("x-mort-parent-bucket", obj.Parent.Bucket)
-				r.Headers.Set("x-mort-parent-storage", obj.Parent.Storage.Kind)
-			}
+		if obj.HasParent() {
+			r.Headers.Set("x-mort-parent-key", obj.Parent.Key)
+			r.Headers.Set("x-mort-parent-bucket", obj.Parent.Bucket)
+			r.Headers.Set("x-mort-parent-storage", obj.Parent.Storage.Kind)
 		}
 		r.writeDebug()
 		return r

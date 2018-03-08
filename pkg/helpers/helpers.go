@@ -1,12 +1,12 @@
 package helpers
 
 import (
-	"strings"
-	"net/http"
-	"net"
-	"time"
 	"io/ioutil"
+	"net"
+	"net/http"
 	"os"
+	"strings"
+	"time"
 )
 
 func FetchObject(uri string) ([]byte, error) {

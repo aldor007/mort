@@ -10,6 +10,7 @@ import (
 
 	"github.com/aldor007/mort/pkg/config"
 	"github.com/aldor007/mort/pkg/engine"
+	"github.com/aldor007/mort/pkg/helpers"
 	"github.com/aldor007/mort/pkg/lock"
 	"github.com/aldor007/mort/pkg/monitoring"
 	"github.com/aldor007/mort/pkg/object"
@@ -17,7 +18,6 @@ import (
 	"github.com/aldor007/mort/pkg/storage"
 	"github.com/aldor007/mort/pkg/throttler"
 	"github.com/aldor007/mort/pkg/transforms"
-	"github.com/aldor007/mort/pkg/helpers"
 	"github.com/karlseguin/ccache"
 	"go.uber.org/zap"
 )
@@ -25,12 +25,10 @@ import (
 const s3LocationStr = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><LocationConstraint xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">EU</LocationConstraint>"
 
 var (
-	ErrTimeout = errors.New("timeout")
+	ErrTimeout       = errors.New("timeout")
 	ErrContextCancel = errors.New("context timeout")
-	ErrThrottled = errors.New("throttled")
+	ErrThrottled     = errors.New("throttled")
 )
-
-
 
 // NewRequestProcessor create instance of request processor
 // It main component of mort it handle all of requests
@@ -54,7 +52,7 @@ type RequestProcessor struct {
 	cache          *ccache.Cache       // cache for created image transformations
 	processTimeout time.Duration       // request processing timeout
 	lockTimeout    time.Duration       // lock timeout for collapsed request it equal processTimeout - 1 s
-	serverConfig    config.Server
+	serverConfig   config.Server
 }
 
 type requestMessage struct {
@@ -94,7 +92,7 @@ func (r *RequestProcessor) processChan() {
 }
 
 func (r *RequestProcessor) replyWithError(obj *object.FileObject, sc int, err error) *response.Response {
-	if !obj.HasTransform() || r.serverConfig.Placeholder == "" {
+	if !obj.HasTransform() || obj.Debug || r.serverConfig.Placeholder == "" {
 		return response.NewError(sc, err)
 	}
 
@@ -116,12 +114,11 @@ func (r *RequestProcessor) replyWithError(obj *object.FileObject, sc int, err er
 	res.StatusCode = sc
 	resCpy, errCpy := res.Copy()
 	if errCpy != nil {
-		r.cache.Set(key, resCpy, time.Minute * 10)
+		r.cache.Set(key, resCpy, time.Minute*10)
 	}
 
 	return res
 }
-
 
 func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *response.Response {
 	switch req.Method {
@@ -292,6 +289,12 @@ resLoop:
 			parentRes = storage.Head(parentObj)
 		}
 
+		if parentRes.HasError() {
+			return r.replyWithError(obj, parentRes.StatusCode, parentRes.Error())
+		} else if parentRes.StatusCode == 404 {
+			return parentRes
+		}
+
 		if obj.HasTransform() && parentRes.StatusCode == 200 && strings.Contains(parentRes.Headers.Get(response.HeaderContentType), "image/") {
 			defer res.Close()
 			parentRes.Close()
@@ -317,9 +320,6 @@ resLoop:
 				zap.String("parent.Key", parentObj.Key), zap.Int("parent.sc", parentRes.StatusCode), zap.String("parent.ContentType", parentRes.Headers.Get(response.HeaderContentType)), zap.Error(parentRes.Error()))
 		}
 
-		if parentRes.StatusCode != 200 && parentRes.StatusCode != 404 {
-			return parentRes
-		}
 	}
 
 	return res
