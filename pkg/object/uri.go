@@ -83,13 +83,22 @@ func Parse(url *url.URL, mortConfig *config.Config, obj *FileObject) error {
 func hashKey(h hash.Hash64, suffix string) string {
 	hashB := []byte(strconv.FormatUint(uint64(h.Sum64()), 16))
 	buf := bufPool.Get().(*bytes.Buffer)
+	safePath := strings.Replace(suffix, "/", "-", -1)
+	sliceRange := 3
+
+	if l := len(safePath); l < 3 {
+		sliceRange = l
+	}
+
 	buf.Reset()
 	buf.WriteByte('/')
 	buf.Write(hashB[0:3])
 	buf.WriteByte('/')
-	buf.Write(hashB)
+	buf.WriteString(safePath[0:sliceRange])
+	buf.WriteByte('/')
+	buf.WriteString(safePath)
 	buf.WriteByte('-')
-	buf.WriteString(strings.Replace(suffix, "/", "-", -1))
+	buf.Write(hashB)
 	defer bufPool.Put(buf)
 	return buf.String()
 }
