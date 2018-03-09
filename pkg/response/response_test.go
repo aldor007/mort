@@ -3,13 +3,13 @@ package response
 import (
 	"bytes"
 	"errors"
+	"github.com/aldor007/mort/pkg/object"
 	"github.com/stretchr/testify/assert"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"github.com/aldor007/mort/pkg/object"
 )
 
 func TestResponse_Copy(t *testing.T) {

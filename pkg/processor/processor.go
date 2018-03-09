@@ -10,7 +10,6 @@ import (
 
 	"github.com/aldor007/mort/pkg/config"
 	"github.com/aldor007/mort/pkg/engine"
-	"github.com/aldor007/mort/pkg/helpers"
 	"github.com/aldor007/mort/pkg/lock"
 	"github.com/aldor007/mort/pkg/monitoring"
 	"github.com/aldor007/mort/pkg/object"
@@ -96,17 +95,13 @@ func (r *RequestProcessor) replyWithError(obj *object.FileObject, sc int, err er
 		return response.NewError(sc, err)
 	}
 
-	key := r.serverConfig.Placeholder + strconv.FormatUint(obj.Transforms.Hash().Sum64(), 16) + strconv.FormatInt(int64(sc), 10)
+	key := r.serverConfig.Placeholder + strconv.FormatUint(obj.Transforms.Hash().Sum64(), 16)
 	if cacheRes := r.fetchResponseFromCache(key); cacheRes != nil {
+		cacheRes.StatusCode = sc
 		return cacheRes
 	}
 
-	buf, err := helpers.FetchObject(r.serverConfig.Placeholder)
-	if err != nil {
-		return response.NewError(sc, err)
-	}
-
-	parent := response.NewBuf(sc, buf)
+	parent := response.NewBuf(sc, r.serverConfig.PlaceholderBuf)
 	transformsTab := []transforms.Transforms{obj.Transforms}
 
 	eng := engine.NewImageEngine(parent)

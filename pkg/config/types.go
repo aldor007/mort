@@ -112,4 +112,5 @@ type Server struct {
 	Listen         []string `yaml:"listens"`
 	Monitoring     string   `yaml:"monitoring"`
 	Placeholder    string   `yaml:"placeholder"`
+	PlaceholderBuf []byte
 }
