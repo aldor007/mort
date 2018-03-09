@@ -1,3 +1,9 @@
+* 0.9.0
+    * Feature: Allow to define placeholder for error response 
+* 0.8.0
+    * Feature: Added support for AWS presigned url
+    * Bugfix: Fixed reporting collaped reqeuest to promethues
+    * Feature: Update golang to 1.10 update libvips 8.6.2 
 * 0.7.0
     * Feature: Remove mutex from time monitoring 
 * 0.6.1

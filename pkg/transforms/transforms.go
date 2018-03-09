@@ -4,13 +4,9 @@ import (
 	"encoding/binary"
 	"errors"
 	"hash"
-	"io/ioutil"
-	"net"
-	"net/http"
-	"os"
 	"strings"
-	"time"
 
+	"github.com/aldor007/mort/pkg/helpers"
 	"github.com/spaolacci/murmur3"
 	"gopkg.in/h2non/bimg.v1"
 )
@@ -57,46 +53,7 @@ var angleMap = map[int]bimg.Angle{
 var prime64 = 1099511628211
 
 func (w watermark) fetchImage() ([]byte, error) {
-	if strings.HasPrefix(w.image, "http") {
-		client := &http.Client{
-			Transport: &http.Transport{
-				Dial: (&net.Dialer{
-					Timeout:   30 * time.Second,
-					KeepAlive: 30 * time.Second,
-				}).Dial,
-				TLSHandshakeTimeout:   10 * time.Second,
-				ResponseHeaderTimeout: 10 * time.Second,
-				ExpectContinueTimeout: 1 * time.Second,
-			},
-		}
-
-		req, err := http.NewRequest("GET", w.image, nil)
-		if err != nil {
-			return nil, err
-		}
-
-		response, err := client.Do(req)
-		if err != nil {
-			return nil, err
-		}
-
-		defer response.Body.Close()
-		buf, err := ioutil.ReadAll(response.Body)
-		if err != nil {
-			return nil, err
-		}
-
-		return buf, nil
-	}
-
-	f, err := os.Open(w.image)
-	if err != nil {
-		return nil, err
-	}
-
-	defer f.Close()
-
-	return ioutil.ReadAll(f)
+	return helpers.FetchObject(w.image)
 }
 
 func (w watermark) calculatePostion(width, height int) (top int, left int) {

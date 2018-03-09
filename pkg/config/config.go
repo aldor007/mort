@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/aldor007/mort/pkg/helpers"
 	"github.com/aldor007/mort/pkg/monitoring"
 )
 
@@ -239,6 +240,14 @@ func (c *Config) validateServer() error {
 
 	if c.Server.QueueLen == 0 {
 		c.Server.QueueLen = 5
+	}
+
+	if c.Server.Placeholder != "" {
+		var err error
+		c.Server.PlaceholderBuf, err = helpers.FetchObject(c.Server.Placeholder)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

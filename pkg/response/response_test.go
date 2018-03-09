@@ -3,6 +3,7 @@ package response
 import (
 	"bytes"
 	"errors"
+	"github.com/aldor007/mort/pkg/object"
 	"github.com/stretchr/testify/assert"
 	"io"
 	"io/ioutil"
@@ -88,7 +89,7 @@ func TestNewError(t *testing.T) {
 	assert.NotNil(t, err, "Should return error when reading body")
 	assert.Nil(t, buf)
 
-	res.SetDebug(true, nil)
+	res.SetDebug(&object.FileObject{Debug: true})
 	buf, err = res.ReadBody()
 	assert.Nil(t, err)
 	assert.NotNil(t, buf, "Should return error when reading body")

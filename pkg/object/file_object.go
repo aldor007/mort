@@ -20,6 +20,7 @@ type FileObject struct {
 	Parent         *FileObject           // original image for transformed image
 	CheckParent    bool                  // boolean if we should always check if parent exists
 	allowChangeKey bool                  // parser can allow or not changing key by this flag
+	Debug          bool                  // flag for debug requests
 }
 
 // NewFileObjectFromPath create new instance of FileObject

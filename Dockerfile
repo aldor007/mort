@@ -1,9 +1,8 @@
 FROM ubuntu:16.04 as builder
 
-
-ENV LIBVIPS_VERSION 8.5.9
-ENV DEP_VERSION v0.3.2
-ENV GOLANG_VERSION 1.9.2
+ENV LIBVIPS_VERSION 8.6.2
+ENV DEP_VERSION v0.4.1
+ENV GOLANG_VERSION 1.10
 
 
 # Installs libvips + required libraries
@@ -78,6 +77,7 @@ COPY --from=builder /usr/local/lib /usr/local/lib
 RUN ldconfig
 COPY --from=builder /go/mort /go/mort
 COPY --from=builder /go/src/github.com/aldor007/mort/configuration/config.yml /etc/mort/mort.yml
+RUN /go/mort -version
 # add mime types
 ADD http://svn.apache.org/viewvc/httpd/httpd/branches/2.2.x/docs/conf/mime.types?view=co /etc/mime.types
 

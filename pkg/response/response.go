@@ -4,10 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"github.com/aldor007/mort/pkg/monitoring"
 	"github.com/aldor007/mort/pkg/object"
 	"github.com/djherbis/stream"
-	"go.uber.org/zap"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -176,23 +174,21 @@ func (r *Response) Close() {
 }
 
 // SetDebug set flag indicating that response can including debug information
-func (r *Response) SetDebug(debug bool, obj *object.FileObject) *Response {
-	if debug == true {
+func (r *Response) SetDebug(obj *object.FileObject) *Response {
+	if obj.Debug == true {
 		r.debug = true
-		if obj != nil {
-			r.Headers.Set("Cache-Control", "no-cache")
-			r.Headers.Set("x-mort-key", obj.Key)
-			r.Headers.Set("x-mort-storage", obj.Storage.Kind)
+		r.Headers.Set("Cache-Control", "no-cache")
+		r.Headers.Set("x-mort-key", obj.Key)
+		r.Headers.Set("x-mort-storage", obj.Storage.Kind)
 
-			if obj.HasTransform() {
-				r.Headers.Set("x-mort-transform", "true")
-			}
+		if obj.HasTransform() {
+			r.Headers.Set("x-mort-transform", "true")
+		}
 
-			if obj.HasParent() {
-				r.Headers.Set("x-mort-parent-key", obj.Parent.Key)
-				r.Headers.Set("x-mort-parent-bucket", obj.Parent.Bucket)
-				r.Headers.Set("x-mort-parent-storage", obj.Parent.Storage.Kind)
-			}
+		if obj.HasParent() {
+			r.Headers.Set("x-mort-parent-key", obj.Parent.Key)
+			r.Headers.Set("x-mort-parent-bucket", obj.Parent.Bucket)
+			r.Headers.Set("x-mort-parent-storage", obj.Parent.Storage.Kind)
 		}
 		r.writeDebug()
 		return r
@@ -239,7 +235,7 @@ func (r *Response) Send(w http.ResponseWriter) error {
 // SendContent use http.ServeContent to return response to client
 // It can handle range and condition requests
 func (r *Response) SendContent(req *http.Request, w http.ResponseWriter) error {
-	if r.StatusCode != 200 || r.bodySeeker == nil || isRangeOrCondition(req) == false {
+	if r.bodySeeker == nil || isRangeOrCondition(req) == false {
 		return r.Send(w)
 	}
 
@@ -250,7 +246,6 @@ func (r *Response) SendContent(req *http.Request, w http.ResponseWriter) error {
 
 	lastMod, err := time.Parse(http.TimeFormat, r.Headers.Get("Last-Modified"))
 	if err != nil {
-		monitoring.Log().Error("Unable to parse last-modified", zap.Error(err))
 		lastMod = time.Now()
 	}
 
@@ -288,6 +283,7 @@ func (r *Response) Copy() (*Response, error) {
 		c.ContentLength = int64(len(r.body))
 		c.body = r.body
 		c.bodySeeker = bytes.NewReader(c.body)
+		c.reader = ioutil.NopCloser(c.bodySeeker)
 	} else if r.reader != nil {
 		buf, err := r.CopyBody()
 		if err != nil {
@@ -353,7 +349,7 @@ func (r *Response) Stream() io.ReadCloser {
 	return nil
 }
 
-// IsBuffered check if response has access to original buffor
+// IsBuffered check if response has access to original buffer
 func (r *Response) IsBuffered() bool {
 	return r.body != nil
 }

@@ -30,7 +30,7 @@ import (
 
 const (
 	// Version of mort
-	Version = "0.7.0"
+	Version = "0.9.0"
 	// BANNER just fancy command line banner
 	BANNER = `
   /\/\   ___  _ __| |_
@@ -74,13 +74,7 @@ func handleSignals(servers []*http.Server, socketPaths []string, wg *sync.WaitGr
 	for {
 		sig := <-signalChan
 		switch sig {
-		case syscall.SIGTERM:
-			fallthrough
-		case syscall.SIGKILL:
-			fallthrough
-		case syscall.SIGINT:
-			fallthrough
-		case os.Kill:
+		case os.Kill, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGINT:
 			for _, s := range servers {
 				s.Close()
 				wg.Done()
@@ -150,7 +144,13 @@ func startServer(s *http.Server, ln net.Listener) {
 func main() {
 	configPath := flag.String("config", "/etc/mort/mort.yml", "Path to configuration")
 	debug := flag.Bool("debug", false, "enable debug mode")
+	version := flag.Bool("version", false, "get mort version")
 	flag.Parse()
+
+	if version != nil && *version == true {
+		fmt.Println(Version)
+		return
+	}
 
 	router := chi.NewRouter()
 	imgConfig := config.GetInstance()
@@ -178,12 +178,13 @@ func main() {
 			obj, err := object.NewFileObject(req.URL, imgConfig)
 			if err != nil {
 				monitoring.Logs().Errorf("Unable to create file object err = %s", err)
-				response.NewError(400, err).SetDebug(debug, nil).Send(resWriter)
+				response.NewError(400, err).SetDebug(&object.FileObject{Debug: debug}).Send(resWriter)
 				return
 			}
+			obj.Debug = debug
 
 			res := rp.Process(req, obj)
-			res.SetDebug(debug, obj)
+			res.SetDebug(obj)
 			if debug {
 				res.Set("X-Mort-Version", Version)
 			}

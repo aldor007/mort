@@ -111,4 +111,6 @@ type Server struct {
 	QueueLen       int      `yaml:"queueLen"`
 	Listen         []string `yaml:"listens"`
 	Monitoring     string   `yaml:"monitoring"`
+	Placeholder    string   `yaml:"placeholder"`
+	PlaceholderBuf []byte
 }
