@@ -96,7 +96,7 @@ func (r *RequestProcessor) replyWithError(obj *object.FileObject, sc int, err er
 	}
 
 	key := r.serverConfig.Placeholder + strconv.FormatUint(obj.Transforms.Hash().Sum64(), 16)
-	if cacheRes := r.fetchResponseFromCache(key); cacheRes != nil {
+	if cacheRes := r.fetchResponseFromCache(key, true); cacheRes != nil {
 		cacheRes.StatusCode = sc
 		return cacheRes
 	}
@@ -131,7 +131,7 @@ func (r *RequestProcessor) replyWithError(obj *object.FileObject, sc int, err er
 		case <-timer.C:
 			return response.NewError(sc, err)
 		default:
-			if cacheRes := r.fetchResponseFromCache(key); cacheRes != nil {
+			if cacheRes := r.fetchResponseFromCache(key, false); cacheRes != nil {
 				lockResult.Cancel <- true
 				return cacheRes
 			}
@@ -197,7 +197,7 @@ func (r *RequestProcessor) collapseGET(req *http.Request, obj *object.FileObject
 			lockResult.Cancel <- true
 			return r.replyWithError(obj, 504, ErrTimeout)
 		default:
-			if cacheRes := r.fetchResponseFromCache(obj.Key); cacheRes != nil {
+			if cacheRes := r.fetchResponseFromCache(obj.Key, true); cacheRes != nil {
 				lockResult.Cancel <- true
 				return cacheRes
 			}
@@ -206,7 +206,7 @@ func (r *RequestProcessor) collapseGET(req *http.Request, obj *object.FileObject
 
 }
 
-func (r *RequestProcessor) fetchResponseFromCache(key string) *response.Response {
+func (r *RequestProcessor) fetchResponseFromCache(key string, allowExpired bool) *response.Response {
 	cacheValue := r.cache.Get(key)
 	if cacheValue != nil {
 		if cacheValue.Expired() == false {
@@ -222,8 +222,15 @@ func (r *RequestProcessor) fetchResponseFromCache(key string) *response.Response
 			monitoring.Log().Info("Handle Get cache", zap.String("cache", "expired"), zap.String("obj.Key", key))
 			monitoring.Report().Inc("cache_ratio;status:expired")
 			res := cacheValue.Value().(*response.Response)
-			res.Close()
-			r.cache.Delete(key)
+			if allowExpired {
+				resCp, err := res.Copy()
+				if err == nil {
+					return resCp
+				}
+			} else {
+				res.Close()
+				r.cache.Delete(key)
+			}
 		}
 	}
 
@@ -232,7 +239,7 @@ func (r *RequestProcessor) fetchResponseFromCache(key string) *response.Response
 }
 
 func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) *response.Response {
-	if cacheRes := r.fetchResponseFromCache(obj.Key); cacheRes != nil {
+	if cacheRes := r.fetchResponseFromCache(obj.Key, false); cacheRes != nil {
 		return cacheRes
 	}
 
@@ -269,7 +276,6 @@ func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) 
 		}(parentObj)
 	}
 
-resLoop:
 	for {
 		select {
 		case <-ctx.Done():
@@ -290,7 +296,7 @@ resLoop:
 				}
 
 				if res.StatusCode == 404 {
-					break resLoop
+					return r.handleNotFound(ctx, obj, parentObj, transformsTab, parentRes, res)
 				} else {
 					return res
 				}
@@ -304,6 +310,9 @@ resLoop:
 		}
 	}
 
+}
+
+func (r *RequestProcessor) handleNotFound(ctx context.Context, obj, parentObj *object.FileObject, transformsTab []transforms.Transforms, parentRes, res *response.Response) *response.Response {
 	if parentObj != nil {
 		if !obj.CheckParent {
 			parentRes = storage.Head(parentObj)

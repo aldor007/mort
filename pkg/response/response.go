@@ -235,7 +235,8 @@ func (r *Response) Send(w http.ResponseWriter) error {
 // SendContent use http.ServeContent to return response to client
 // It can handle range and condition requests
 func (r *Response) SendContent(req *http.Request, w http.ResponseWriter) error {
-	if r.bodySeeker == nil || isRangeOrCondition(req) == false {
+	// ServerContent will modified status code so to it we should pass only 200 response
+	if r.StatusCode != 200 || r.bodySeeker == nil || isRangeOrCondition(req) == false {
 		return r.Send(w)
 	}
 
