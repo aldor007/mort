@@ -101,18 +101,43 @@ func (r *RequestProcessor) replyWithError(obj *object.FileObject, sc int, err er
 		return cacheRes
 	}
 
-	parent := response.NewBuf(sc, r.serverConfig.PlaceholderBuf)
-	transformsTab := []transforms.Transforms{obj.Transforms}
+	lockResult, locked := r.collapse.Lock(key)
+	if locked {
+		defer r.collapse.Release(key)
+		monitoring.Log().Info("Lock acquired", zap.String("obj.Key", obj.Key))
+		parent := response.NewBuf(sc, r.serverConfig.PlaceholderBuf)
+		transformsTab := []transforms.Transforms{obj.Transforms}
 
-	eng := engine.NewImageEngine(parent)
-	res, err := eng.Process(obj, transformsTab)
-	res.StatusCode = sc
-	resCpy, errCpy := res.Copy()
-	if errCpy != nil {
-		r.cache.Set(key, resCpy, time.Minute*10)
+		eng := engine.NewImageEngine(parent)
+		res, errProcess := eng.Process(obj, transformsTab)
+
+		if errProcess != nil {
+			return response.NewError(sc, err)
+		}
+
+		res.StatusCode = sc
+		resCpy, errCpy := res.Copy()
+		if errCpy != nil {
+			r.cache.Set(key, resCpy, time.Minute*10)
+		}
+		return res
 	}
 
-	return res
+	timer := time.NewTimer(r.lockTimeout)
+
+	for {
+
+		select {
+		case <-timer.C:
+			return response.NewError(sc, err)
+		default:
+			if cacheRes := r.fetchResponseFromCache(key); cacheRes != nil {
+				lockResult.Cancel <- true
+				return cacheRes
+			}
+		}
+	}
+
 }
 
 func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *response.Response {
