@@ -238,6 +238,10 @@ func (c *Config) validateServer() error {
 		c.Server.RequestTimeout = 60
 	}
 
+	if c.Server.LockTimeout == 0 {
+		c.Server.LockTimeout = 30
+	}
+
 	if c.Server.QueueLen == 0 {
 		c.Server.QueueLen = 5
 	}

@@ -10,6 +10,8 @@ mkdir -p /tmp/mort-tests/remote/dir
 echo "test" > /tmp/mort-tests/local/file
 echo "test" > /tmp/mort-tests/remote/file
 
+pkill -f 'tests-int/config.yml'
+
 cp -r pkg/processor/benchmark/local/* /tmp/mort-tests/local/
 
 MORT_PORT=8091
@@ -17,7 +19,7 @@ export MORT_PORT
 
 go run cmd/mort/mort.go -config tests-int/config.yml  &
 pid=$!
-sleep 15
+sleep 10
 
 ./node_modules/.bin/mocha tests-int/*.Spec.js
 TEST_RESULT=$?
@@ -27,5 +29,5 @@ if [[ $TEST_RESULT -eq 0 ]]; then
     rm -rf /tmp/mort-tests
 fi
 unset MORT_PORT
-exit ${TEST_RESULT}
 pkill -f 'tests-int/config.yml'
+exit ${TEST_RESULT}
