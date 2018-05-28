@@ -103,7 +103,7 @@ func BenchmarkNewRequestProcessorNopLock(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				res := rp.Process(req, obj)
 				if res.StatusCode != 200 {
-					b.Fatalf("Invalid response sc %s test name %s", res.StatusCode, bm.name)
+					b.Fatalf("Invalid response sc %d test name %s", res.StatusCode, bm.name)
 				}
 			}
 		})

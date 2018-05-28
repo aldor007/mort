@@ -43,19 +43,22 @@ func (m *MemoryLock) NotifyAndRelease(key string, res *response.Response) {
 		} else {
 			buf, err := resCopy.ReadBody()
 			if err != nil {
-				buf = []byte{}
+				for _, q := range result.notifyQueue {
+					close(q.ResponseChan)
+				}
+				return
 			}
 
 			go func() {
 				for _, q := range result.notifyQueue {
+					resCpy := response.NewBuf(resCopy.StatusCode, buf)
+					resCpy.CopyHeadersFrom(resCopy)
 					select {
 					case <-q.Cancel:
 						close(q.ResponseChan)
-					default:
-						resCpy := response.NewBuf(resCopy.StatusCode, buf)
-						resCpy.CopyHeadersFrom(resCopy)
-						q.ResponseChan <- resCpy
+					case q.ResponseChan <- resCpy:
 						close(q.ResponseChan)
+					default:
 
 					}
 				}
@@ -65,16 +68,16 @@ func (m *MemoryLock) NotifyAndRelease(key string, res *response.Response) {
 
 		}
 	} else {
-		resCopy, _ := res.CopyWithStream()
+		resCopy, _ := res.Copy()
 		go func() {
 			for _, q := range result.notifyQueue {
+				resCpy, _ := resCopy.CopyWithStream()
 				select {
 				case <-q.Cancel:
 					close(q.ResponseChan)
-				default:
-					resCpy, _ := resCopy.CopyWithStream()
-					q.ResponseChan <- resCpy
+				case q.ResponseChan <- resCpy:
 					close(q.ResponseChan)
+				default:
 				}
 			}
 			resCopy.Close()

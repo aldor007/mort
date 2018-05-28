@@ -108,6 +108,7 @@ type Server struct {
 	SingleListen   string   `yaml:"listen"`
 	CacheSize      int64    `yaml:"cacheSize"`
 	RequestTimeout int      `yaml:"requestTimeout"`
+	LockTimeout    int      `yaml:"lockTimeout"`
 	QueueLen       int      `yaml:"queueLen"`
 	Listen         []string `yaml:"listens"`
 	Monitoring     string   `yaml:"monitoring"`

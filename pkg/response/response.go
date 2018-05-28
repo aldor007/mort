@@ -332,7 +332,7 @@ func (r *Response) CopyWithStream() (*Response, error) {
 
 }
 
-// Stream return io.Reader interferace from correct response content
+// Stream return io.Reader interface from correct response content
 func (r *Response) Stream() io.ReadCloser {
 	if r.hasParent == true && r.resStream != nil {
 		r, _ := r.resStream.NextReader()
