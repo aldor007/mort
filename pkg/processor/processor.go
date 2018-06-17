@@ -38,7 +38,7 @@ func NewRequestProcessor(serverConfig config.Server, l lock.Lock, throttler thro
 	rp.queue = make(chan requestMessage, serverConfig.QueueLen)
 	rp.cache = ccache.New(ccache.Configure().MaxSize(serverConfig.CacheSize))
 	rp.processTimeout = time.Duration(serverConfig.RequestTimeout) * time.Second
-	rp.lockTimeout = time.Duration(serverConfig.RequestTimeout-1) * time.Second
+	rp.lockTimeout = time.Duration(serverConfig.LockTimeout) * time.Second
 	rp.serverConfig = serverConfig
 	return rp
 }
@@ -58,39 +58,55 @@ type requestMessage struct {
 	responseChan chan *response.Response
 	obj          *object.FileObject
 	request      *http.Request
+	cancel       chan struct{}
 }
 
 // Process handle incoming request and create response
 func (r *RequestProcessor) Process(req *http.Request, obj *object.FileObject) *response.Response {
+	pCtx := req.Context()
+	ctx, timeout := context.WithTimeout(pCtx, r.processTimeout)
+	defer timeout()
+	//return r.process(ctx, req, obj)
 	msg := requestMessage{}
 	msg.request = req
 	msg.obj = obj
 	msg.responseChan = make(chan *response.Response)
-	ctx := req.Context()
-	go r.processChan()
+	msg.cancel = make(chan struct{}, 1)
+
+	go r.processChan(ctx)
 	r.queue <- msg
 
-	timer := time.NewTimer(r.processTimeout)
+	//timer := time.NewTimer(r.processTimeout)
 	select {
 	case <-ctx.Done():
+		msg.cancel <- struct{}{}
+		close(msg.responseChan)
 		monitoring.Log().Warn("Process timeout", zap.String("obj.Key", obj.Key), zap.String("error", "Context.timeout"))
-		return r.replyWithError(obj, 499, ErrContextCancel)
+		return r.replyWithError(ctx, obj, 499, ErrContextCancel)
 	case res := <-msg.responseChan:
+		close(msg.responseChan)
 		return res
-	case <-timer.C:
-		monitoring.Log().Warn("Process timeout", zap.String("obj.Key", obj.Key), zap.String("error", "timeout"))
-		return r.replyWithError(obj, 504, ErrTimeout)
 	}
 
 }
 
-func (r *RequestProcessor) processChan() {
+func (r *RequestProcessor) processChan(ctx context.Context) {
 	msg := <-r.queue
-	res := r.process(msg.request, msg.obj)
-	msg.responseChan <- res
+	res := r.process(ctx, msg.request, msg.obj)
+
+	select {
+	case <-msg.cancel:
+		return
+	case <-ctx.Done():
+		return
+	case <-msg.responseChan:
+		return
+	default:
+		msg.responseChan <- res
+	}
 }
 
-func (r *RequestProcessor) replyWithError(obj *object.FileObject, sc int, err error) *response.Response {
+func (r *RequestProcessor) replyWithError(_ context.Context, obj *object.FileObject, sc int, err error) *response.Response {
 	if !obj.HasTransform() || obj.Debug || r.serverConfig.Placeholder == "" {
 		return response.NewError(sc, err)
 	}
@@ -105,7 +121,7 @@ func (r *RequestProcessor) replyWithError(obj *object.FileObject, sc int, err er
 	if locked {
 		defer r.collapse.Release(key)
 		monitoring.Log().Info("Lock acquired", zap.String("obj.Key", obj.Key))
-		parent := response.NewBuf(sc, r.serverConfig.PlaceholderBuf)
+		parent := response.NewBuf(200, r.serverConfig.PlaceholderBuf)
 		transformsTab := []transforms.Transforms{obj.Transforms}
 
 		eng := engine.NewImageEngine(parent)
@@ -140,7 +156,7 @@ func (r *RequestProcessor) replyWithError(obj *object.FileObject, sc int, err er
 
 }
 
-func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *response.Response {
+func (r *RequestProcessor) process(ctx context.Context, req *http.Request, obj *object.FileObject) *response.Response {
 	switch req.Method {
 	case "GET", "HEAD":
 		if obj.Key == "" {
@@ -148,10 +164,10 @@ func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *r
 		}
 
 		if obj.HasTransform() {
-			return updateHeaders(req, r.collapseGET(req, obj))
+			return updateHeaders(req, r.collapseGET(ctx, req, obj))
 		}
 
-		return updateHeaders(req, r.handleGET(req, obj))
+		return updateHeaders(req, r.handleGET(ctx, req, obj))
 	case "PUT":
 		return handlePUT(req, obj)
 	case "DELETE":
@@ -167,12 +183,11 @@ func handlePUT(req *http.Request, obj *object.FileObject) *response.Response {
 	return storage.Set(obj, req.Header, req.ContentLength, req.Body)
 }
 
-func (r *RequestProcessor) collapseGET(req *http.Request, obj *object.FileObject) *response.Response {
-	ctx := req.Context()
+func (r *RequestProcessor) collapseGET(ctx context.Context, req *http.Request, obj *object.FileObject) *response.Response {
 	lockResult, locked := r.collapse.Lock(obj.Key)
 	if locked {
 		monitoring.Log().Info("Lock acquired", zap.String("obj.Key", obj.Key))
-		res := r.handleGET(req, obj)
+		res := r.handleGET(ctx, req, obj)
 		r.collapse.NotifyAndRelease(obj.Key, res)
 		return res
 	}
@@ -186,16 +201,16 @@ func (r *RequestProcessor) collapseGET(req *http.Request, obj *object.FileObject
 		select {
 		case <-ctx.Done():
 			lockResult.Cancel <- true
-			return r.replyWithError(obj, 499, ErrContextCancel)
+			return r.replyWithError(ctx, obj, 504, ErrContextCancel)
 		case res, ok := <-lockResult.ResponseChan:
 			if ok {
 				return res
 			}
 
-			return r.handleGET(req, obj)
+			return r.handleGET(ctx, req, obj)
 		case <-timer.C:
 			lockResult.Cancel <- true
-			return r.replyWithError(obj, 504, ErrTimeout)
+			return r.replyWithError(ctx, obj, 504, ErrTimeout)
 		default:
 			if cacheRes := r.fetchResponseFromCache(obj.Key, true); cacheRes != nil {
 				lockResult.Cancel <- true
@@ -238,7 +253,7 @@ func (r *RequestProcessor) fetchResponseFromCache(key string, allowExpired bool)
 
 }
 
-func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) *response.Response {
+func (r *RequestProcessor) handleGET(ctx context.Context, req *http.Request, obj *object.FileObject) *response.Response {
 	if cacheRes := r.fetchResponseFromCache(obj.Key, false); cacheRes != nil {
 		return cacheRes
 	}
@@ -248,7 +263,6 @@ func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) 
 	var transformsTab []transforms.Transforms
 	var res *response.Response
 	var parentRes *response.Response
-	ctx := req.Context()
 
 	// search for last parent
 	for currObj.HasParent() {
@@ -262,24 +276,42 @@ func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) 
 		}
 	}
 
-	resChan := make(chan *response.Response)
-	parentChan := make(chan *response.Response)
+	resChan := make(chan *response.Response, 1)
+	parentChan := make(chan *response.Response, 1)
 
 	go func(o *object.FileObject) {
-		resChan <- storage.Get(o)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case resChan <- storage.Get(o):
+				return
+			default:
+
+			}
+		}
 	}(obj)
 
 	// get parent from storage
 	if parentObj != nil && obj.CheckParent {
 		go func(p *object.FileObject) {
-			parentChan <- storage.Head(p)
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case parentChan <- storage.Head(p):
+					return
+				default:
+
+				}
+			}
 		}(parentObj)
 	}
 
 	for {
 		select {
 		case <-ctx.Done():
-			return r.replyWithError(obj, 499, ErrContextCancel)
+			return r.replyWithError(ctx, obj, 504, ErrContextCancel)
 		case res = <-resChan:
 			if obj.CheckParent && parentObj != nil && (parentRes == nil || parentRes.StatusCode == 0) {
 				go func() {
@@ -319,7 +351,7 @@ func (r *RequestProcessor) handleNotFound(ctx context.Context, obj, parentObj *o
 		}
 
 		if parentRes.HasError() {
-			return r.replyWithError(obj, parentRes.StatusCode, parentRes.Error())
+			return r.replyWithError(ctx, obj, parentRes.StatusCode, parentRes.Error())
 		} else if parentRes.StatusCode == 404 {
 			return parentRes
 		}
@@ -391,7 +423,7 @@ func (r *RequestProcessor) processImage(ctx context.Context, obj *object.FileObj
 	if !taked {
 		monitoring.Log().Warn("Processor/processImage", zap.String("obj.Key", obj.Key), zap.String("error", "throttled"))
 		monitoring.Report().Inc("throttled_count")
-		return r.replyWithError(obj, 503, ErrThrottled)
+		return r.replyWithError(ctx, obj, 503, ErrThrottled)
 	}
 	defer r.throttler.Release()
 

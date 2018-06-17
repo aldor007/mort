@@ -1,3 +1,6 @@
+* 0.9.1
+    * Bugfix: Fixed goroutines leak
+    * Feature: Added lockTimeout to config 
 * 0.9.0
     * Feature: Allow to define placeholder for error response 
 * 0.8.0

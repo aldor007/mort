@@ -29,7 +29,7 @@ type lockData struct {
 func (l *lockData) AddWatcher() LockResult {
 	d := LockResult{}
 	d.ResponseChan = make(chan *response.Response)
-	d.Cancel = make(chan bool)
+	d.Cancel = make(chan bool, 1)
 	l.notifyQueue = append(l.notifyQueue, d)
 	return d
 }
