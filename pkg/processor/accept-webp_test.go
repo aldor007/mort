@@ -34,7 +34,7 @@ func TestWebpInAccept(t *testing.T) {
 	w.preProcess(obj, req)
 	w.postProcess(obj, req, res)
 
-	assert.Equal(t, res.Headers.Get("Vary"), "accept")
+	assert.Equal(t, res.Headers.Get("Vary"), "Accept")
 	assert.Equal(t, obj.Transforms.FormatStr, "webp")
 }
 

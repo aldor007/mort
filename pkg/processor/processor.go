@@ -124,7 +124,7 @@ func (r *RequestProcessor) replyWithError(obj *object.FileObject, sc int, err er
 	lockResult, locked := r.collapse.Lock(key)
 	if locked {
 		defer r.collapse.Release(key)
-		monitoring.Log().Info("Lock acquired", zap.String("obj.Key", obj.Key))
+		monitoring.Log().Info("Lock acquired for error response", zap.String("obj.Key", obj.Key))
 		parent := response.NewBuf(200, r.serverConfig.PlaceholderBuf)
 		transformsTab := []transforms.Transforms{obj.Transforms}
 
