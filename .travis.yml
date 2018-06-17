@@ -5,10 +5,10 @@ dist: trusty
 
 go:
   - 1.9
+  - 1.10
 
 env:
-  - LIBVIPS=8.5
-  - LIBVIPS=master
+  - LIBVIPS=8.6.2
 
 cache: apt
 
