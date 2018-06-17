@@ -355,6 +355,11 @@ func (r *Response) IsBuffered() bool {
 	return r.body != nil
 }
 
+// IsImage check if response is image
+func (r *Response) IsImage() bool {
+	return strings.Contains(r.Headers.Get(HeaderContentType), "image/")
+}
+
 func (r *Response) writeDebug() {
 	if !r.debug {
 		return

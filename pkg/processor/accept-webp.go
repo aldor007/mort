@@ -31,15 +31,7 @@ func (_ WebpHook) preProcess(obj *object.FileObject, req *http.Request) {
 
 // postProcess update vary header
 func (_ WebpHook) postProcess(obj *object.FileObject, req *http.Request, res *response.Response) {
-	acceptHeader := req.Header.Get("Accept")
-	if acceptHeader == "" {
-		return
+	if res.IsImage() && obj.HasTransform() {
+		res.Headers.Add("Vary", "Accept")
 	}
-
-	ctx := obj.Ctx
-
-	if _, ok := ctx.Value("webp").(bool); ok {
-		res.Headers.Add("Vary", "accept")
-	}
-
 }

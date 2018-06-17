@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/aldor007/mort/pkg/config"
@@ -367,7 +366,7 @@ func (r *RequestProcessor) handleNotFound(obj, parentObj *object.FileObject, tra
 			return parentRes
 		}
 
-		if obj.HasTransform() && parentRes.StatusCode == 200 && strings.Contains(parentRes.Headers.Get(response.HeaderContentType), "image/") {
+		if obj.HasTransform() && parentRes.StatusCode == 200 && parentRes.IsImage() {
 			defer res.Close()
 			parentRes.Close()
 			parentRes = storage.Get(parentObj)
