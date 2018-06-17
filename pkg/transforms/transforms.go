@@ -65,7 +65,7 @@ func (w watermark) calculatePostion(width, height int) (top int, left int) {
 // ImageInfo holds information about image
 type ImageInfo struct {
 	width  int    // width of image in px
-	height int    // height of image in px
+	height int    // HeightValue of image in px
 	format string // format of image in string e.x. "jpg"
 }
 
@@ -76,7 +76,7 @@ func NewImageInfo(metadata bimg.ImageMetadata, format string) ImageInfo {
 
 // Transforms struct hold information about what operations should be performed on image
 type Transforms struct {
-	height         int
+	HeightValue    int
 	width          int
 	areaHeight     int
 	areaWidth      int
@@ -100,7 +100,8 @@ type Transforms struct {
 
 	blur blur
 
-	format bimg.ImageType
+	format    bimg.ImageType
+	FormatStr string
 
 	watermark watermark
 
@@ -109,13 +110,13 @@ type Transforms struct {
 	transHash fnvI64
 }
 
-// Resize change image width and height
+// Resize change image width and HeightValue
 func (t *Transforms) Resize(width, height int, enlarge bool) error {
 	t.width = width
-	t.height = height
+	t.HeightValue = height
 	t.enlarge = enlarge
 
-	t.transHash.write(1111, uint64(t.width)*7, uint64(t.height)*3)
+	t.transHash.write(1111, uint64(t.width)*7, uint64(t.HeightValue)*3)
 
 	if t.enlarge {
 		t.transHash.write(12311)
@@ -128,7 +129,7 @@ func (t *Transforms) Resize(width, height int, enlarge bool) error {
 // Crop extract part of image
 func (t *Transforms) Crop(width, height int, gravity string, enlarge bool) error {
 	t.width = width
-	t.height = height
+	t.HeightValue = height
 	t.enlarge = enlarge
 	t.crop = true
 	t.NotEmpty = true
@@ -138,7 +139,7 @@ func (t *Transforms) Crop(width, height int, gravity string, enlarge bool) error
 		t.gravity = bimg.GravitySmart
 	}
 
-	t.transHash.write(1212, uint64(t.width)*5, uint64(t.height), uint64(t.gravity))
+	t.transHash.write(1212, uint64(t.width)*5, uint64(t.HeightValue), uint64(t.gravity))
 	return nil
 }
 
@@ -192,6 +193,7 @@ func (t *Transforms) Format(format string) error {
 		return err
 	}
 	t.format = f
+	t.FormatStr = format
 	t.transHash.write(1122121, uint64(f))
 	return nil
 }
@@ -246,7 +248,6 @@ func (t *Transforms) Rotate(angle int) error {
 }
 
 func imageFormat(format string) (bimg.ImageType, error) {
-
 	switch format {
 	case "jpeg", "jpg":
 		return bimg.JPEG, nil
@@ -269,7 +270,7 @@ func imageFormat(format string) (bimg.ImageType, error) {
 func (t *Transforms) BimgOptions(imageInfo ImageInfo) (bimg.Options, error) {
 	b := bimg.Options{
 		Width:         t.width,
-		Height:        t.height,
+		Height:        t.HeightValue,
 		Enlarge:       t.enlarge,
 		Crop:          t.crop,
 		Interlace:     t.interlace,
@@ -286,7 +287,7 @@ func (t *Transforms) BimgOptions(imageInfo ImageInfo) (bimg.Options, error) {
 		b.Gravity = t.gravity
 	}
 
-	if t.format != 0 {
+	if t.FormatStr != "" {
 		b.Type = t.format
 	}
 
@@ -305,15 +306,15 @@ func (t *Transforms) BimgOptions(imageInfo ImageInfo) (bimg.Options, error) {
 		width := imageInfo.width
 		height := imageInfo.height
 
-		if t.width != 0 && t.height != 0 {
+		if t.width != 0 && t.HeightValue != 0 {
 			width = t.width
-			height = t.height
+			height = t.HeightValue
 		} else if t.width != 0 {
 			width = t.width
 			height = t.width * height / imageInfo.width
-		} else if t.height != 0 {
-			height = t.height
-			width = t.height * width / imageInfo.height
+		} else if t.HeightValue != 0 {
+			height = t.HeightValue
+			width = t.HeightValue * width / imageInfo.height
 		}
 
 		top, left := t.watermark.calculatePostion(width, height)

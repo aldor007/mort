@@ -144,6 +144,43 @@ describe('Image processing', function () {
                 });
         });
 
+        it('should create thumbnails with watermark from external source and handle accept header', function (done) {
+            this.timeout(5000);
+            const reqPath = '/remote/nxpvwo7qqfwz.jpg/watermark';
+            const width = '200';
+            const height = '200';
+            request.get(reqPath)
+                .set('accept', 'image/webp')
+                .expect(200)
+                .end(function(err, res) {
+                    if (err) {
+                        return done(err);
+                    }
+
+                    const body = res.body;
+                    expect(body.length).to.be.eql(2488);
+
+                    expect(res.headers['x-amz-meta-public-width']).to.eql(width);
+                    expect(res.headers['x-amz-meta-public-height']).to.eql(height);
+                    expect(res.headers['content-type']).to.eql('image/webp');
+                    request.get(reqPath)
+                        .expect(200)
+                        .set('accept', 'image/webp')
+                        .end(function (err2, res2) {
+                            if (err2) {
+                                return done(err2);
+                            }
+
+                            const body2 = res2.body;
+                            expect(body2.length).to.eql(body.length);
+
+                            expect(res2.headers['x-amz-meta-public-width']).to.eql(width);
+                            expect(res2.headers['x-amz-meta-public-height']).to.eql(height);
+                            done(err2)
+                        });
+                });
+        });
+
         it('should return 400 when invalid preset given', function (done) {
             request.get('/local/nxpvwo7qqfwz.jpg/default_smalaaal')
                 .expect(400)

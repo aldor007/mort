@@ -40,6 +40,7 @@ func NewRequestProcessor(serverConfig config.Server, l lock.Lock, throttler thro
 	rp.processTimeout = time.Duration(serverConfig.RequestTimeout) * time.Second
 	rp.lockTimeout = time.Duration(serverConfig.LockTimeout) * time.Second
 	rp.serverConfig = serverConfig
+	rp.plugins = HooksProcessor{serverConfig.Plugins}
 	return rp
 }
 
@@ -51,6 +52,7 @@ type RequestProcessor struct {
 	cache          *ccache.Cache       // cache for created image transformations
 	processTimeout time.Duration       // request processing timeout
 	lockTimeout    time.Duration       // lock timeout for collapsed request it equal processTimeout - 1 s
+	plugins        HooksProcessor      // plugins run plugins before some phases of requests processing
 	serverConfig   config.Server
 }
 
@@ -65,7 +67,9 @@ type requestMessage struct {
 func (r *RequestProcessor) Process(req *http.Request, obj *object.FileObject) *response.Response {
 	pCtx := req.Context()
 	ctx, timeout := context.WithTimeout(pCtx, r.processTimeout)
+	obj.Ctx = ctx
 	defer timeout()
+	r.plugins.preProcess(obj, req)
 	//return r.process(ctx, req, obj)
 	msg := requestMessage{}
 	msg.request = req
@@ -82,8 +86,9 @@ func (r *RequestProcessor) Process(req *http.Request, obj *object.FileObject) *r
 		msg.cancel <- struct{}{}
 		close(msg.responseChan)
 		monitoring.Log().Warn("Process timeout", zap.String("obj.Key", obj.Key), zap.String("error", "Context.timeout"))
-		return r.replyWithError(ctx, obj, 499, ErrContextCancel)
+		return r.replyWithError(obj, 499, ErrContextCancel)
 	case res := <-msg.responseChan:
+		r.plugins.postProcess(obj, req, res)
 		close(msg.responseChan)
 		return res
 	}
@@ -92,7 +97,7 @@ func (r *RequestProcessor) Process(req *http.Request, obj *object.FileObject) *r
 
 func (r *RequestProcessor) processChan(ctx context.Context) {
 	msg := <-r.queue
-	res := r.process(ctx, msg.request, msg.obj)
+	res := r.process(msg.request, msg.obj)
 
 	select {
 	case <-msg.cancel:
@@ -106,7 +111,7 @@ func (r *RequestProcessor) processChan(ctx context.Context) {
 	}
 }
 
-func (r *RequestProcessor) replyWithError(_ context.Context, obj *object.FileObject, sc int, err error) *response.Response {
+func (r *RequestProcessor) replyWithError(obj *object.FileObject, sc int, err error) *response.Response {
 	if !obj.HasTransform() || obj.Debug || r.serverConfig.Placeholder == "" {
 		return response.NewError(sc, err)
 	}
@@ -156,7 +161,8 @@ func (r *RequestProcessor) replyWithError(_ context.Context, obj *object.FileObj
 
 }
 
-func (r *RequestProcessor) process(ctx context.Context, req *http.Request, obj *object.FileObject) *response.Response {
+func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *response.Response {
+
 	switch req.Method {
 	case "GET", "HEAD":
 		if obj.Key == "" {
@@ -164,10 +170,10 @@ func (r *RequestProcessor) process(ctx context.Context, req *http.Request, obj *
 		}
 
 		if obj.HasTransform() {
-			return updateHeaders(req, r.collapseGET(ctx, req, obj))
+			return updateHeaders(req, r.collapseGET(req, obj))
 		}
 
-		return updateHeaders(req, r.handleGET(ctx, req, obj))
+		return updateHeaders(req, r.handleGET(req, obj))
 	case "PUT":
 		return handlePUT(req, obj)
 	case "DELETE":
@@ -183,11 +189,12 @@ func handlePUT(req *http.Request, obj *object.FileObject) *response.Response {
 	return storage.Set(obj, req.Header, req.ContentLength, req.Body)
 }
 
-func (r *RequestProcessor) collapseGET(ctx context.Context, req *http.Request, obj *object.FileObject) *response.Response {
+func (r *RequestProcessor) collapseGET(req *http.Request, obj *object.FileObject) *response.Response {
+	ctx := obj.Ctx
 	lockResult, locked := r.collapse.Lock(obj.Key)
 	if locked {
 		monitoring.Log().Info("Lock acquired", zap.String("obj.Key", obj.Key))
-		res := r.handleGET(ctx, req, obj)
+		res := r.handleGET(req, obj)
 		r.collapse.NotifyAndRelease(obj.Key, res)
 		return res
 	}
@@ -201,16 +208,16 @@ func (r *RequestProcessor) collapseGET(ctx context.Context, req *http.Request, o
 		select {
 		case <-ctx.Done():
 			lockResult.Cancel <- true
-			return r.replyWithError(ctx, obj, 504, ErrContextCancel)
+			return r.replyWithError(obj, 504, ErrContextCancel)
 		case res, ok := <-lockResult.ResponseChan:
 			if ok {
 				return res
 			}
 
-			return r.handleGET(ctx, req, obj)
+			return r.handleGET(req, obj)
 		case <-timer.C:
 			lockResult.Cancel <- true
-			return r.replyWithError(ctx, obj, 504, ErrTimeout)
+			return r.replyWithError(obj, 504, ErrTimeout)
 		default:
 			if cacheRes := r.fetchResponseFromCache(obj.Key, true); cacheRes != nil {
 				lockResult.Cancel <- true
@@ -249,11 +256,14 @@ func (r *RequestProcessor) fetchResponseFromCache(key string, allowExpired bool)
 		}
 	}
 
+	monitoring.Report().Inc("cache_ratio;status:miss")
+
 	return nil
 
 }
 
-func (r *RequestProcessor) handleGET(ctx context.Context, req *http.Request, obj *object.FileObject) *response.Response {
+func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) *response.Response {
+	ctx := obj.Ctx
 	if cacheRes := r.fetchResponseFromCache(obj.Key, false); cacheRes != nil {
 		return cacheRes
 	}
@@ -311,7 +321,7 @@ func (r *RequestProcessor) handleGET(ctx context.Context, req *http.Request, obj
 	for {
 		select {
 		case <-ctx.Done():
-			return r.replyWithError(ctx, obj, 504, ErrContextCancel)
+			return r.replyWithError(obj, 504, ErrContextCancel)
 		case res = <-resChan:
 			if obj.CheckParent && parentObj != nil && (parentRes == nil || parentRes.StatusCode == 0) {
 				go func() {
@@ -328,7 +338,7 @@ func (r *RequestProcessor) handleGET(ctx context.Context, req *http.Request, obj
 				}
 
 				if res.StatusCode == 404 {
-					return r.handleNotFound(ctx, obj, parentObj, transformsTab, parentRes, res)
+					return r.handleNotFound(obj, parentObj, transformsTab, parentRes, res)
 				} else {
 					return res
 				}
@@ -344,15 +354,16 @@ func (r *RequestProcessor) handleGET(ctx context.Context, req *http.Request, obj
 
 }
 
-func (r *RequestProcessor) handleNotFound(ctx context.Context, obj, parentObj *object.FileObject, transformsTab []transforms.Transforms, parentRes, res *response.Response) *response.Response {
+func (r *RequestProcessor) handleNotFound(obj, parentObj *object.FileObject, transformsTab []transforms.Transforms, parentRes, res *response.Response) *response.Response {
 	if parentObj != nil {
 		if !obj.CheckParent {
 			parentRes = storage.Head(parentObj)
 		}
 
 		if parentRes.HasError() {
-			return r.replyWithError(ctx, obj, parentRes.StatusCode, parentRes.Error())
+			return r.replyWithError(obj, parentRes.StatusCode, parentRes.Error())
 		} else if parentRes.StatusCode == 404 {
+			monitoring.Log().Warn("Missing parent for object", zap.String("obj.Key", obj.Key), zap.String("parent.Key", parentObj.Key))
 			return parentRes
 		}
 
@@ -374,7 +385,7 @@ func (r *RequestProcessor) handleNotFound(ctx context.Context, obj, parentObj *o
 			}
 
 			monitoring.Log().Info("Performing transforms", zap.String("obj.Bucket", obj.Bucket), zap.String("obj.Key", obj.Key), zap.Int("transformsLen", len(transformsTab)))
-			return r.processImage(ctx, obj, parentRes, transformsTab)
+			return r.processImage(obj, parentRes, transformsTab)
 		} else if obj.HasTransform() {
 			parentRes.Close()
 			monitoring.Log().Warn("Not performing transforms", zap.String("obj.Bucket", obj.Bucket), zap.String("obj.Key", obj.Key),
@@ -418,12 +429,13 @@ func handleS3Get(req *http.Request, obj *object.FileObject) *response.Response {
 
 }
 
-func (r *RequestProcessor) processImage(ctx context.Context, obj *object.FileObject, parent *response.Response, transforms []transforms.Transforms) *response.Response {
+func (r *RequestProcessor) processImage(obj *object.FileObject, parent *response.Response, transforms []transforms.Transforms) *response.Response {
+	ctx := obj.Ctx
 	taked := r.throttler.Take(ctx)
 	if !taked {
 		monitoring.Log().Warn("Processor/processImage", zap.String("obj.Key", obj.Key), zap.String("error", "throttled"))
 		monitoring.Report().Inc("throttled_count")
-		return r.replyWithError(ctx, obj, 503, ErrThrottled)
+		return r.replyWithError(obj, 503, ErrThrottled)
 	}
 	defer r.throttler.Release()
 
