@@ -7,10 +7,10 @@ import (
 	"github.com/aldor007/mort/pkg/throttler"
 	//"github.com/aldor007/mort/pkg/monitoring"
 	//"go.uber.org/zap"
+	"context"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"testing"
-	"context"
 )
 
 func TestNewRequestProcessor(t *testing.T) {
