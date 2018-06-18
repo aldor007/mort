@@ -3,6 +3,8 @@ server:
     - ":8080"
     - "unix:/tmp/mort.sock"
   monitoring: "prometheus"
+  plugins:
+    - "webp"
 
 
 headers:

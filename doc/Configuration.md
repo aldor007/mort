@@ -63,6 +63,8 @@ server:
     cacheSize: 10 # default size of cache used for new images
     requestTimeout: 70 # default request timeout in seconds
     internalListen: "0.0.0.0:8081" # default listener for debug /debug and metrics /metrics
+    plugins: # list of additional plugins
+        - "webp" # returns response based on accept header
 ```
 
 ## Response Headers

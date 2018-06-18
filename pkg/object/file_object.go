@@ -5,6 +5,7 @@ import (
 	"github.com/aldor007/mort/pkg/monitoring"
 	"github.com/aldor007/mort/pkg/transforms"
 	//"github.com/aldor007/mort/pkg/uri"
+	"context"
 	"go.uber.org/zap"
 	"net/url"
 )
@@ -21,6 +22,7 @@ type FileObject struct {
 	CheckParent    bool                  // boolean if we should always check if parent exists
 	allowChangeKey bool                  // parser can allow or not changing key by this flag
 	Debug          bool                  // flag for debug requests
+	Ctx            context.Context       // context of request
 }
 
 // NewFileObjectFromPath create new instance of FileObject
@@ -67,4 +69,9 @@ func (o *FileObject) HasParent() bool {
 // HasTransform inform if object has transform
 func (o *FileObject) HasTransform() bool {
 	return o.Transforms.NotEmpty == true
+}
+
+func (o *FileObject) UpdateKey(str string) {
+	o.key = o.key + str
+	o.Key = o.Key + str
 }

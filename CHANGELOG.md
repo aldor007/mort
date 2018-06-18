@@ -1,3 +1,6 @@
+* 0.10.0
+    * Feature: Introduce plugins
+    * Feature: Webp plugins (if there is image/webp in accept header convert object to that format)
 * 0.9.1
     * Bugfix: Fixed goroutines leak
     * Feature: Added lockTimeout to config 
