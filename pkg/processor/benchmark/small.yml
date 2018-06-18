@@ -5,7 +5,7 @@ buckets:
     local:
         transform:
             path: "\\/(?P<parent>[a-zA-Z0-9\\.\\/]+)\\-(?P<presetName>[a-z]+)"
-            kind: "presets"
+            kind: "presets-query"
             parentBucket: "local"
             presets:
                 small:

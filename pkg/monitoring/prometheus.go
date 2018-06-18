@@ -13,7 +13,7 @@ import (
 type PrometheusReporter struct {
 	countersVec   map[string]*prometheus.CounterVec
 	counters      map[string]prometheus.Counter
-	gaugesVec     map[string]prometheus.GaugeVec
+	gaugesVec     map[string]*prometheus.GaugeVec
 	gauges        map[string]prometheus.Gauge
 	histograms    map[string]prometheus.Histogram
 	histogramsVec map[string]*prometheus.HistogramVec
@@ -24,7 +24,7 @@ func NewPrometheusReporter() *PrometheusReporter {
 	p := PrometheusReporter{}
 	p.countersVec = make(map[string]*prometheus.CounterVec)
 	p.counters = make(map[string]prometheus.Counter)
-	p.gaugesVec = make(map[string]prometheus.GaugeVec)
+	p.gaugesVec = make(map[string]*prometheus.GaugeVec)
 	p.gauges = make(map[string]prometheus.Gauge)
 	p.histograms = make(map[string]prometheus.Histogram)
 	p.histogramsVec = make(map[string]*prometheus.HistogramVec)
@@ -128,7 +128,7 @@ func (p *PrometheusReporter) RegisterGauge(name string, c prometheus.Gauge) {
 
 // RegisterGaugeVec register gaugeVec in prometheus default registry
 // and add to map counter
-func (p *PrometheusReporter) RegisterGaugeVec(name string, c prometheus.GaugeVec) {
+func (p *PrometheusReporter) RegisterGaugeVec(name string, c *prometheus.GaugeVec) {
 	prometheus.MustRegister(c)
 	p.gaugesVec[name] = c
 }

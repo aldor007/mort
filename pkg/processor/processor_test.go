@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"testing"
+	"context"
 )
 
 func TestNewRequestProcessor(t *testing.T) {
@@ -28,6 +29,57 @@ func TestNewRequestProcessor(t *testing.T) {
 	assert.Equal(t, res.StatusCode, 200)
 	assert.Equal(t, res.Headers.Get("x-amz-meta-public-width"), "150")
 	assert.Equal(t, res.Headers.Get("ETag"), "W/\"7eaa484e8c841e7e\"")
+}
+
+func TestReturn404WhenParentNotFound(t *testing.T) {
+	req, _ := http.NewRequest("GET", "http://mort/local/small.not-m", nil)
+
+	mortConfig := config.Config{}
+	err := mortConfig.Load("./benchmark/small.yml")
+	assert.Nil(t, err)
+
+	obj, err := object.NewFileObject(req.URL, &mortConfig)
+	assert.Nil(t, err)
+
+	rp := NewRequestProcessor(mortConfig.Server, lock.NewMemoryLock(), throttler.NewBucketThrottler(10))
+	res := rp.Process(req, obj)
+
+	assert.Equal(t, res.StatusCode, 404)
+}
+
+func TestReturn503WhenThrottled(t *testing.T) {
+	req, _ := http.NewRequest("GET", "http://mort/local/small.jpg?width=5", nil)
+
+	mortConfig := config.Config{}
+	err := mortConfig.Load("./benchmark/small.yml")
+	assert.Nil(t, err)
+
+	obj, err := object.NewFileObject(req.URL, &mortConfig)
+	assert.Nil(t, err)
+
+	rp := NewRequestProcessor(mortConfig.Server, lock.NewMemoryLock(), throttler.NewBucketThrottler(0))
+	res := rp.Process(req, obj)
+
+	assert.Equal(t, res.StatusCode, 503)
+}
+
+func TestContextTimeout(t *testing.T) {
+	req, _ := http.NewRequest("GET", "http://mort/local/small.jpg?width=5", nil)
+	ctx, cancel := context.WithCancel(context.Background())
+	req = req.WithContext(ctx)
+	cancel()
+
+	mortConfig := config.Config{}
+	err := mortConfig.Load("./benchmark/small.yml")
+	assert.Nil(t, err)
+
+	obj, err := object.NewFileObject(req.URL, &mortConfig)
+	assert.Nil(t, err)
+
+	rp := NewRequestProcessor(mortConfig.Server, lock.NewMemoryLock(), throttler.NewBucketThrottler(0))
+	res := rp.Process(req, obj)
+
+	assert.Equal(t, res.StatusCode, 499)
 }
 
 func BenchmarkNewRequestProcessorMemoryLock(b *testing.B) {
