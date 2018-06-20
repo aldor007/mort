@@ -4,7 +4,32 @@ server:
     - "unix:/tmp/mort.sock"
   monitoring: "prometheus"
   plugins:
-    - "webp"
+    webp: ~
+    compress:
+      gzip:
+        types:
+          - text/plain
+          - text/css
+          - application/json
+          - application/javascript
+          - text/xml
+          - application/xml
+          - application/xml+rss
+          - text/javascript
+          - text/html;
+        level: 4
+      brotli:
+        types:
+          - text/plain
+          - text/css
+          - application/json
+          - application/javascript
+          - text/xml
+          - application/xml
+          - application/xml+rss
+          - text/javascript
+          - text/html;
+        level: 4
 
 
 headers:

@@ -1,4 +1,4 @@
-package processor
+package plugins
 
 import (
 	"github.com/aldor007/mort/pkg/config"
@@ -30,7 +30,7 @@ func TestWebpInAccept(t *testing.T) {
 	res.Headers.Set("content-type", "image/jpg")
 
 	obj.Ctx = req.Context()
-	w := WebpHook{}
+	w := CompressPlugin{}
 	w.preProcess(obj, req)
 	w.postProcess(obj, req, res)
 
@@ -53,7 +53,7 @@ func TestDontChangeWhenNoAccept(t *testing.T) {
 	res.Headers.Set("content-type", "image/jpg")
 
 	obj.Ctx = req.Context()
-	w := WebpHook{}
+	w := CompressPlugin{}
 	w.preProcess(obj, req)
 	w.postProcess(obj, req, res)
 
@@ -76,7 +76,7 @@ func TestDontChangeWhenNotImage(t *testing.T) {
 	res.Headers.Set("content-type", "text/plain")
 
 	obj.Ctx = req.Context()
-	w := WebpHook{}
+	w := CompressPlugin{}
 	w.preProcess(obj, req)
 	w.postProcess(obj, req, res)
 

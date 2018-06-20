@@ -12,6 +12,7 @@ import (
 	"github.com/aldor007/mort/pkg/lock"
 	"github.com/aldor007/mort/pkg/monitoring"
 	"github.com/aldor007/mort/pkg/object"
+	"github.com/aldor007/mort/pkg/processor/plugins"
 	"github.com/aldor007/mort/pkg/response"
 	"github.com/aldor007/mort/pkg/storage"
 	"github.com/aldor007/mort/pkg/throttler"
@@ -39,19 +40,19 @@ func NewRequestProcessor(serverConfig config.Server, l lock.Lock, throttler thro
 	rp.processTimeout = time.Duration(serverConfig.RequestTimeout) * time.Second
 	rp.lockTimeout = time.Duration(serverConfig.LockTimeout) * time.Second
 	rp.serverConfig = serverConfig
-	rp.plugins = HooksProcessor{serverConfig.Plugins}
+	rp.plugins = plugins.NewPluginsManager(serverConfig.Plugins)
 	return rp
 }
 
 // RequestProcessor handle incoming requests
 type RequestProcessor struct {
-	collapse       lock.Lock           // interface used for request collapsing
-	throttler      throttler.Throttler // interface used for rate limiting creating of new images
-	queue          chan requestMessage // request queue
-	cache          *ccache.Cache       // cache for created image transformations
-	processTimeout time.Duration       // request processing timeout
-	lockTimeout    time.Duration       // lock timeout for collapsed request it equal processTimeout - 1 s
-	plugins        HooksProcessor      // plugins run plugins before some phases of requests processing
+	collapse       lock.Lock              // interface used for request collapsing
+	throttler      throttler.Throttler    // interface used for rate limiting creating of new images
+	queue          chan requestMessage    // request queue
+	cache          *ccache.Cache          // cache for created image transformations
+	processTimeout time.Duration          // request processing timeout
+	lockTimeout    time.Duration          // lock timeout for collapsed request it equal processTimeout - 1 s
+	plugins        plugins.PluginsManager // plugins run plugins before some phases of requests processing
 	serverConfig   config.Server
 }
 
@@ -68,7 +69,7 @@ func (r *RequestProcessor) Process(req *http.Request, obj *object.FileObject) *r
 	ctx, timeout := context.WithTimeout(pCtx, r.processTimeout)
 	obj.Ctx = ctx
 	defer timeout()
-	r.plugins.preProcess(obj, req)
+	r.plugins.PreProcess(obj, req)
 	//return r.process(ctx, req, obj)
 	msg := requestMessage{}
 	msg.request = req
@@ -87,7 +88,7 @@ func (r *RequestProcessor) Process(req *http.Request, obj *object.FileObject) *r
 		monitoring.Log().Warn("Process timeout", zap.String("obj.Key", obj.Key), zap.String("error", "Context.timeout"))
 		return r.replyWithError(obj, 499, ErrContextCancel)
 	case res := <-msg.responseChan:
-		r.plugins.postProcess(obj, req, res)
+		r.plugins.PostProcess(obj, req, res)
 		close(msg.responseChan)
 		return res
 	}
