@@ -5,10 +5,11 @@ dist: trusty
 
 go:
   - 1.9
+  - '1.10'
 
 env:
-  - LIBVIPS=8.5
-  - LIBVIPS=master
+  - LIBVIPS=8.6.2
+  - LIBVIPS=8.6.4
 
 cache: apt
 
@@ -30,8 +31,8 @@ addons:
       - libwebp-dev
 
 before_install:
-  - wget https://github.com/jcupitt/libvips/archive/$LIBVIPS.zip
-  - unzip $LIBVIPS
+  - wget https://github.com/jcupitt/libvips/archive/v$LIBVIPS.zip
+  - unzip v$LIBVIPS
   - cd libvips-$LIBVIPS
   - test -f autogen.sh && ./autogen.sh || ./bootstrap.sh
   - >
@@ -55,6 +56,7 @@ script:
   - cd -
   - sudo curl -fsSL -o /usr/local/bin/dep https://github.com/golang/dep/releases/download/v0.3.2/dep-linux-amd64 && sudo chmod +x /usr/local/bin/dep
   - dep ensure -vendor-only
-  - make unit
+  - ./scripts/unit-travis.sh
 
-
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
