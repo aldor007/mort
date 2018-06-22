@@ -13,6 +13,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"testing"
+	"github.com/aldor007/mort/pkg/storage"
+	"bytes"
 )
 
 func TestNewRequestProcessor(t *testing.T) {
@@ -196,10 +198,6 @@ func BenchmarkNewRequestProcessorMemoryLock(b *testing.B) {
 		{"Process large image, small result", "http://mort/local/large.jpeg-small", "./benchmark/small.yml"},
 	}
 
-	//logger, _ := zap.NewProduction()
-	////logger, _ := zap.NewDevelopment()
-	//zap.ReplaceGlobals(logger)
-	//log.RegisterLogger(logger)
 	for _, bm := range benchmarks {
 		req, _ := http.NewRequest("GET", bm.url, nil)
 
