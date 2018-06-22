@@ -17,13 +17,12 @@ func init() {
 type WebpPlugin struct {
 }
 
-func (_ WebpPlugin) configure(_ interface{}) {
+func (WebpPlugin) configure(_ interface{}) {
 
 }
 
 // PreProcess add webp transform to object
-func (_ WebpPlugin) preProcess(obj *object.FileObject, req *http.Request) {
-
+func (WebpPlugin) preProcess(obj *object.FileObject, req *http.Request) {
 	if strings.Contains(req.Header.Get("Accept"), "image/webp") && obj.HasTransform() {
 		obj.Transforms.Format("webp")
 		obj.UpdateKey("webp")
@@ -34,7 +33,7 @@ func (_ WebpPlugin) preProcess(obj *object.FileObject, req *http.Request) {
 }
 
 // PostProcess update vary header
-func (_ WebpPlugin) postProcess(obj *object.FileObject, req *http.Request, res *response.Response) {
+func (WebpPlugin) postProcess(obj *object.FileObject, req *http.Request, res *response.Response) {
 	if res.IsImage() && obj.HasTransform() {
 		res.Headers.Add("Vary", "Accept")
 	}

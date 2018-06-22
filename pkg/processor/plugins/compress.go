@@ -4,6 +4,7 @@ import (
 	"compress/gzip"
 	"github.com/aldor007/mort/pkg/object"
 	"github.com/aldor007/mort/pkg/response"
+	brEnc "gopkg.in/kothar/brotli-go.v0/enc"
 	"io"
 	"net/http"
 	"strings"
@@ -67,8 +68,25 @@ func (_ CompressPlugin) preProcess(obj *object.FileObject, req *http.Request) {
 func (c CompressPlugin) postProcess(obj *object.FileObject, req *http.Request, res *response.Response) {
 	acceptEnc := req.Header.Get("Accept-Encoding")
 	contentType := res.Headers.Get("Content-Type")
-	if acceptEnc == "" || contentType == "" {
+	if acceptEnc == "" || contentType == "" || (res.ContentLength < 1000 && res.ContentLength != -1) {
 		return
+	}
+
+	if c.brotli.enabled && strings.Contains(acceptEnc, "br") {
+		res.Headers.Set("Content-Encoding", "br")
+		res.Headers.Add("Vary", "Accept-Encoding")
+		for _, supportedType := range c.brotli.types {
+			if contentType == supportedType {
+				res.BodyTransformer(func(w io.Writer) io.WriteCloser {
+					params := brEnc.NewBrotliParams()
+					params.SetQuality(c.brotli.level)
+					br := brEnc.NewBrotliWriter(params, w)
+					return br
+				})
+				return
+			}
+		}
+
 	}
 
 	if c.gzip.enabled && strings.Contains(acceptEnc, "gzip") {
@@ -77,7 +95,11 @@ func (c CompressPlugin) postProcess(obj *object.FileObject, req *http.Request, r
 		for _, supportedType := range c.gzip.types {
 			if contentType == supportedType {
 				res.BodyTransformer(func(w io.Writer) io.WriteCloser {
-					gzipW := gzip.NewWriter(w)
+					gzipW, err := gzip.NewWriterLevel(w, c.gzip.level)
+					if err != nil {
+						panic(err)
+					}
+
 					return gzipW
 				})
 				return

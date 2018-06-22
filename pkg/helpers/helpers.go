@@ -9,6 +9,7 @@ import (
 	"time"
 )
 
+// FetchObject download data from given URI
 func FetchObject(uri string) ([]byte, error) {
 	if strings.HasPrefix(uri, "http") {
 		client := &http.Client{

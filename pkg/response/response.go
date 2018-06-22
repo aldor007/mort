@@ -49,9 +49,9 @@ type Response struct {
 	bodyReader io.ReadCloser // original response buffer
 	bodySeeker io.ReadSeeker
 
-	resStream   *stream.Stream // response stream dispatcher
-	hasParent   bool           // flag indicated that response is a copy
-	transformer bodyTransformFnc
+	resStream   *stream.Stream   // response stream dispatcher
+	hasParent   bool             // flag indicated that response is a copy
+	transformer bodyTransformFnc // function that can transform body writner
 }
 
 // New create response object with io.ReadCloser

@@ -8,15 +8,17 @@ S3 compatible image processing server written in Go. Still in active development
 # Features
 
 * HTTP server
-* Resize 
-* Rotate
-* SmartCrop
+* Resize, Rotate, SmartCrop
 * Convert (JPEG, , PNG , BMP, TIFF, ...)
 * Multiple storage backends (disk, S3, http)
 * Fully modular
 * S3 API for listing and uploading files
 * Request collapsing
 * Build in rate limiter
+* Handling range and Condition request
+* Compression
+
+And more see [changelog](CHANGELOG.md) for more info
 
 # Demo
 -------

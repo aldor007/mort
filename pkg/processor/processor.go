@@ -24,9 +24,9 @@ import (
 const s3LocationStr = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><LocationConstraint xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">EU</LocationConstraint>"
 
 var (
-	ErrTimeout       = errors.New("timeout")
-	ErrContextCancel = errors.New("context timeout")
-	ErrThrottled     = errors.New("throttled")
+	ErrTimeout       = errors.New("timeout")         // error when timeout
+	ErrContextCancel = errors.New("context timeout") // error when context timeout
+	ErrThrottled     = errors.New("throttled")       // error when request throttled
 )
 
 // NewRequestProcessor create instance of request processor
@@ -70,7 +70,6 @@ func (r *RequestProcessor) Process(req *http.Request, obj *object.FileObject) *r
 	obj.Ctx = ctx
 	defer timeout()
 	r.plugins.PreProcess(obj, req)
-	//return r.process(ctx, req, obj)
 	msg := requestMessage{}
 	msg.request = req
 	msg.obj = obj
@@ -80,7 +79,6 @@ func (r *RequestProcessor) Process(req *http.Request, obj *object.FileObject) *r
 	go r.processChan(ctx)
 	r.queue <- msg
 
-	//timer := time.NewTimer(r.processTimeout)
 	select {
 	case <-ctx.Done():
 		msg.cancel <- struct{}{}

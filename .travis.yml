@@ -8,8 +8,8 @@ go:
   - '1.10'
 
 env:
-  - LIBVIPS=v8.6.2
-  - LIBVIPS=v8.6.4
+  - LIBVIPS=8.6.2
+  - LIBVIPS=8.6.4
 
 cache: apt
 
@@ -31,8 +31,8 @@ addons:
       - libwebp-dev
 
 before_install:
-  - wget https://github.com/jcupitt/libvips/archive/$LIBVIPS.zip
-  - unzip $LIBVIPS
+  - wget https://github.com/jcupitt/libvips/archive/v$LIBVIPS.zip
+  - unzip v$LIBVIPS
   - cd libvips-$LIBVIPS
   - test -f autogen.sh && ./autogen.sh || ./bootstrap.sh
   - >

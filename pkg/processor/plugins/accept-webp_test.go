@@ -20,7 +20,7 @@ func TestWebpInAccept(t *testing.T) {
 	req.Header.Add("Accept", "image/webp")
 
 	mortConfig := config.Config{}
-	err := mortConfig.Load("./benchmark/small.yml")
+	err := mortConfig.Load("../benchmark/small.yml")
 	assert.Nil(t, err)
 
 	obj, err := object.NewFileObject(req.URL, &mortConfig)
@@ -30,7 +30,7 @@ func TestWebpInAccept(t *testing.T) {
 	res.Headers.Set("content-type", "image/jpg")
 
 	obj.Ctx = req.Context()
-	w := CompressPlugin{}
+	w := WebpPlugin{}
 	w.preProcess(obj, req)
 	w.postProcess(obj, req, res)
 
@@ -43,7 +43,7 @@ func TestDontChangeWhenNoAccept(t *testing.T) {
 	req.Header.Add("Accept", "image/*")
 
 	mortConfig := config.Config{}
-	err := mortConfig.Load("./benchmark/small.yml")
+	err := mortConfig.Load("../benchmark/small.yml")
 	assert.Nil(t, err)
 
 	obj, err := object.NewFileObject(req.URL, &mortConfig)
@@ -53,7 +53,7 @@ func TestDontChangeWhenNoAccept(t *testing.T) {
 	res.Headers.Set("content-type", "image/jpg")
 
 	obj.Ctx = req.Context()
-	w := CompressPlugin{}
+	w := WebpPlugin{}
 	w.preProcess(obj, req)
 	w.postProcess(obj, req, res)
 
@@ -66,7 +66,7 @@ func TestDontChangeWhenNotImage(t *testing.T) {
 	req.Header.Add("Accept", "image/*")
 
 	mortConfig := config.Config{}
-	err := mortConfig.Load("./benchmark/small.yml")
+	err := mortConfig.Load("../benchmark/small.yml")
 	assert.Nil(t, err)
 
 	obj, err := object.NewFileObject(req.URL, &mortConfig)
@@ -76,7 +76,7 @@ func TestDontChangeWhenNotImage(t *testing.T) {
 	res.Headers.Set("content-type", "text/plain")
 
 	obj.Ctx = req.Context()
-	w := CompressPlugin{}
+	w := WebpPlugin{}
 	w.preProcess(obj, req)
 	w.postProcess(obj, req, res)
 
