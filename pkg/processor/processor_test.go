@@ -7,12 +7,12 @@ import (
 	"github.com/aldor007/mort/pkg/throttler"
 	//"github.com/aldor007/mort/pkg/monitoring"
 	//"go.uber.org/zap"
+	"bytes"
 	"context"
+	"github.com/aldor007/mort/pkg/storage"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"testing"
-	"github.com/aldor007/mort/pkg/storage"
-	"bytes"
 )
 
 func TestNewRequestProcessor(t *testing.T) {
@@ -149,7 +149,7 @@ func TestPut(t *testing.T) {
 	buf := bytes.Buffer{}
 	buf.WriteString("aaaa")
 
-	req, _ := http.NewRequest("PUT", "http://mort/local/fila-test",  &buf)
+	req, _ := http.NewRequest("PUT", "http://mort/local/fila-test", &buf)
 
 	mortConfig := config.Config{}
 	err := mortConfig.Load("./benchmark/small.yml")
@@ -163,7 +163,7 @@ func TestPut(t *testing.T) {
 
 	assert.Equal(t, res.StatusCode, 200)
 
-	req, _ = http.NewRequest("HEAD", "http://mort/local/fila-test",  &buf)
+	req, _ = http.NewRequest("HEAD", "http://mort/local/fila-test", &buf)
 	res = rp.Process(req, obj)
 
 	assert.Equal(t, res.StatusCode, 200)
