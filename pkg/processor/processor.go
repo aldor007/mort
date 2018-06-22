@@ -168,10 +168,10 @@ func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *r
 		}
 
 		if obj.HasTransform() {
-			return updateHeaders(req, r.collapseGET(req, obj))
+			return updateHeaders(obj, r.collapseGET(req, obj))
 		}
 
-		return updateHeaders(req, r.handleGET(req, obj))
+		return updateHeaders(obj, r.handleGET(req, obj))
 	case "PUT":
 		return handlePUT(req, obj)
 	case "DELETE":
@@ -459,8 +459,8 @@ func (r *RequestProcessor) processImage(obj *object.FileObject, parent *response
 
 }
 
-func updateHeaders(req *http.Request, res *response.Response) *response.Response {
-	ctx := req.Context()
+func updateHeaders(obj *object.FileObject, res *response.Response) *response.Response {
+	ctx := obj.Ctx
 
 	headers := config.GetInstance().Headers
 	for _, headerPred := range headers {

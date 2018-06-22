@@ -1,20 +1,16 @@
 package processor
 
 import (
+	"bytes"
+	"context"
 	"github.com/aldor007/mort/pkg/config"
 	"github.com/aldor007/mort/pkg/lock"
 	"github.com/aldor007/mort/pkg/object"
-	"github.com/aldor007/mort/pkg/throttler"
-	//"github.com/aldor007/mort/pkg/monitoring"
-	//"go.uber.org/zap"
-	"bytes"
-	"context"
 	"github.com/aldor007/mort/pkg/storage"
+	"github.com/aldor007/mort/pkg/throttler"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"testing"
-	"github.com/aldor007/mort/pkg/storage"
-	"bytes"
 )
 
 func TestNewRequestProcessor(t *testing.T) {
@@ -171,8 +167,11 @@ func TestPut(t *testing.T) {
 	assert.Equal(t, res.StatusCode, 200)
 }
 
-func TestS3GeT(t *testing.T) {
+func TestS3GET(t *testing.T) {
 	req, _ := http.NewRequest("GET", "http://mort/local", nil)
+	ctx := req.Context()
+	ctx = context.WithValue(ctx, "auth", true)
+	req = req.WithContext(ctx)
 
 	mortConfig := config.Config{}
 	err := mortConfig.Load("./benchmark/small.yml")
@@ -186,6 +185,26 @@ func TestS3GeT(t *testing.T) {
 
 	assert.Equal(t, res.StatusCode, 200)
 	assert.Equal(t, res.Headers.Get("content-type"), "application/xml")
+}
+
+func TestS3GETNoCache(t *testing.T) {
+	req, _ := http.NewRequest("GET", "http://mort/local/small.jpg", nil)
+	ctx := req.Context()
+	ctx = context.WithValue(ctx, "auth", true)
+	req = req.WithContext(ctx)
+
+	mortConfig := config.Config{}
+	err := mortConfig.Load("./benchmark/small.yml")
+	assert.Nil(t, err)
+
+	obj, err := object.NewFileObject(req.URL, &mortConfig)
+	assert.Nil(t, err)
+
+	rp := NewRequestProcessor(mortConfig.Server, lock.NewMemoryLock(), throttler.NewBucketThrottler(10))
+	res := rp.Process(req, obj)
+
+	assert.Equal(t, res.StatusCode, 200)
+	assert.Equal(t, res.Headers.Get("cache-control"), "no-cache")
 }
 
 func BenchmarkNewRequestProcessorMemoryLock(b *testing.B) {

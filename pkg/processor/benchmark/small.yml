@@ -1,5 +1,15 @@
 server:
   requestTimeout: 10
+headers:
+  - statusCodes: [200]
+    values:
+      "cache-control": "max-age=84000, public"
+  - statusCodes: [404, 400]
+    values:
+      "cache-control": "max-age=60, public"
+  - statusCodes: [500, 503]
+    values:
+      "cache-control": "max-age=10, public"
 
 buckets:
     local:

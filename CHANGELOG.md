@@ -1,3 +1,5 @@
+* 0.11.0
+    * Feature: Compress plugin (gzip, brotli)
 * 0.10.0
     * Feature: Introduce plugins
     * Feature: Webp plugins (if there is image/webp in accept header convert object to that format)

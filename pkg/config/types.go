@@ -113,6 +113,6 @@ type Server struct {
 	Listen         []string               `yaml:"listens"`
 	Monitoring     string                 `yaml:"monitoring"`
 	Placeholder    string                 `yaml:"placeholder"`
-	Plugins        map[string]interface{} `yaml:"plugins"`
+	Plugins        map[string]interface{} `yaml:"plugins,omitempty"`
 	PlaceholderBuf []byte
 }
