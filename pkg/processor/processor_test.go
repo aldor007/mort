@@ -11,6 +11,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"testing"
+	"github.com/aldor007/mort/pkg/storage"
+	"bytes"
 )
 
 func TestNewRequestProcessor(t *testing.T) {
@@ -25,6 +27,35 @@ func TestNewRequestProcessor(t *testing.T) {
 
 	rp := NewRequestProcessor(mortConfig.Server, lock.NewMemoryLock(), throttler.NewBucketThrottler(10))
 	res := rp.Process(req, obj)
+
+	assert.Equal(t, res.StatusCode, 200)
+	assert.Equal(t, res.Headers.Get("x-amz-meta-public-width"), "150")
+	assert.Equal(t, res.Headers.Get("ETag"), "W/\"7eaa484e8c841e7e\"")
+}
+
+func TestFetchFromCache(t *testing.T) {
+	req, _ := http.NewRequest("GET", "http://mort/local/small.jpg-m?width=55", nil)
+	req.Header.Add("x-mort-debug", "1")
+
+	mortConfig := config.Config{}
+	err := mortConfig.Load("./benchmark/small.yml")
+	assert.Nil(t, err)
+
+	obj, err := object.NewFileObject(req.URL, &mortConfig)
+	assert.Nil(t, err)
+
+	rp := NewRequestProcessor(mortConfig.Server, lock.NewMemoryLock(), throttler.NewBucketThrottler(10))
+	res := rp.Process(req, obj)
+
+	req, _ = http.NewRequest("DELETE", "http://mort/local/small.jpg-m?width=55", nil)
+	res = rp.Process(req, obj)
+
+	storageRes := storage.Get(obj)
+
+	assert.Equal(t, 404, storageRes.StatusCode)
+
+	req, _ = http.NewRequest("GET", "http://mort/local/small.jpg-m?width=55", nil)
+	res = rp.Process(req, obj)
 
 	assert.Equal(t, res.StatusCode, 200)
 	assert.Equal(t, res.Headers.Get("x-amz-meta-public-width"), "150")
@@ -80,6 +111,79 @@ func TestContextTimeout(t *testing.T) {
 	res := rp.Process(req, obj)
 
 	assert.Equal(t, res.StatusCode, 499)
+}
+
+func TestMethodNotAllowed(t *testing.T) {
+	req, _ := http.NewRequest("OPTIONS", "http://mort/local/small.jpg-m?width=55", nil)
+
+	mortConfig := config.Config{}
+	err := mortConfig.Load("./benchmark/small.yml")
+	assert.Nil(t, err)
+
+	obj, err := object.NewFileObject(req.URL, &mortConfig)
+	assert.Nil(t, err)
+
+	rp := NewRequestProcessor(mortConfig.Server, lock.NewMemoryLock(), throttler.NewBucketThrottler(10))
+	res := rp.Process(req, obj)
+
+	assert.Equal(t, res.StatusCode, 405)
+}
+
+func TestGetParent(t *testing.T) {
+	req, _ := http.NewRequest("GET", "http://mort/local/small.jpg", nil)
+
+	mortConfig := config.Config{}
+	err := mortConfig.Load("./benchmark/small.yml")
+	assert.Nil(t, err)
+
+	obj, err := object.NewFileObject(req.URL, &mortConfig)
+	assert.Nil(t, err)
+
+	rp := NewRequestProcessor(mortConfig.Server, lock.NewMemoryLock(), throttler.NewBucketThrottler(10))
+	res := rp.Process(req, obj)
+
+	assert.Equal(t, res.StatusCode, 200)
+}
+
+func TestPut(t *testing.T) {
+	buf := bytes.Buffer{}
+	buf.WriteString("aaaa")
+
+	req, _ := http.NewRequest("PUT", "http://mort/local/fila-test",  &buf)
+
+	mortConfig := config.Config{}
+	err := mortConfig.Load("./benchmark/small.yml")
+	assert.Nil(t, err)
+
+	obj, err := object.NewFileObject(req.URL, &mortConfig)
+	assert.Nil(t, err)
+
+	rp := NewRequestProcessor(mortConfig.Server, lock.NewMemoryLock(), throttler.NewBucketThrottler(10))
+	res := rp.Process(req, obj)
+
+	assert.Equal(t, res.StatusCode, 200)
+
+	req, _ = http.NewRequest("HEAD", "http://mort/local/fila-test",  &buf)
+	res = rp.Process(req, obj)
+
+	assert.Equal(t, res.StatusCode, 200)
+}
+
+func TestS3GeT(t *testing.T) {
+	req, _ := http.NewRequest("GET", "http://mort/local", nil)
+
+	mortConfig := config.Config{}
+	err := mortConfig.Load("./benchmark/small.yml")
+	assert.Nil(t, err)
+
+	obj, err := object.NewFileObject(req.URL, &mortConfig)
+	assert.Nil(t, err)
+
+	rp := NewRequestProcessor(mortConfig.Server, lock.NewMemoryLock(), throttler.NewBucketThrottler(10))
+	res := rp.Process(req, obj)
+
+	assert.Equal(t, res.StatusCode, 200)
+	assert.Equal(t, res.Headers.Get("content-type"), "application/xml")
 }
 
 func BenchmarkNewRequestProcessorMemoryLock(b *testing.B) {
