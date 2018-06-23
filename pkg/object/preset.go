@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"path"
 	"sync"
+	"fmt"
 )
 
 func init() {
@@ -27,6 +28,7 @@ func decodePreset(url *url.URL, bucketConfig config.Bucket, obj *FileObject) (st
 	trans := bucketConfig.Transform
 	matches := trans.PathRegexp.FindStringSubmatch(obj.Key)
 	if matches == nil {
+		fmt.Println("Not maths")
 		return "", nil
 	}
 
@@ -56,6 +58,7 @@ func decodePreset(url *url.URL, bucketConfig config.Bucket, obj *FileObject) (st
 		presetCacheLock.RUnlock()
 		obj.Transforms, err = presetToTransform(trans.Presets[presetName])
 		if err != nil {
+			fmt.Println("ERRR" ,err)
 			return parent, err
 		}
 
