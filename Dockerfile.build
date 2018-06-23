@@ -4,8 +4,8 @@ FROM golang:1.9.2-stretch
 
 ARG GITHUB_TOKEN=""
 
-ENV LIBVIPS_VERSION 8.5.9
-ENV DEP_VERSION v0.3.2
+ENV LIBVIPS_VERSION 8.6.2
+ENV DEP_VERSION v0.4.1
 # Installs libvips + required libraries
 RUN \
   # Install dependencies

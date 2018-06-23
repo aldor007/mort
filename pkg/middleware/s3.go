@@ -14,6 +14,7 @@ import (
 	"github.com/aldor007/go-aws-auth"
 	"go.uber.org/zap"
 	"golang.org/x/net/context"
+	"fmt"
 )
 
 // authHeaderRegexpv4 regular expression for AWS Auth v4 header mode
@@ -65,6 +66,7 @@ func (s *S3Auth) Handler(next http.Handler) http.Handler {
 	fn := func(resWriter http.ResponseWriter, req *http.Request) {
 		path := req.URL.Path
 		auth := req.Header.Get("Authorization")
+
 		if !isAuthRequired(req, auth, path) {
 			next.ServeHTTP(resWriter, req)
 			return
@@ -189,10 +191,12 @@ func (s *S3Auth) Handler(next http.Handler) http.Handler {
 			ctx := context.WithValue(req.Context(), "auth", true)
 
 			next.ServeHTTP(resWriter, req.WithContext(ctx))
+			fmt.Println("AAA ok")
 			return
 
 		}
 
+		fmt.Println("Sig mis")
 		monitoring.Log().Warn("S3Auth signature mismatch", zap.String("req.path", req.URL.Path), zap.String("req.method", req.Method))
 		response.NewNoContent(403).Send(resWriter)
 		return
@@ -262,7 +266,7 @@ func (s *S3Auth) authByQuery(resWriter http.ResponseWriter, r *http.Request, buc
 		bucket = buckets[0]
 	}
 
-	if r.URL.Query().Get("X-Amz-Credential") == "" {
+	if r.URL.Query().Get("X-Amz-Credential") == "" || r.URL.Query().Get("X-Amz-Date") == "" {
 		res := response.NewString(401, "")
 		monitoring.Log().Warn("S3Auth invalid request no x-amz-credential in query string", zap.String("bucket", bucketName))
 		res.Send(resWriter)
