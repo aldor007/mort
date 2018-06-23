@@ -31,6 +31,26 @@ func TestNewRequestProcessor(t *testing.T) {
 	assert.Equal(t, res.Headers.Get("ETag"), "W/\"7eaa484e8c841e7e\"")
 }
 
+func TestNewRequestProcessorCheckParent(t *testing.T) {
+	req, _ := http.NewRequest("GET", "http://mort/local/small.jpg-mm", nil)
+
+	mortConfig := config.Config{}
+	err := mortConfig.Load("./benchmark/small.yml")
+	assert.Nil(t, err)
+
+	obj, err := object.NewFileObject(req.URL, &mortConfig)
+	obj.CheckParent = true
+	assert.Nil(t, err)
+
+	rp := NewRequestProcessor(mortConfig.Server, lock.NewMemoryLock(), throttler.NewBucketThrottler(10))
+	obj.CheckParent = true
+	res := rp.Process(req, obj)
+
+	assert.Equal(t, res.StatusCode, 200)
+	assert.Equal(t, res.Headers.Get("x-amz-meta-public-width"), "150")
+	assert.Equal(t, res.Headers.Get("ETag"), "W/\"744899c0aad5789c\"")
+}
+
 func TestFetchFromCache(t *testing.T) {
 	req, _ := http.NewRequest("GET", "http://mort/local/small.jpg-m?width=55", nil)
 	req.Header.Add("x-mort-debug", "1")
@@ -168,7 +188,7 @@ func TestPut(t *testing.T) {
 }
 
 func TestS3GET(t *testing.T) {
-	req, _ := http.NewRequest("GET", "http://mort/local", nil)
+	req, _ := http.NewRequest("GET", "http://mort/local?maker=&max-keys=1000&delimter=&prefix=", nil)
 	ctx := req.Context()
 	ctx = context.WithValue(ctx, "auth", true)
 	req = req.WithContext(ctx)
@@ -179,6 +199,7 @@ func TestS3GET(t *testing.T) {
 
 	obj, err := object.NewFileObject(req.URL, &mortConfig)
 	assert.Nil(t, err)
+	assert.False(t, obj.HasTransform())
 
 	rp := NewRequestProcessor(mortConfig.Server, lock.NewMemoryLock(), throttler.NewBucketThrottler(10))
 	res := rp.Process(req, obj)
@@ -205,6 +226,21 @@ func TestS3GETNoCache(t *testing.T) {
 
 	assert.Equal(t, res.StatusCode, 200)
 	assert.Equal(t, res.Headers.Get("cache-control"), "no-cache")
+}
+
+func TestTransformWrongContentType(t *testing.T) {
+	req, _ := http.NewRequest("GET", "http://mort/local/file.txt?width=400", nil)
+
+	mortConfig := config.Config{}
+	err := mortConfig.Load("./benchmark/small.yml")
+
+	obj, err := object.NewFileObject(req.URL, &mortConfig)
+	assert.Nil(t, err)
+
+	rp := NewRequestProcessor(mortConfig.Server, lock.NewMemoryLock(), throttler.NewBucketThrottler(10))
+	res := rp.Process(req, obj)
+
+	assert.Equal(t, res.StatusCode, 404)
 }
 
 func BenchmarkNewRequestProcessorMemoryLock(b *testing.B) {

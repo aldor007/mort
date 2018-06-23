@@ -40,12 +40,13 @@ func queryToTransform(query url.Values) (transforms.Transforms, error) {
 	var err error
 	opt := query.Get("operation")
 	if opt == "" {
-		var w, h int
-		w, _ = queryToInt(query, "width")
-		h, _ = queryToInt(query, "height")
-		err = trans.Resize(w, h, false)
-		if err != nil {
-			return trans, err
+		w, err1 := queryToInt(query, "width")
+		h, err2 := queryToInt(query, "height")
+		if (err1 != nil || err2 != nil) && (w != 0 || h != 0) {
+			err = trans.Resize(w, h, false)
+			if err != nil {
+				return trans, err
+			}
 		}
 	} else {
 		for qsKey, values := range query {
@@ -111,8 +112,11 @@ func queryToTransform(query url.Values) (transforms.Transforms, error) {
 	}
 
 	var q int
-	q, err = queryToInt(query, "quality")
-	err = trans.Quality(q)
+	if _, ok := query["quality"]; ok {
+		q, _ = queryToInt(query, "quality")
+		trans.Quality(q)
+	}
+
 	if format, ok := query["format"]; ok {
 		err = trans.Format(format[0])
 		if err != nil {

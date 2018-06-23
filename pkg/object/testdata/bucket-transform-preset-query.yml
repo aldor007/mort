@@ -15,14 +15,17 @@ buckets:
                             mode: outbound
                         crop:
                           width: 10
-                        interlace: tyes
+                        interlace: yes
                         strip: yes
                         format: png
+                        blur:
+                          sigma: 2
+                          minAmpl: 3
                         watermark:
                           image: "../processor/benchmark/local/small.jpg"
                           position: "top-center"
                           opacity: 0.8
-                        gryscale: yes
+                        grayscale: yes
                         rotate:
                           angle: 90
                 width:

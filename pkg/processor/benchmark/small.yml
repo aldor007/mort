@@ -34,6 +34,14 @@ buckets:
                             height: 100
                             mode: outbound
                         interlace: true
+                mm:
+                    quality: 79
+                    filters:
+                        thumbnail:
+                            width: 10
+                            height: 100
+                            mode: outbound
+                        interlace: true
         storages:
             basic:
                 kind: "local-meta"
