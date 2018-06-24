@@ -1,0 +1,27 @@
+buckets:
+  bucket:
+    storages:
+      basic:
+        kind: "local-meta"
+        rootPath: "./no-bucket"
+  buckets3:
+    storages:
+      basic:
+        kind: "s3"
+        accessKey: "a"
+        secretAccessKey: "b"
+        endpoint: "s3.amazonaws.com"
+        region: "eu-west-1"
+        bucket: "mybucket" # optional
+  buckethttp:
+    storages:
+      basic:
+        kind: "http"
+        url: "http://remote/<container>/<item>"
+        headers:
+          "x-mort": 1
+  bucketlocal:
+    storages:
+      basic:
+        kind: "local"
+        rootPath: "./no-bucket"

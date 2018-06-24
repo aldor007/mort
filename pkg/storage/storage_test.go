@@ -126,6 +126,52 @@ func TestSet(t *testing.T) {
 	assert.Equal(t, resHead.Headers.Get("X-Amz-Meta-Header"), "val")
 }
 
+func TestHeadS3BucketError(t *testing.T) {
+	mortConfig := config.Config{}
+	mortConfig.Load("testdata/config2.yml")
+
+	obj, _ := object.NewFileObjectFromPath("/buckets3/file", &mortConfig)
+
+	res := Head(obj)
+
+	assert.Equal(t, res.StatusCode, 503)
+
+	res = Get(obj)
+
+	assert.Equal(t, res.StatusCode, 503)
+
+	res = List(obj, 100, "", "", "")
+
+	assert.Equal(t, res.StatusCode, 503)
+
+	res = Delete(obj)
+
+	assert.Equal(t, res.StatusCode, 503)
+}
+
+func TestHeadHTTPBucketError(t *testing.T) {
+	mortConfig := config.Config{}
+	mortConfig.Load("testdata/config2.yml")
+
+	obj, _ := object.NewFileObjectFromPath("/buckethttp/file", &mortConfig)
+
+	res := Head(obj)
+
+	assert.Equal(t, res.StatusCode, 500)
+
+	res = Get(obj)
+
+	assert.Equal(t, res.StatusCode, 500)
+
+	res = List(obj, 1000, "", "", "")
+
+	assert.Equal(t, res.StatusCode, 500)
+
+	res = Delete(obj)
+
+	assert.Equal(t, res.StatusCode, 500)
+}
+
 func BenchmarkGet(b *testing.B) {
 	mortConfig := config.Config{}
 	mortConfig.Load("testdata/config.yml")
