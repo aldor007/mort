@@ -20,7 +20,7 @@ type compressConfig struct {
 	enabled bool
 }
 
-// WebpPlugin plugins that transform image to webp if web browser can handle that format
+// CompressPlugin plugins that transform image to webp if web browser can handle that format
 type CompressPlugin struct {
 	brotli compressConfig
 	gzip   compressConfig
@@ -60,7 +60,7 @@ func (c *CompressPlugin) configure(config interface{}) {
 }
 
 // PreProcess add webp transform to object
-func (_ CompressPlugin) preProcess(obj *object.FileObject, req *http.Request) {
+func (CompressPlugin) preProcess(obj *object.FileObject, req *http.Request) {
 
 }
 

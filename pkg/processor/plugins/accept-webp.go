@@ -1,7 +1,6 @@
 package plugins
 
 import (
-	"context"
 	"net/http"
 	"strings"
 
@@ -26,9 +25,6 @@ func (WebpPlugin) preProcess(obj *object.FileObject, req *http.Request) {
 	if strings.Contains(req.Header.Get("Accept"), "image/webp") && obj.HasTransform() {
 		obj.Transforms.Format("webp")
 		obj.UpdateKey("webp")
-		ctx := obj.Ctx
-		ctx = context.WithValue(ctx, "webp", true)
-		obj.Ctx = ctx
 	}
 }
 

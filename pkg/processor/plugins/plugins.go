@@ -1,7 +1,6 @@
 package plugins
 
 import (
-	"errors"
 	"fmt"
 	"github.com/aldor007/mort/pkg/object"
 	"github.com/aldor007/mort/pkg/response"
@@ -23,13 +22,13 @@ type PluginsManager struct {
 	list []string
 }
 
-// NewHooksProcessor create new instance of plugins manager
+// NewPluginsManager create new instance of plugins manager
 func NewPluginsManager(plugins map[string]interface{}) PluginsManager {
 	pm := PluginsManager{}
 	pm.list = make([]string, 0)
 	for pName, pConfig := range plugins {
 		if _, ok := pluginsList[pName]; !ok {
-			panic(errors.New(fmt.Sprintf("unknown plugin %s", pName)))
+			panic(fmt.Errorf("unknown plugin %s", pName))
 		}
 
 		pluginsList[pName].configure(pConfig)

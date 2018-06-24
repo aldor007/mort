@@ -97,6 +97,18 @@ func TestMemoryLock_NotifyAndRelease(t *testing.T) {
 	}
 }
 
+func TestMemoryLock_NotifyAndRelease2(t *testing.T) {
+	l := NewMemoryLock()
+	key := "kluczi222"
+	c, acquired := l.Lock(key)
+
+	assert.True(t, acquired, "Should acquire lock")
+	assert.Nil(t, c.ResponseChan, "shouldn't return channel")
+
+	l.NotifyAndRelease("no-key", response.NewError(400, errors.New("invalid transform")))
+	l.NotifyAndRelease(key, response.NewNoContent(200))
+}
+
 func BenchmarkMemoryLock_NotifyAndRelease(b *testing.B) {
 	l := NewMemoryLock()
 	key := "aaa"

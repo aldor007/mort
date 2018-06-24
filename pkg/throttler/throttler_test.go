@@ -12,4 +12,8 @@ func TestNewNopThrottler(t *testing.T) {
 
 	assert.True(t, th.Take(ctx))
 	assert.True(t, th.Take(ctx))
+
+	th.Release()
+	assert.True(t, th.Take(ctx))
+	assert.True(t, th.Take(ctx))
 }

@@ -361,6 +361,7 @@ func (r *Response) Stream() io.ReadCloser {
 	return nil
 }
 
+// BodyTransformer add function that will transform body before send to client
 func (r *Response) BodyTransformer(w bodyTransformFnc) {
 	r.transformer = w
 }

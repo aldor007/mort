@@ -18,3 +18,12 @@ func TestNopReporter(t *testing.T) {
 		t.Done()
 	})
 }
+
+func TestRegisterReporter(t *testing.T) {
+	nop := NopReporter{}
+
+	RegisterReporter(nop)
+	nop2 := Report()
+
+	assert.Equal(t, nop, nop2)
+}

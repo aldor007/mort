@@ -5,11 +5,14 @@ import (
 	"context"
 	"github.com/aldor007/mort/pkg/config"
 	"github.com/aldor007/mort/pkg/lock"
+	"github.com/aldor007/mort/pkg/middleware"
 	"github.com/aldor007/mort/pkg/object"
+	"github.com/aldor007/mort/pkg/response"
 	"github.com/aldor007/mort/pkg/storage"
 	"github.com/aldor007/mort/pkg/throttler"
 	"github.com/stretchr/testify/assert"
 	"net/http"
+	"sync"
 	"testing"
 )
 
@@ -131,6 +134,47 @@ func TestContextTimeout(t *testing.T) {
 	assert.Equal(t, res.StatusCode, 499)
 }
 
+func TestCollapse(t *testing.T) {
+	req, _ := http.NewRequest("GET", "http://mort/local/small.jpg?width=54", nil)
+	req2, _ := http.NewRequest("GET", "http://mort/local/small.jpg?width=54", nil)
+
+	mortConfig := config.Config{}
+	err := mortConfig.Load("./benchmark/small.yml")
+	assert.Nil(t, err)
+
+	obj, err := object.NewFileObject(req.URL, &mortConfig)
+	assert.Nil(t, err)
+
+	obj2, err := object.NewFileObject(req.URL, &mortConfig)
+	assert.Nil(t, err)
+
+	rp := NewRequestProcessor(mortConfig.Server, lock.NewMemoryLock(), throttler.NewBucketThrottler(1))
+	var wg sync.WaitGroup
+
+	var res1 *response.Response
+	var res2 *response.Response
+
+	wg.Add(1)
+	go func() {
+		res1 = rp.Process(req, obj)
+		wg.Done()
+
+		assert.Equal(t, res1.StatusCode, 200)
+	}()
+
+	wg.Add(1)
+	go func() {
+		res2 = rp.Process(req2, obj2)
+		wg.Done()
+
+		assert.Equal(t, res2.StatusCode, 200)
+	}()
+
+	wg.Wait()
+	assert.Equal(t, res1.StatusCode, 200)
+	assert.Equal(t, res2.StatusCode, 200)
+}
+
 func TestMethodNotAllowed(t *testing.T) {
 	req, _ := http.NewRequest("OPTIONS", "http://mort/local/small.jpg-m?width=55", nil)
 
@@ -190,7 +234,7 @@ func TestPut(t *testing.T) {
 func TestS3GET(t *testing.T) {
 	req, _ := http.NewRequest("GET", "http://mort/local?maker=&max-keys=1000&delimter=&prefix=", nil)
 	ctx := req.Context()
-	ctx = context.WithValue(ctx, "auth", true)
+	ctx = context.WithValue(ctx, middleware.AuthCtxKey, true)
 	req = req.WithContext(ctx)
 
 	mortConfig := config.Config{}
@@ -211,7 +255,7 @@ func TestS3GET(t *testing.T) {
 func TestS3GETNoCache(t *testing.T) {
 	req, _ := http.NewRequest("GET", "http://mort/local/small.jpg", nil)
 	ctx := req.Context()
-	ctx = context.WithValue(ctx, "auth", true)
+	ctx = context.WithValue(ctx, middleware.AuthCtxKey, true)
 	req = req.WithContext(ctx)
 
 	mortConfig := config.Config{}
