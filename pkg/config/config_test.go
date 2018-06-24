@@ -29,3 +29,34 @@ func TestNoBasicStorage(t *testing.T) {
 	err := c.Load("testdata/no-basic-storage.yml")
 	assert.NotNil(t, err)
 }
+
+func TestInvalidYaml(t *testing.T) {
+	c := GetInstance()
+	assert.Panics(t, func() {
+		c.load([]byte(`
+	server:
+		a: [
+`))
+	})
+}
+
+func TestInvalidFile(t *testing.T) {
+	c := GetInstance()
+	assert.Panics(t, func() {
+		c.Load("no-file")
+	})
+}
+
+func TestConfig_Load(t *testing.T) {
+	c := Config{}
+	err := c.Load("testdata/config.yml")
+
+	assert.Nil(t, err)
+
+	buckets := c.BucketsByAccessKey("acc")
+
+	assert.Equal(t, len(buckets), 1)
+
+	bucket := c.Buckets["media"]
+	assert.Equal(t, bucket.Storages.Transform().Kind, "local-meta")
+}

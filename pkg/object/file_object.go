@@ -71,6 +71,7 @@ func (o *FileObject) HasTransform() bool {
 	return o.Transforms.NotEmpty == true
 }
 
+// UpdateKey add string to ky
 func (o *FileObject) UpdateKey(str string) {
 	o.key = o.key + str
 	o.Key = o.Key + str

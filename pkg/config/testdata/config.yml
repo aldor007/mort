@@ -3,6 +3,7 @@ server:
     - ":8080"
     - "unix:/tmp/mort.sock"
   monitoring: "prometheus"
+  placeholder: "./testdata/config.yml"
   plugins:
     webp: ~
     compress:
@@ -90,30 +91,4 @@ buckets:
             transform:
                 kind: "local-meta"
                 rootPath: "/tmp/mort"
-                pathPrefix: "transforms"
-
-    query:
-        keys:
-          - accessKey: "acc"
-            secretAccessKey: "sec"
-        transform:
-            kind: "query"
-            resultKey: "hash"
-        storages:
-            basic:
-                kind: "http"
-                url: "https://i.imgur.com/<item>"
-                headers:
-                  "x--key": "sec"
-            transform:
-                kind: "local-meta"
-                rootPath: "/tmp/mort/"
-                pathPrefix: "transforms"
-    local:
-        keys:
-          - accessKey: "acc"
-            secretAccessKey: "sec"
-        storages:
-            basic:
-                kind: "local-meta"
-                rootPath: "/tmp/mort/"
+                pathPrefix: "transf"

@@ -1,16 +1,16 @@
 package processor
 
 import (
+	"bytes"
+	"context"
 	"github.com/aldor007/mort/pkg/config"
 	"github.com/aldor007/mort/pkg/lock"
 	"github.com/aldor007/mort/pkg/object"
+	"github.com/aldor007/mort/pkg/storage"
 	"github.com/aldor007/mort/pkg/throttler"
-	//"github.com/aldor007/mort/pkg/monitoring"
-	//"go.uber.org/zap"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"testing"
-	"context"
 )
 
 func TestNewRequestProcessor(t *testing.T) {
@@ -25,6 +25,55 @@ func TestNewRequestProcessor(t *testing.T) {
 
 	rp := NewRequestProcessor(mortConfig.Server, lock.NewMemoryLock(), throttler.NewBucketThrottler(10))
 	res := rp.Process(req, obj)
+
+	assert.Equal(t, res.StatusCode, 200)
+	assert.Equal(t, res.Headers.Get("x-amz-meta-public-width"), "150")
+	assert.Equal(t, res.Headers.Get("ETag"), "W/\"7eaa484e8c841e7e\"")
+}
+
+func TestNewRequestProcessorCheckParent(t *testing.T) {
+	req, _ := http.NewRequest("GET", "http://mort/local/small.jpg-mm", nil)
+
+	mortConfig := config.Config{}
+	err := mortConfig.Load("./benchmark/small.yml")
+	assert.Nil(t, err)
+
+	obj, err := object.NewFileObject(req.URL, &mortConfig)
+	obj.CheckParent = true
+	assert.Nil(t, err)
+
+	rp := NewRequestProcessor(mortConfig.Server, lock.NewMemoryLock(), throttler.NewBucketThrottler(10))
+	obj.CheckParent = true
+	res := rp.Process(req, obj)
+
+	assert.Equal(t, res.StatusCode, 200)
+	assert.Equal(t, res.Headers.Get("x-amz-meta-public-width"), "150")
+	assert.Equal(t, res.Headers.Get("ETag"), "W/\"744899c0aad5789c\"")
+}
+
+func TestFetchFromCache(t *testing.T) {
+	req, _ := http.NewRequest("GET", "http://mort/local/small.jpg-m?width=55", nil)
+	req.Header.Add("x-mort-debug", "1")
+
+	mortConfig := config.Config{}
+	err := mortConfig.Load("./benchmark/small.yml")
+	assert.Nil(t, err)
+
+	obj, err := object.NewFileObject(req.URL, &mortConfig)
+	assert.Nil(t, err)
+
+	rp := NewRequestProcessor(mortConfig.Server, lock.NewMemoryLock(), throttler.NewBucketThrottler(10))
+	res := rp.Process(req, obj)
+
+	req, _ = http.NewRequest("DELETE", "http://mort/local/small.jpg-m?width=55", nil)
+	res = rp.Process(req, obj)
+
+	storageRes := storage.Get(obj)
+
+	assert.Equal(t, 404, storageRes.StatusCode)
+
+	req, _ = http.NewRequest("GET", "http://mort/local/small.jpg-m?width=55", nil)
+	res = rp.Process(req, obj)
 
 	assert.Equal(t, res.StatusCode, 200)
 	assert.Equal(t, res.Headers.Get("x-amz-meta-public-width"), "150")
@@ -82,6 +131,118 @@ func TestContextTimeout(t *testing.T) {
 	assert.Equal(t, res.StatusCode, 499)
 }
 
+func TestMethodNotAllowed(t *testing.T) {
+	req, _ := http.NewRequest("OPTIONS", "http://mort/local/small.jpg-m?width=55", nil)
+
+	mortConfig := config.Config{}
+	err := mortConfig.Load("./benchmark/small.yml")
+	assert.Nil(t, err)
+
+	obj, err := object.NewFileObject(req.URL, &mortConfig)
+	assert.Nil(t, err)
+
+	rp := NewRequestProcessor(mortConfig.Server, lock.NewMemoryLock(), throttler.NewBucketThrottler(10))
+	res := rp.Process(req, obj)
+
+	assert.Equal(t, res.StatusCode, 405)
+}
+
+func TestGetParent(t *testing.T) {
+	req, _ := http.NewRequest("GET", "http://mort/local/small.jpg", nil)
+
+	mortConfig := config.Config{}
+	err := mortConfig.Load("./benchmark/small.yml")
+	assert.Nil(t, err)
+
+	obj, err := object.NewFileObject(req.URL, &mortConfig)
+	assert.Nil(t, err)
+
+	rp := NewRequestProcessor(mortConfig.Server, lock.NewMemoryLock(), throttler.NewBucketThrottler(10))
+	res := rp.Process(req, obj)
+
+	assert.Equal(t, res.StatusCode, 200)
+}
+
+func TestPut(t *testing.T) {
+	buf := bytes.Buffer{}
+	buf.WriteString("aaaa")
+
+	req, _ := http.NewRequest("PUT", "http://mort/local/fila-test", &buf)
+
+	mortConfig := config.Config{}
+	err := mortConfig.Load("./benchmark/small.yml")
+	assert.Nil(t, err)
+
+	obj, err := object.NewFileObject(req.URL, &mortConfig)
+	assert.Nil(t, err)
+
+	rp := NewRequestProcessor(mortConfig.Server, lock.NewMemoryLock(), throttler.NewBucketThrottler(10))
+	res := rp.Process(req, obj)
+
+	assert.Equal(t, res.StatusCode, 200)
+
+	req, _ = http.NewRequest("HEAD", "http://mort/local/fila-test", &buf)
+	res = rp.Process(req, obj)
+
+	assert.Equal(t, res.StatusCode, 200)
+}
+
+func TestS3GET(t *testing.T) {
+	req, _ := http.NewRequest("GET", "http://mort/local?maker=&max-keys=1000&delimter=&prefix=", nil)
+	ctx := req.Context()
+	ctx = context.WithValue(ctx, "auth", true)
+	req = req.WithContext(ctx)
+
+	mortConfig := config.Config{}
+	err := mortConfig.Load("./benchmark/small.yml")
+	assert.Nil(t, err)
+
+	obj, err := object.NewFileObject(req.URL, &mortConfig)
+	assert.Nil(t, err)
+	assert.False(t, obj.HasTransform())
+
+	rp := NewRequestProcessor(mortConfig.Server, lock.NewMemoryLock(), throttler.NewBucketThrottler(10))
+	res := rp.Process(req, obj)
+
+	assert.Equal(t, res.StatusCode, 200)
+	assert.Equal(t, res.Headers.Get("content-type"), "application/xml")
+}
+
+func TestS3GETNoCache(t *testing.T) {
+	req, _ := http.NewRequest("GET", "http://mort/local/small.jpg", nil)
+	ctx := req.Context()
+	ctx = context.WithValue(ctx, "auth", true)
+	req = req.WithContext(ctx)
+
+	mortConfig := config.Config{}
+	err := mortConfig.Load("./benchmark/small.yml")
+	assert.Nil(t, err)
+
+	obj, err := object.NewFileObject(req.URL, &mortConfig)
+	assert.Nil(t, err)
+
+	rp := NewRequestProcessor(mortConfig.Server, lock.NewMemoryLock(), throttler.NewBucketThrottler(10))
+	res := rp.Process(req, obj)
+
+	assert.Equal(t, res.StatusCode, 200)
+	assert.Equal(t, res.Headers.Get("cache-control"), "no-cache")
+}
+
+func TestTransformWrongContentType(t *testing.T) {
+	req, _ := http.NewRequest("GET", "http://mort/local/file.txt?width=400", nil)
+
+	mortConfig := config.Config{}
+	err := mortConfig.Load("./benchmark/small.yml")
+
+	obj, err := object.NewFileObject(req.URL, &mortConfig)
+	assert.Nil(t, err)
+
+	rp := NewRequestProcessor(mortConfig.Server, lock.NewMemoryLock(), throttler.NewBucketThrottler(10))
+	res := rp.Process(req, obj)
+
+	assert.Equal(t, res.StatusCode, 404)
+}
+
 func BenchmarkNewRequestProcessorMemoryLock(b *testing.B) {
 	benchmarks := []struct {
 		name       string
@@ -92,10 +253,6 @@ func BenchmarkNewRequestProcessorMemoryLock(b *testing.B) {
 		{"Process large image, small result", "http://mort/local/large.jpeg-small", "./benchmark/small.yml"},
 	}
 
-	//logger, _ := zap.NewProduction()
-	////logger, _ := zap.NewDevelopment()
-	//zap.ReplaceGlobals(logger)
-	//log.RegisterLogger(logger)
 	for _, bm := range benchmarks {
 		req, _ := http.NewRequest("GET", bm.url, nil)
 

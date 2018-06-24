@@ -1,0 +1,52 @@
+buckets:
+    bucket:
+        transform:
+            kind: "presets-query"
+            path: "\\/(?P<presetName>[a-z]+)\\/(?P<parent>.*)"
+            parentStorage: "other"
+            parentBucket: "bucket"
+            presets:
+                blog:
+                    quality: 75
+                    filters:
+                        thumbnail:
+                            width: 100
+                            height: 100
+                            mode: outbound
+                        crop:
+                          width: 10
+                        interlace: yes
+                        strip: yes
+                        format: png
+                        blur:
+                          sigma: 2
+                          minAmpl: 3
+                        watermark:
+                          image: "../processor/benchmark/local/small.jpg"
+                          position: "top-center"
+                          opacity: 0.8
+                        grayscale: yes
+                        rotate:
+                          angle: 90
+                width:
+                    quality: 75
+                    filters:
+                        thumbnail:
+                            width: 100
+                            mode: outbound
+                height:
+                    quality: 75
+                    filters:
+                        thumbnail:
+                            height: 100
+                            mode: outbound
+        storages:
+            basic:
+                kind: "local"
+                rootPath: "/Users/aldor/workspace/mkaciubacom/web"
+            transform:
+                kind: "local"
+                rootPath: "/Users/aldor/workspace/mkaciubacom/web"
+            other:
+                kind: "http"
+                url: "https://domain.pl"

@@ -40,10 +40,14 @@ func queryToTransform(query url.Values) (transforms.Transforms, error) {
 	var err error
 	opt := query.Get("operation")
 	if opt == "" {
-		var w, h int
-		w, _ = queryToInt(query, "width")
-		h, _ = queryToInt(query, "height")
-		err = trans.Resize(w, h, false)
+		w, err1 := queryToInt(query, "width")
+		h, err2 := queryToInt(query, "height")
+		if (err1 != nil || err2 != nil) && (w != 0 || h != 0) {
+			err = trans.Resize(w, h, false)
+			if err != nil {
+				return trans, err
+			}
+		}
 	} else {
 		for qsKey, values := range query {
 			if qsKey == "operation" {
@@ -55,12 +59,18 @@ func queryToTransform(query url.Values) (transforms.Transforms, error) {
 						h, _ = queryToInt(query, "height")
 
 						err = trans.Resize(w, h, false)
+						if err != nil {
+							return trans, err
+						}
 					case "crop":
 						var w, h int
 						w, err = queryToInt(query, "width")
 						h, err = queryToInt(query, "height")
 
 						err = trans.Crop(w, h, query.Get("gravity"), false)
+						if err != nil {
+							return trans, err
+						}
 					case "watermark":
 						var opacity float64
 						opacity, err = strconv.ParseFloat(query.Get("opacity"), 32)
@@ -68,6 +78,9 @@ func queryToTransform(query url.Values) (transforms.Transforms, error) {
 							return trans, err
 						}
 						err = trans.Watermark(query.Get("image"), query.Get("position"), float32(opacity))
+						if err != nil {
+							return trans, err
+						}
 					case "blur":
 						var sigma, minAmpl float64
 						sigma, err = strconv.ParseFloat(query.Get("sigma"), 32)
@@ -77,6 +90,9 @@ func queryToTransform(query url.Values) (transforms.Transforms, error) {
 
 						minAmpl, _ = strconv.ParseFloat(query.Get("minAmpl"), 32)
 						err = trans.Blur(sigma, minAmpl)
+						if err != nil {
+							return trans, err
+						}
 					case "rotate":
 						var a int
 						a, err = queryToInt(query, "angle")
@@ -84,6 +100,9 @@ func queryToTransform(query url.Values) (transforms.Transforms, error) {
 							return trans, err
 						}
 						err = trans.Rotate(a)
+						if err != nil {
+							return trans, err
+						}
 					}
 
 				}
@@ -93,10 +112,16 @@ func queryToTransform(query url.Values) (transforms.Transforms, error) {
 	}
 
 	var q int
-	q, err = queryToInt(query, "quality")
-	err = trans.Quality(q)
+	if _, ok := query["quality"]; ok {
+		q, _ = queryToInt(query, "quality")
+		trans.Quality(q)
+	}
+
 	if format, ok := query["format"]; ok {
 		err = trans.Format(format[0])
+		if err != nil {
+			return trans, err
+		}
 	}
 
 	if _, ok := query["grayscale"]; ok {

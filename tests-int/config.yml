@@ -1,7 +1,7 @@
 server:
     listen: ":8091"
     plugins:
-      - "webp"
+      "webp":
 
 headers:
   - statusCodes: [200]

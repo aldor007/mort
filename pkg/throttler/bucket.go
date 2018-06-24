@@ -7,8 +7,8 @@ import (
 
 // BucketThrottler is implementation of token-bucket algorithm for rate-limiting
 type BucketThrottler struct {
-	tokens         chan bool
-	backlogTokens  chan bool
+	tokens         chan struct{}
+	backlogTokens  chan struct{}
 	backlogTimeout time.Duration
 }
 
@@ -21,16 +21,16 @@ func NewBucketThrottler(limit int) *BucketThrottler {
 func NewBucketThrottlerBacklog(limit int, backlog int, timeout time.Duration) *BucketThrottler {
 	max := limit + backlog
 	t := &BucketThrottler{
-		tokens:         make(chan bool, limit),
-		backlogTokens:  make(chan bool, max),
+		tokens:         make(chan struct{}, limit),
+		backlogTokens:  make(chan struct{}, max),
 		backlogTimeout: timeout,
 	}
 
 	for i := 0; i < max; i++ {
 		if i < limit {
-			t.tokens <- true
+			t.tokens <- struct{}{}
 		}
-		t.backlogTokens <- true
+		t.backlogTokens <- struct{}{}
 
 	}
 	return t
@@ -61,5 +61,5 @@ func (t *BucketThrottler) Take(ctx context.Context) bool {
 
 // Release return toke to bucket
 func (t *BucketThrottler) Release() {
-	t.tokens <- true
+	t.tokens <- struct{}{}
 }

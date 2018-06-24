@@ -4,7 +4,10 @@ install:
 	dep ensure
 
 unit:
-	@(go list ./... | grep -v "vendor/" | xargs -n1 go test -v -cover)
+	@(go list ./... | grep -v "vendor/" | xargs -n1 go test -race -v -cover)
+
+unit-bench:
+	./scripts/unit-travis.sh
 
 coverage:
 	go test github.com/aldor007/mort/... -race -coverprofile=coverage.txt -covermode=atomic

@@ -101,29 +101,36 @@ func BenchmarkMemoryLock_NotifyAndRelease(b *testing.B) {
 	l := NewMemoryLock()
 	key := "aaa"
 	buf := make([]byte, 10)
+	result, acquired := l.Lock(key)
+	go time.AfterFunc(time.Millisecond*time.Duration(500), func() {
+		l.NotifyAndRelease(key, response.NewBuf(200, buf))
+	})
 
 	for i := 0; i < b.N; i++ {
-		result, acquired := l.Lock(key)
-		multi := 800 % (i + 1)
+		result, acquired = l.Lock(key)
+		multi := 500 % (i + 1)
 		if acquired {
 			go time.AfterFunc(time.Millisecond*time.Duration(multi), func() {
-				go l.NotifyAndRelease(key, response.NewBuf(200, buf))
+				l.NotifyAndRelease(key, response.NewBuf(200, buf))
 			})
 		} else {
+			go func(r LockResult) {
+				timer := time.NewTimer(time.Second * 1)
+				for {
+					select {
+					case <-r.ResponseChan:
+						return
+					case <-timer.C:
+						b.Fatalf("timeout waiting for lock")
+						return
+					default:
 
-			timer := time.NewTimer(time.Second * 4)
-		forLoop:
-			for {
-				select {
-				case <-result.ResponseChan:
-					break forLoop
-				case <-timer.C:
-					b.Fatalf("timeout waitgin for lock")
-					return
-				default:
-
+					}
 				}
-			}
+			}(result)
+
+			time.Sleep(time.Millisecond * 10)
+
 		}
 
 	}

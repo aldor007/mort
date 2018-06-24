@@ -2,8 +2,10 @@ package response
 
 import (
 	"bytes"
+	"compress/gzip"
 	"errors"
 	"github.com/aldor007/mort/pkg/object"
+	"github.com/aldor007/mort/pkg/transforms"
 	"github.com/stretchr/testify/assert"
 	"io"
 	"io/ioutil"
@@ -64,7 +66,7 @@ func TestNewString(t *testing.T) {
 
 func TestNewNoContent(t *testing.T) {
 	res := NewNoContent(400)
-	res.Headers.Set("x-header", "1")
+	res.Set("x-header", "1")
 	res.SetContentType("text/plain")
 
 	assert.Equal(t, res.StatusCode, 400)
@@ -77,19 +79,23 @@ func TestNewNoContent(t *testing.T) {
 }
 
 func TestNewError(t *testing.T) {
-	res := NewError(500, errors.New("costam"))
+	err := errors.New("costam")
+	res := NewError(500, err)
 	res.Headers.Set("x-header", "1")
 	res.SetContentType("text/plain")
 
 	assert.Equal(t, res.StatusCode, 500)
 	assert.Equal(t, res.Headers.Get(HeaderContentType), "text/plain")
 	assert.Equal(t, res.Headers["X-Header"][0], "1")
+	assert.True(t, res.HasError())
+	assert.Equal(t, res.Error(), err)
 
 	buf, err := res.ReadBody()
 	assert.NotNil(t, err, "Should return error when reading body")
 	assert.Nil(t, buf)
 
-	res.SetDebug(&object.FileObject{Debug: true})
+	p := &object.FileObject{}
+	res.SetDebug(&object.FileObject{Debug: true, Parent: p, Transforms: transforms.Transforms{NotEmpty: true}})
 	buf, err = res.ReadBody()
 	assert.Nil(t, err)
 	assert.NotNil(t, buf, "Should return error when reading body")
@@ -119,6 +125,7 @@ func TestResponse_Send(t *testing.T) {
 	res.Send(recorder)
 
 	result := recorder.Result()
+	assert.True(t, res.IsBuffered())
 	assert.Equal(t, result.StatusCode, 200)
 	assert.Equal(t, result.Header.Get("X-Header"), "1")
 	assert.Equal(t, result.Header.Get("Content-Type"), "text/html")
@@ -164,6 +171,51 @@ func TestResponse_SendContentNotRangeOrCondition(t *testing.T) {
 	assert.Equal(t, result.Header.Get("X-Header"), "1")
 	body, _ := ioutil.ReadAll(result.Body)
 	assert.Equal(t, len(body), 1000)
+}
+
+func TestResponse_BodyTransformer(t *testing.T) {
+	buf := make([]byte, 1000)
+	res := New(200, ioutil.NopCloser(bytes.NewReader(buf)))
+	res.Headers.Set("X-Header", "1")
+	res.SetContentType("text/html")
+
+	var writerCalled bool
+
+	res.BodyTransformer(func(writer io.Writer) io.WriteCloser {
+		writerCalled = true
+		gzipW := gzip.NewWriter(writer)
+		return gzipW
+	})
+
+	recorder := httptest.NewRecorder()
+	res.Send(recorder)
+
+	assert.True(t, writerCalled)
+}
+
+func TestResponse_IsImage(t *testing.T) {
+	res := NewNoContent(299)
+
+	res.Headers.Set("Content-type", "image/jpg")
+
+	assert.True(t, res.IsImage())
+}
+
+func TestIsRangeOrCond(t *testing.T) {
+	req, _ := http.NewRequest("GET", "http://url", nil)
+	req.Header.Set("Range", "1-3")
+	assert.True(t, isRangeOrCondition(req))
+
+	req, _ = http.NewRequest("GET", "http://url", nil)
+	req.Header.Set("If-match", "1-3")
+	assert.True(t, isRangeOrCondition(req))
+
+	req, _ = http.NewRequest("GET", "http://url", nil)
+	req.Header.Set("If-unmodified-since", "1-3")
+	assert.True(t, isRangeOrCondition(req))
+
+	req, _ = http.NewRequest("GET", "http://url", nil)
+	assert.False(t, isRangeOrCondition(req))
 }
 
 func BenchmarkNewBuf(b *testing.B) {

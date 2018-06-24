@@ -1,9 +1,9 @@
 package monitoring
 
 import (
-	"testing"
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
+	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"time"
@@ -65,7 +65,7 @@ func TestPrometheusReporter_Inc(t *testing.T) {
 		Help: "mort cache ratio",
 	}))
 
-	p.Inc("test3", )
+	p.Inc("test3")
 
 	result := dto.Metric{}
 	p.counters["test3"].Write(&result)
@@ -104,7 +104,7 @@ func TestPrometheusReporter_CounterVec(t *testing.T) {
 	p.Counter("testvec;label:elo", 2)
 
 	result := dto.Metric{}
-	p.countersVec["testvec"].With(prometheus.Labels{"label":"elo"}).Write(&result)
+	p.countersVec["testvec"].With(prometheus.Labels{"label": "elo"}).Write(&result)
 
 	assert.Equal(t, *result.Counter.Value, 2.)
 }
@@ -122,7 +122,7 @@ func TestPrometheusReporter_GaugeVec(t *testing.T) {
 	p.Gauge("test1vec;label:hej", 5)
 
 	result := dto.Metric{}
-	p.gaugesVec["test1vec"].With(prometheus.Labels{"label":"hej"}).Write(&result)
+	p.gaugesVec["test1vec"].With(prometheus.Labels{"label": "hej"}).Write(&result)
 
 	assert.Equal(t, *result.Gauge.Value, 5.)
 }

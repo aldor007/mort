@@ -201,3 +201,14 @@ func TestTransformsRotate(t *testing.T) {
 	hashStr2 := strconv.FormatUint(uint64(trans2.Hash().Sum64()), 16)
 	assert.NotEqual(t, hashStr, hashStr2)
 }
+
+func TestTransforms_Watermark(t *testing.T) {
+	trans := Transforms{}
+	trans.Watermark("../processor/benchmark/local/small.jpg", "top-left", 0.5)
+
+	opts, err := trans.BimgOptions(ImageInfo{})
+
+	assert.Nil(t, err)
+	assert.NotNil(t, opts)
+	assert.True(t, trans.NotEmpty)
+}
