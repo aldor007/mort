@@ -25,6 +25,7 @@ func (m *MemoryLock) NotifyAndRelease(key string, res *response.Response) {
 	m.lock.Lock()
 	result, ok := m.internal[key]
 	if !ok {
+		m.lock.Unlock()
 		return
 	}
 
