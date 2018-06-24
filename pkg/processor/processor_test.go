@@ -211,7 +211,7 @@ func TestPut(t *testing.T) {
 	buf := bytes.Buffer{}
 	buf.WriteString("aaaa")
 
-	req, _ := http.NewRequest("PUT", "http://mort/local/fila-test", &buf)
+	req, _ := http.NewRequest("PUT", "http://mort/local/file-test", &buf)
 
 	mortConfig := config.Config{}
 	err := mortConfig.Load("./benchmark/small.yml")
@@ -225,7 +225,7 @@ func TestPut(t *testing.T) {
 
 	assert.Equal(t, res.StatusCode, 200)
 
-	req, _ = http.NewRequest("HEAD", "http://mort/local/fila-test", &buf)
+	req, _ = http.NewRequest("HEAD", "http://mort/local/file-test", &buf)
 	res = rp.Process(req, obj)
 
 	assert.Equal(t, res.StatusCode, 200)
