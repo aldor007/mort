@@ -10,6 +10,7 @@ import (
 	"github.com/aldor007/mort/pkg/config"
 	"github.com/aldor007/mort/pkg/engine"
 	"github.com/aldor007/mort/pkg/lock"
+	"github.com/aldor007/mort/pkg/middleware"
 	"github.com/aldor007/mort/pkg/monitoring"
 	"github.com/aldor007/mort/pkg/object"
 	"github.com/aldor007/mort/pkg/processor/plugins"
@@ -24,9 +25,9 @@ import (
 const s3LocationStr = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><LocationConstraint xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">EU</LocationConstraint>"
 
 var (
-	ErrTimeout       = errors.New("timeout")         // error when timeout
-	ErrContextCancel = errors.New("context timeout") // error when context timeout
-	ErrThrottled     = errors.New("throttled")       // error when request throttled
+	errTimeout       = errors.New("timeout")         // error when timeout
+	errContextCancel = errors.New("context timeout") // error when context timeout
+	errThrottled     = errors.New("throttled")       // error when request throttled
 )
 
 // NewRequestProcessor create instance of request processor
@@ -84,7 +85,7 @@ func (r *RequestProcessor) Process(req *http.Request, obj *object.FileObject) *r
 		msg.cancel <- struct{}{}
 		close(msg.responseChan)
 		monitoring.Log().Warn("Process timeout", zap.String("obj.Key", obj.Key), zap.String("error", "Context.timeout"))
-		return r.replyWithError(obj, 499, ErrContextCancel)
+		return r.replyWithError(obj, 499, errContextCancel)
 	case res := <-msg.responseChan:
 		r.plugins.PostProcess(obj, req, res)
 		close(msg.responseChan)
@@ -206,7 +207,7 @@ func (r *RequestProcessor) collapseGET(req *http.Request, obj *object.FileObject
 		select {
 		case <-ctx.Done():
 			lockResult.Cancel <- true
-			return r.replyWithError(obj, 504, ErrContextCancel)
+			return r.replyWithError(obj, 504, errContextCancel)
 		case res, ok := <-lockResult.ResponseChan:
 			if ok {
 				return res
@@ -215,7 +216,7 @@ func (r *RequestProcessor) collapseGET(req *http.Request, obj *object.FileObject
 			return r.handleGET(req, obj)
 		case <-timer.C:
 			lockResult.Cancel <- true
-			return r.replyWithError(obj, 504, ErrTimeout)
+			return r.replyWithError(obj, 504, errTimeout)
 		default:
 			if cacheRes := r.fetchResponseFromCache(obj.Key, true); cacheRes != nil {
 				lockResult.Cancel <- true
@@ -319,7 +320,7 @@ func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) 
 	for {
 		select {
 		case <-ctx.Done():
-			return r.replyWithError(obj, 504, ErrContextCancel)
+			return r.replyWithError(obj, 504, errContextCancel)
 		case res = <-resChan:
 			if obj.CheckParent && parentObj != nil && (parentRes == nil || parentRes.StatusCode == 0) {
 				go func() {
@@ -337,9 +338,9 @@ func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) 
 
 				if res.StatusCode == 404 {
 					return r.handleNotFound(obj, parentObj, transformsTab, parentRes, res)
-				} else {
-					return res
 				}
+
+				return res
 			}
 		case parentRes = <-parentChan:
 			if parentRes.StatusCode == 404 {
@@ -433,7 +434,7 @@ func (r *RequestProcessor) processImage(obj *object.FileObject, parent *response
 	if !taked {
 		monitoring.Log().Warn("Processor/processImage", zap.String("obj.Key", obj.Key), zap.String("error", "throttled"))
 		monitoring.Report().Inc("throttled_count")
-		return r.replyWithError(obj, 503, ErrThrottled)
+		return r.replyWithError(obj, 503, errThrottled)
 	}
 	defer r.throttler.Release()
 
@@ -474,7 +475,7 @@ func updateHeaders(obj *object.FileObject, res *response.Response) *response.Res
 		}
 	}
 
-	if ctx.Value("auth") != nil {
+	if ctx.Value(middleware.AuthCtxKey) != nil {
 		res.Set("Cache-Control", "no-cache")
 	}
 

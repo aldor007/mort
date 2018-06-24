@@ -20,7 +20,7 @@ type compressConfig struct {
 	enabled bool
 }
 
-// WebpPlugin plugins that transform image to webp if web browser can handle that format
+// CompressPlugin plugins that transform image to webp if web browser can handle that format
 type CompressPlugin struct {
 	brotli compressConfig
 	gzip   compressConfig

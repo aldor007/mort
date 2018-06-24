@@ -5,6 +5,7 @@ import (
 	"context"
 	"github.com/aldor007/mort/pkg/config"
 	"github.com/aldor007/mort/pkg/lock"
+	"github.com/aldor007/mort/pkg/middleware"
 	"github.com/aldor007/mort/pkg/object"
 	"github.com/aldor007/mort/pkg/response"
 	"github.com/aldor007/mort/pkg/storage"
@@ -233,7 +234,7 @@ func TestPut(t *testing.T) {
 func TestS3GET(t *testing.T) {
 	req, _ := http.NewRequest("GET", "http://mort/local?maker=&max-keys=1000&delimter=&prefix=", nil)
 	ctx := req.Context()
-	ctx = context.WithValue(ctx, "auth", true)
+	ctx = context.WithValue(ctx, middleware.AuthCtxKey, true)
 	req = req.WithContext(ctx)
 
 	mortConfig := config.Config{}
@@ -254,7 +255,7 @@ func TestS3GET(t *testing.T) {
 func TestS3GETNoCache(t *testing.T) {
 	req, _ := http.NewRequest("GET", "http://mort/local/small.jpg", nil)
 	ctx := req.Context()
-	ctx = context.WithValue(ctx, "auth", true)
+	ctx = context.WithValue(ctx, middleware.AuthCtxKey, true)
 	req = req.WithContext(ctx)
 
 	mortConfig := config.Config{}

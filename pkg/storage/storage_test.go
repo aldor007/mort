@@ -11,8 +11,8 @@ import (
 
 	"github.com/aldor007/mort/pkg/config"
 	"github.com/aldor007/mort/pkg/object"
-	"github.com/stretchr/testify/assert"
 	"github.com/aldor007/mort/pkg/response"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestMain(m *testing.M) {
@@ -217,7 +217,7 @@ func TestParseMetadata(t *testing.T) {
 	assert.Equal(t, res.Headers.Get("x-amz-meta-public"), "200")
 }
 
-func TestPrepareMetaData(t *testing.T)  {
+func TestPrepareMetaData(t *testing.T) {
 	headers := make(http.Header)
 	headers.Add("x-amz-meta-public", "p")
 	headers.Add("content-type", "text/html")
