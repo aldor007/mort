@@ -1,20 +1,20 @@
 package middleware
 
 import (
-	"testing"
+	"bytes"
+	"github.com/aldor007/go-aws-auth"
 	"github.com/aldor007/mort/pkg/config"
+	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
-	"github.com/stretchr/testify/assert"
-	"github.com/aldor007/go-aws-auth"
-	"bytes"
+	"testing"
 )
 
 type nextHandler struct {
 	called bool
 }
 
-func (n *nextHandler) ServeHTTP(_ http.ResponseWriter, _ *http.Request){
+func (n *nextHandler) ServeHTTP(_ http.ResponseWriter, _ *http.Request) {
 	n.called = true
 }
 
@@ -60,9 +60,8 @@ func TestS3Auth_Handler200S3(t *testing.T) {
 	next := nextHandler{}
 	fn := s3.Handler(&next)
 
-
 	req, _ := http.NewRequest("GET", "http://mort/local/test.jpg", nil)
-	awsauth.SignS3(req, awsauth.Credentials{AccessKeyID: "acc", SecretAccessKey: "sec" })
+	awsauth.SignS3(req, awsauth.Credentials{AccessKeyID: "acc", SecretAccessKey: "sec"})
 
 	recorder := httptest.NewRecorder()
 	fn.ServeHTTP(recorder, req)
@@ -85,7 +84,7 @@ func TestS3Auth_Handler200S3Put(t *testing.T) {
 
 	req, _ := http.NewRequest("PUT", "http://mort/local/test.jpg", &buf)
 	req.Header.Add("content-type", "image/jpg")
-	awsauth.SignS3(req, awsauth.Credentials{AccessKeyID: "acc", SecretAccessKey: "sec" })
+	awsauth.SignS3(req, awsauth.Credentials{AccessKeyID: "acc", SecretAccessKey: "sec"})
 
 	recorder := httptest.NewRecorder()
 	fn.ServeHTTP(recorder, req)
@@ -107,7 +106,7 @@ func TestS3Auth_Handler403S3Put(t *testing.T) {
 	buf.WriteString("aaaa-s3")
 
 	req, _ := http.NewRequest("PUT", "http://mort/local/test.jpg", &buf)
-	awsauth.SignS3(req, awsauth.Credentials{AccessKeyID: "acc", SecretAccessKey: "sedc" })
+	awsauth.SignS3(req, awsauth.Credentials{AccessKeyID: "acc", SecretAccessKey: "sedc"})
 
 	recorder := httptest.NewRecorder()
 	fn.ServeHTTP(recorder, req)
@@ -129,7 +128,7 @@ func TestS3Auth_Handler401S3Put_2(t *testing.T) {
 	buf.WriteString("aaaa-s3")
 
 	req, _ := http.NewRequest("PUT", "http://mort/local/test.jpg", &buf)
-	awsauth.SignS3(req, awsauth.Credentials{AccessKeyID: "acc2", SecretAccessKey: "sec" })
+	awsauth.SignS3(req, awsauth.Credentials{AccessKeyID: "acc2", SecretAccessKey: "sec"})
 
 	recorder := httptest.NewRecorder()
 	fn.ServeHTTP(recorder, req)
@@ -174,7 +173,7 @@ func TestS3Auth_Handler200S3Put_v4(t *testing.T) {
 	buf.WriteString("aaaa-s3")
 
 	req, _ := http.NewRequest("PUT", "http://mort/local/test.jpg", &buf)
-	awsauth.Sign4ForRegion(req, "mort", "s3", []string{}, awsauth.Credentials{AccessKeyID: "acc", SecretAccessKey: "sec",  })
+	awsauth.Sign4ForRegion(req, "mort", "s3", []string{}, awsauth.Credentials{AccessKeyID: "acc", SecretAccessKey: "sec"})
 
 	recorder := httptest.NewRecorder()
 	fn.ServeHTTP(recorder, req)
@@ -196,7 +195,7 @@ func TestS3Auth_Handler401S3Put_v4Query(t *testing.T) {
 	buf.WriteString("aaaa-s3")
 
 	req, _ := http.NewRequest("PUT", "http://mort/local/test.jpg", &buf)
-	awsauth.PreSign(req, "mort", "s3", []string{}, awsauth.Credentials{AccessKeyID: "acc", SecretAccessKey: "sec",  })
+	awsauth.PreSign(req, "mort", "s3", []string{}, awsauth.Credentials{AccessKeyID: "acc", SecretAccessKey: "sec"})
 
 	recorder := httptest.NewRecorder()
 	fn.ServeHTTP(recorder, req)
@@ -204,4 +203,3 @@ func TestS3Auth_Handler401S3Put_v4Query(t *testing.T) {
 	assert.False(t, next.called)
 	assert.Equal(t, recorder.Code, 401)
 }
-

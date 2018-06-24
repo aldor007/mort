@@ -40,7 +40,7 @@ func TestInvalidYaml(t *testing.T) {
 	})
 }
 
-func TestInvalidFile(t *testing.T)  {
+func TestInvalidFile(t *testing.T) {
 	c := GetInstance()
 	assert.Panics(t, func() {
 		c.Load("no-file")
