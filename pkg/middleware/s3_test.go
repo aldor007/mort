@@ -219,7 +219,6 @@ func TestS3Auth_Handler200S3Get_v4Query(t *testing.T) {
 	req, _ := http.NewRequest("GET", "http://mort/local/test.jpg?X-Amz-Date=88888888888&X-Amz-Credential=acc/AWS", &buf)
 	awsauth.PreSign(req, "mort", "s3", []string{}, awsauth.Credentials{AccessKeyID: "acc", SecretAccessKey: "sec"})
 
-
 	recorder := httptest.NewRecorder()
 	fn.ServeHTTP(recorder, req)
 
@@ -241,7 +240,6 @@ func TestS3Auth_Handler401S3Get_v4Query2(t *testing.T) {
 
 	req, _ := http.NewRequest("GET", "http://mort/local/test.jpg?X-Amz-Date=88888888888&X-Amz-Credential=ac5c/AWS", &buf)
 	awsauth.PreSign(req, "mort", "s3", []string{}, awsauth.Credentials{AccessKeyID: "acc", SecretAccessKey: "sec"})
-
 
 	recorder := httptest.NewRecorder()
 	fn.ServeHTTP(recorder, req)

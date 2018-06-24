@@ -43,7 +43,7 @@ func TestTransformsBlur(t *testing.T) {
 
 func TestTransformsResize(t *testing.T) {
 	trans := Transforms{}
-	trans.Resize(5, 100, false)
+	trans.Resize(5, 100, true)
 
 	opts, err := trans.BimgOptions(ImageInfo{})
 
@@ -53,10 +53,10 @@ func TestTransformsResize(t *testing.T) {
 
 	assert.Equal(t, opts.Width, 5)
 	assert.Equal(t, opts.Height, 100)
-	assert.Equal(t, opts.Enlarge, false)
+	assert.Equal(t, opts.Enlarge, true)
 
 	hashStr := strconv.FormatUint(uint64(trans.Hash().Sum64()), 16)
-	assert.Equal(t, "755cf90e7c1d5f6", hashStr)
+	assert.Equal(t, "3c9adb04ba75bd9c", hashStr)
 
 	trans2 := Transforms{}
 	trans2.Resize(100, 5, false)
@@ -84,7 +84,7 @@ func TestTransformsCrop(t *testing.T) {
 	assert.Equal(t, "276ec67309d8039b", hashStr)
 
 	trans2 := Transforms{}
-	trans.Crop(12, 11, "smart", false)
+	trans.Crop(12, 11, "unknown", false)
 
 	hashStr2 := strconv.FormatUint(uint64(trans2.Hash().Sum64()), 16)
 	assert.NotEqual(t, hashStr, hashStr2)
@@ -163,6 +163,26 @@ func TestTransformsFormat(t *testing.T) {
 	trans2.Format("png")
 	hashStr2 := strconv.FormatUint(uint64(trans2.Hash().Sum64()), 16)
 	assert.NotEqual(t, hashStr, hashStr2)
+
+	err = trans.Format("webp")
+
+	assert.Nil(t, err)
+	assert.Equal(t, trans.FormatStr, "webp")
+
+	err = trans.Format("svg")
+
+	assert.Nil(t, err)
+	assert.Equal(t, trans.FormatStr, "svg")
+
+	err = trans.Format("pdf")
+
+	assert.Nil(t, err)
+	assert.Equal(t, trans.FormatStr, "pdf")
+
+	err = trans.Format("pdfaa")
+
+	assert.NotNil(t, err)
+
 }
 
 func TestTransformsGrayscale(t *testing.T) {
@@ -211,4 +231,20 @@ func TestTransforms_Watermark(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, opts)
 	assert.True(t, trans.NotEmpty)
+
+	err = trans.Watermark("../processor/benchmark/local/small.jpg", "topleft", 0.5)
+
+	assert.NotNil(t, err)
+
+	err = trans.Watermark("../processor/benchmark/local/small.jpg", "left-top", 0.5)
+
+	assert.NotNil(t, err)
+
+	err = trans.Watermark("../processor/benchmark/local/small.jpg", "top-b", 0.5)
+
+	assert.NotNil(t, err)
+
+	err = trans.Watermark("", "top-left", 0.5)
+
+	assert.NotNil(t, err)
 }

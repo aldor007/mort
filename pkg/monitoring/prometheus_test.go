@@ -132,10 +132,10 @@ func TestPrometheusReporter_TimerVec(t *testing.T) {
 	p := NewPrometheusReporter()
 
 	p.RegisterHistogramVec("test-2-hist-vec", prometheus.NewHistogramVec(prometheus.HistogramOpts{
-		Name: "mort_cache_ratio_2_vec_hist",
-		Help: "mort cache ratio",
+		Name:    "mort_cache_ratio_2_vec_hist",
+		Help:    "mort cache ratio",
 		Buckets: []float64{10, 50, 100, 200, 300, 400, 500, 1000, 2000, 3000, 4000, 5000, 6000, 10000, 30000, 60000, 70000, 80000},
-		},
+	},
 		[]string{"label"},
 	))
 
