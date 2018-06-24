@@ -350,6 +350,11 @@ func prepareResponse(obj *object.FileObject, stream io.ReadCloser, item stow.Ite
 		return response.NewError(500, err)
 	}
 
+	size, err := item.Size()
+	if err == nil {
+		res.ContentLength = size
+	}
+
 	if etag != "" {
 		res.Set("ETag", etag)
 	}

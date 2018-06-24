@@ -104,15 +104,15 @@ type HeaderYaml struct {
 
 // Server configure HTTP server
 type Server struct {
-	InternalListen string   `yaml:"internalListen"`
-	SingleListen   string   `yaml:"listen"`
-	CacheSize      int64    `yaml:"cacheSize"`
-	RequestTimeout int      `yaml:"requestTimeout"`
-	LockTimeout    int      `yaml:"lockTimeout"`
-	QueueLen       int      `yaml:"queueLen"`
-	Listen         []string `yaml:"listens"`
-	Monitoring     string   `yaml:"monitoring"`
-	Placeholder    string   `yaml:"placeholder"`
-	Plugins        []string `yaml:"plugins"`
+	InternalListen string                 `yaml:"internalListen"`
+	SingleListen   string                 `yaml:"listen"`
+	CacheSize      int64                  `yaml:"cacheSize"`
+	RequestTimeout int                    `yaml:"requestTimeout"`
+	LockTimeout    int                    `yaml:"lockTimeout"`
+	QueueLen       int                    `yaml:"queueLen"`
+	Listen         []string               `yaml:"listens"`
+	Monitoring     string                 `yaml:"monitoring"`
+	Placeholder    string                 `yaml:"placeholder"`
+	Plugins        map[string]interface{} `yaml:"plugins,omitempty"`
 	PlaceholderBuf []byte
 }

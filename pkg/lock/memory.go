@@ -1,7 +1,9 @@
 package lock
 
 import (
+	"github.com/aldor007/mort/pkg/monitoring"
 	"github.com/aldor007/mort/pkg/response"
+	"go.uber.org/zap"
 	"sync"
 )
 
@@ -30,6 +32,7 @@ func (m *MemoryLock) NotifyAndRelease(key string, res *response.Response) {
 	m.lock.Unlock()
 
 	if len(result.notifyQueue) == 0 {
+		monitoring.Log().Warn("Empty notify queue", zap.String("key", key))
 		return
 	}
 
@@ -56,11 +59,12 @@ func (m *MemoryLock) NotifyAndRelease(key string, res *response.Response) {
 					select {
 					case <-q.Cancel:
 						close(q.ResponseChan)
-					case q.ResponseChan <- resCpy:
-						close(q.ResponseChan)
+						continue
 					default:
 
 					}
+					q.ResponseChan <- resCpy
+					close(q.ResponseChan)
 				}
 
 				resCopy.Close()

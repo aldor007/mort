@@ -28,7 +28,7 @@ type lockData struct {
 // AddWatcher add next request waiting for lock to expire or return result
 func (l *lockData) AddWatcher() LockResult {
 	d := LockResult{}
-	d.ResponseChan = make(chan *response.Response)
+	d.ResponseChan = make(chan *response.Response, 1)
 	d.Cancel = make(chan bool, 1)
 	l.notifyQueue = append(l.notifyQueue, d)
 	return d

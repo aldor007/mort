@@ -46,6 +46,17 @@ func TestGet(t *testing.T) {
 	assert.Equal(t, res.StatusCode, 200)
 }
 
+func TestGetNotFound(t *testing.T) {
+	mortConfig := config.Config{}
+	mortConfig.Load("testdata/config.yml")
+
+	obj, _ := object.NewFileObjectFromPath("/bucket/file-404", &mortConfig)
+
+	res := Get(obj)
+
+	assert.Equal(t, res.StatusCode, 404)
+}
+
 func TestHead(t *testing.T) {
 	mortConfig := config.Config{}
 	mortConfig.Load("testdata/config.yml")
@@ -55,6 +66,40 @@ func TestHead(t *testing.T) {
 	res := Head(obj)
 
 	assert.Equal(t, res.StatusCode, 200)
+}
+
+func TestHeadNotFound(t *testing.T) {
+	mortConfig := config.Config{}
+	mortConfig.Load("testdata/config.yml")
+
+	obj, _ := object.NewFileObjectFromPath("/bucket/file-404", &mortConfig)
+
+	res := Head(obj)
+
+	assert.Equal(t, res.StatusCode, 404)
+}
+
+func TestDeleteNotFound(t *testing.T) {
+	mortConfig := config.Config{}
+	mortConfig.Load("testdata/config.yml")
+
+	obj, _ := object.NewFileObjectFromPath("/bucket/file-404", &mortConfig)
+
+	res := Delete(obj)
+
+	assert.Equal(t, res.StatusCode, 200)
+}
+
+func TestList(t *testing.T) {
+	mortConfig := config.Config{}
+	mortConfig.Load("testdata/config.yml")
+
+	obj, _ := object.NewFileObjectFromPath("/bucket/", &mortConfig)
+
+	res := List(obj, 1000, "", "", "")
+
+	assert.Equal(t, res.StatusCode, 200)
+	assert.Equal(t, res.Headers.Get("content-type"), "application/xml")
 }
 
 func TestSet(t *testing.T) {

@@ -34,6 +34,8 @@ func isRangeOrCondition(req *http.Request) bool {
 	return false
 }
 
+type bodyTransformFnc func(writer io.Writer) io.WriteCloser
+
 // Response is helper struct for wrapping different storage response
 type Response struct {
 	StatusCode    int         // status code of response
@@ -47,8 +49,9 @@ type Response struct {
 	bodyReader io.ReadCloser // original response buffer
 	bodySeeker io.ReadSeeker
 
-	resStream *stream.Stream // response stream dispatcher
-	hasParent bool           // flag indicated that response is a copy
+	resStream   *stream.Stream   // response stream dispatcher
+	hasParent   bool             // flag indicated that response is a copy
+	transformer bodyTransformFnc // function that can transform body writner
 }
 
 // New create response object with io.ReadCloser
@@ -226,7 +229,13 @@ func (r *Response) Send(w http.ResponseWriter) error {
 	w.WriteHeader(r.StatusCode)
 
 	if resStream != nil {
-		io.Copy(w, resStream)
+		if r.transformer != nil {
+			tW := r.transformer(w)
+			io.Copy(tW, resStream)
+			tW.Close()
+		} else {
+			io.Copy(w, resStream)
+		}
 	}
 
 	return nil
@@ -234,6 +243,8 @@ func (r *Response) Send(w http.ResponseWriter) error {
 
 // SendContent use http.ServeContent to return response to client
 // It can handle range and condition requests
+// In this function we don't need to use transformer because it don't serve whole body
+// It is used for range and condition requests
 func (r *Response) SendContent(req *http.Request, w http.ResponseWriter) error {
 	// ServerContent will modified status code so to it we should pass only 200 response
 	if r.StatusCode != 200 || r.bodySeeker == nil || isRangeOrCondition(req) == false {
@@ -348,6 +359,10 @@ func (r *Response) Stream() io.ReadCloser {
 	}
 
 	return nil
+}
+
+func (r *Response) BodyTransformer(w bodyTransformFnc) {
+	r.transformer = w
 }
 
 // IsBuffered check if response has access to original buffer
