@@ -60,7 +60,7 @@ func (c *CompressPlugin) configure(config interface{}) {
 }
 
 // PreProcess add webp transform to object
-func (_ CompressPlugin) preProcess(obj *object.FileObject, req *http.Request) {
+func (CompressPlugin) preProcess(obj *object.FileObject, req *http.Request) {
 
 }
 

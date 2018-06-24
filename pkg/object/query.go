@@ -64,8 +64,8 @@ func queryToTransform(query url.Values) (transforms.Transforms, error) {
 						}
 					case "crop":
 						var w, h int
-						w, err = queryToInt(query, "width")
-						h, err = queryToInt(query, "height")
+						w, _ = queryToInt(query, "width")
+						h, _ = queryToInt(query, "height")
 
 						err = trans.Crop(w, h, query.Get("gravity"), false)
 						if err != nil {
