@@ -73,10 +73,10 @@ func (c CompressPlugin) postProcess(obj *object.FileObject, req *http.Request, r
 	}
 
 	if c.brotli.enabled && strings.Contains(acceptEnc, "br") {
-		res.Headers.Set("Content-Encoding", "br")
-		res.Headers.Add("Vary", "Accept-Encoding")
 		for _, supportedType := range c.brotli.types {
 			if contentType == supportedType {
+				res.Headers.Set("Content-Encoding", "br")
+				res.Headers.Add("Vary", "Accept-Encoding")
 				res.BodyTransformer(func(w io.Writer) io.WriteCloser {
 					params := brEnc.NewBrotliParams()
 					params.SetQuality(c.brotli.level)
@@ -90,10 +90,10 @@ func (c CompressPlugin) postProcess(obj *object.FileObject, req *http.Request, r
 	}
 
 	if c.gzip.enabled && strings.Contains(acceptEnc, "gzip") {
-		res.Headers.Set("Content-Encoding", "gzip")
-		res.Headers.Add("Vary", "Accept-Encoding")
 		for _, supportedType := range c.gzip.types {
 			if contentType == supportedType {
+				res.Headers.Set("Content-Encoding", "gzip")
+				res.Headers.Add("Vary", "Accept-Encoding")
 				res.BodyTransformer(func(w io.Writer) io.WriteCloser {
 					gzipW, err := gzip.NewWriterLevel(w, c.gzip.level)
 					if err != nil {

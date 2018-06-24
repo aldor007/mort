@@ -74,6 +74,26 @@ func TestCompressTooSmallContent(t *testing.T) {
 	assert.Equal(t, len(res.Headers), 1)
 }
 
+func TestCompressGzipImage(t *testing.T) {
+	c := CompressPlugin{}
+	configStr := `
+    gzip:
+       level: 5
+`
+	var config interface{}
+	yaml.Unmarshal([]byte(configStr), &config)
+
+	c.configure(config)
+	req, _ := http.NewRequest("GET", "http://mort/local/small.jpg-m", nil)
+	req.Header.Add("Accept-Encoding", "gzip")
+	res := response.NewBuf(200, make([]byte, 13000))
+	res.Headers.Add("Content-Type", "image/jpg")
+
+	c.postProcess(nil, req, res)
+
+	assert.Equal(t, len(res.Headers), 1)
+}
+
 func TestCompressGzip(t *testing.T) {
 	c := CompressPlugin{}
 	configStr := `
@@ -207,4 +227,49 @@ func TestCompressBrotliType(t *testing.T) {
 	br.Close()
 
 	assert.Equal(t, recorder.Body.Len(), buf.Len())
+}
+
+func TestCompressBrImage(t *testing.T) {
+	c := CompressPlugin{}
+	configStr := `
+    gzip:
+       level: 5
+    brotli:
+       types: ["application/json", "text/html"]
+`
+	var config interface{}
+	yaml.Unmarshal([]byte(configStr), &config)
+
+	c.configure(config)
+	req, _ := http.NewRequest("GET", "http://mort/local/small.jpg-m", nil)
+	req.Header.Add("Accept-Encoding", "gzip, br")
+	res := response.NewBuf(200, make([]byte, 13000))
+	res.Headers.Add("Content-Type", "image/jpg")
+
+	c.postProcess(nil, req, res)
+
+	assert.Equal(t, len(res.Headers), 1)
+}
+
+func TestCompressDoBrImage(t *testing.T) {
+	c := CompressPlugin{}
+	configStr := `
+    gzip:
+       level: 5
+    brotli:
+       types: ["application/json", "text/html"]
+`
+	var config interface{}
+	yaml.Unmarshal([]byte(configStr), &config)
+
+	c.configure(config)
+	req, _ := http.NewRequest("GET", "http://mort/local/small.jpg-m", nil)
+	req.Header.Add("Accept-Encoding", "gzip, br")
+	res := response.NewBuf(200, make([]byte, 13000))
+	res.Headers.Add("Content-Type", "text/html")
+
+	c.postProcess(nil, req, res)
+
+	assert.Equal(t, len(res.Headers), 3)
+	assert.Equal(t, res.Headers.Get("Content-Encoding"), "br")
 }

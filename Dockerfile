@@ -22,7 +22,6 @@ RUN \
     make && \
     make install && \
     ldconfig && \
-    apt-get remove -y curl automake build-essential && \
     apt-get autoremove -y && \
     apt-get autoclean && \
     apt-get clean && \
