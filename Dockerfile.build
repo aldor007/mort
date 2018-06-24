@@ -40,7 +40,7 @@ RUN apt-get update && apt-get install -y \
   && rm -rf /var/lib/apt/lists/*
 
 RUN gem install --no-ri --no-rdoc fpm
-RUN go get github.com/goreleaser/goreleaser
+RUN curl -sL http://git.io/goreleaser | bash
 
 ENV GOPATH /go
 ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
