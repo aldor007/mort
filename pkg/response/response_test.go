@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"errors"
+	"github.com/aldor007/mort/pkg/helpers"
 	"github.com/aldor007/mort/pkg/object"
 	"github.com/aldor007/mort/pkg/transforms"
 	"github.com/stretchr/testify/assert"
@@ -204,18 +205,18 @@ func TestResponse_IsImage(t *testing.T) {
 func TestIsRangeOrCond(t *testing.T) {
 	req, _ := http.NewRequest("GET", "http://url", nil)
 	req.Header.Set("Range", "1-3")
-	assert.True(t, isRangeOrCondition(req))
+	assert.True(t, helpers.IsRangeOrCondition(req))
 
 	req, _ = http.NewRequest("GET", "http://url", nil)
 	req.Header.Set("If-match", "1-3")
-	assert.True(t, isRangeOrCondition(req))
+	assert.True(t, helpers.IsRangeOrCondition(req))
 
 	req, _ = http.NewRequest("GET", "http://url", nil)
 	req.Header.Set("If-unmodified-since", "1-3")
-	assert.True(t, isRangeOrCondition(req))
+	assert.True(t, helpers.IsRangeOrCondition(req))
 
 	req, _ = http.NewRequest("GET", "http://url", nil)
-	assert.False(t, isRangeOrCondition(req))
+	assert.False(t, helpers.IsRangeOrCondition(req))
 }
 
 func BenchmarkNewBuf(b *testing.B) {

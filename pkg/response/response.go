@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"github.com/aldor007/mort/pkg/helpers"
 	"github.com/aldor007/mort/pkg/object"
 	"github.com/djherbis/stream"
 	"io"
@@ -17,22 +18,6 @@ const (
 	// HeaderContentType name of Content-Type header
 	HeaderContentType = "content-type"
 )
-
-func isRangeOrCondition(req *http.Request) bool {
-	if req.Header.Get("Range") != "" || req.Header.Get("if-range") != "" {
-		return true
-	}
-
-	if req.Header.Get("If-match") != "" || req.Header.Get("If-none-match") != "" {
-		return true
-	}
-
-	if req.Header.Get("If-Unmodified-Since") != "" || req.Header.Get("If-Modified-Since") != "" {
-		return true
-	}
-
-	return false
-}
 
 type bodyTransformFnc func(writer io.Writer) io.WriteCloser
 
@@ -247,7 +232,7 @@ func (r *Response) Send(w http.ResponseWriter) error {
 // It is used for range and condition requests
 func (r *Response) SendContent(req *http.Request, w http.ResponseWriter) error {
 	// ServerContent will modified status code so to it we should pass only 200 response
-	if r.StatusCode != 200 || r.bodySeeker == nil || isRangeOrCondition(req) == false {
+	if r.StatusCode != 200 || r.bodySeeker == nil || helpers.IsRangeOrCondition(req) == false {
 		return r.Send(w)
 	}
 

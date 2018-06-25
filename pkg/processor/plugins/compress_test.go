@@ -191,6 +191,31 @@ func TestCompressGzipType(t *testing.T) {
 	assert.Equal(t, recorder.Body.Len(), buf.Len())
 }
 
+func TestNotCompressOnRange(t *testing.T) {
+	c := CompressPlugin{}
+	configStr := `
+    gzip:
+       level: 5
+       types: ["application/json"]
+`
+	var config interface{}
+	yaml.Unmarshal([]byte(configStr), &config)
+
+	c.configure(config)
+	req, _ := http.NewRequest("GET", "http://mort/local/small.jpg-m", nil)
+	req.Header.Add("Accept-Encoding", "gzip")
+	req.Header.Add("Range", "0-1")
+	body := make([]byte, 1200)
+	body[33] = 'a'
+	body[324] = 'c'
+	res := response.NewBuf(200, body)
+	res.Headers.Add("Content-Type", "application/json")
+
+	c.postProcess(nil, req, res)
+
+	assert.Equal(t, len(res.Headers), 1)
+}
+
 func TestCompressBrotliType(t *testing.T) {
 	c := CompressPlugin{}
 	configStr := `

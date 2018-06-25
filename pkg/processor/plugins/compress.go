@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"compress/gzip"
+	"github.com/aldor007/mort/pkg/helpers"
 	"github.com/aldor007/mort/pkg/object"
 	"github.com/aldor007/mort/pkg/response"
 	brEnc "gopkg.in/kothar/brotli-go.v0/enc"
@@ -68,7 +69,7 @@ func (CompressPlugin) preProcess(obj *object.FileObject, req *http.Request) {
 func (c CompressPlugin) postProcess(obj *object.FileObject, req *http.Request, res *response.Response) {
 	acceptEnc := req.Header.Get("Accept-Encoding")
 	contentType := res.Headers.Get("Content-Type")
-	if acceptEnc == "" || contentType == "" || (res.ContentLength < 1000 && res.ContentLength != -1) {
+	if acceptEnc == "" || contentType == "" || helpers.IsRangeOrCondition(req) || (res.ContentLength < 1000 && res.ContentLength != -1) {
 		return
 	}
 

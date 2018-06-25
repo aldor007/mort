@@ -52,3 +52,20 @@ func FetchObject(uri string) ([]byte, error) {
 
 	return ioutil.ReadAll(f)
 }
+
+// IsRangeOrCondition check if request is range or condition
+func IsRangeOrCondition(req *http.Request) bool {
+	if req.Header.Get("Range") != "" || req.Header.Get("if-range") != "" {
+		return true
+	}
+
+	if req.Header.Get("If-match") != "" || req.Header.Get("If-none-match") != "" {
+		return true
+	}
+
+	if req.Header.Get("If-Unmodified-Since") != "" || req.Header.Get("If-Modified-Since") != "" {
+		return true
+	}
+
+	return false
+}
