@@ -229,6 +229,12 @@
   version = "v1.0.18"
 
 [[projects]]
+  name = "gopkg.in/h2non/gock.v1"
+  packages = ["."]
+  revision = "4692cba4394f79372bfe85996501ad43db9d82e0"
+  version = "v1.0.9"
+
+[[projects]]
   branch = "master"
   name = "gopkg.in/kothar/brotli-go.v0"
   packages = [
@@ -246,6 +252,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "d0cd9f515feb1910171240866b6e16eeae1669d07b50ac1f4fec1c81d3a45041"
+  inputs-digest = "a3830c5da14fcf0e9ccd38e36e415cc13c009e0225318f7109c0897bbd29c82c"
   solver-name = "gps-cdcl"
   solver-version = 1
