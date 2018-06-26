@@ -33,11 +33,44 @@ func decodeQuery(url *url.URL, bucketConfig config.Bucket, obj *FileObject) (str
 
 // nolint: gocyclo
 func queryToTransform(query url.Values) (transforms.Transforms, error) {
-	var trans transforms.Transforms
 	if len(query) == 0 {
-		return trans, nil
+		return transforms.Transforms{}, nil
 	}
 
+	trans, err := parseOperation(query)
+
+	if err != nil {
+		return trans, err
+	}
+
+	var q int
+	if _, ok := query["quality"]; ok {
+		q, _ = queryToInt(query, "quality")
+		trans.Quality(q)
+	}
+
+	if format, ok := query["format"]; ok {
+		err = trans.Format(format[0])
+		if err != nil {
+			return trans, err
+		}
+	}
+
+	if _, ok := query["grayscale"]; ok {
+		trans.Grayscale()
+	}
+
+	return trans, err
+}
+
+func queryToInt(q url.Values, k string) (int, error) {
+	r, err := strconv.ParseInt(q.Get(k), 10, 32)
+	return int(r), err
+
+}
+
+func parseOperation(query url.Values) (transforms.Transforms, error) {
+	var trans transforms.Transforms
 	var err error
 	opt := query.Get("operation")
 	if opt == "" {
@@ -111,29 +144,6 @@ func queryToTransform(query url.Values) (transforms.Transforms, error) {
 			}
 		}
 	}
-
-	var q int
-	if _, ok := query["quality"]; ok {
-		q, _ = queryToInt(query, "quality")
-		trans.Quality(q)
-	}
-
-	if format, ok := query["format"]; ok {
-		err = trans.Format(format[0])
-		if err != nil {
-			return trans, err
-		}
-	}
-
-	if _, ok := query["grayscale"]; ok {
-		trans.Grayscale()
-	}
-
-	return trans, err
-}
-
-func queryToInt(q url.Values, k string) (int, error) {
-	r, err := strconv.ParseInt(q.Get(k), 10, 32)
-	return int(r), err
+	return trans, nil
 
 }

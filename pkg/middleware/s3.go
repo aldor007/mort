@@ -23,7 +23,7 @@ var autHeaderRegexpv4 = regexp.MustCompile("^(:?[A-Za-z0-9-]+) Credential=(:?.+)
 var authHeaderRegexpv2 = regexp.MustCompile("^AWS ([A-Za-z0-9-]+):(.+)$")
 
 // S3AuthCtxKey flag if we have perform authorisation
-const S3AuthCtxKey = 123
+const S3AuthCtxKey = iota
 
 func isAuthRequired(req *http.Request, auth string, path string) bool {
 	method := req.Method
@@ -63,9 +63,7 @@ func NewS3AuthMiddleware(mortConfig *config.Config) *S3Auth {
 // Handler main method of S3AuthMiddleware it check if request should be signed. If so it create copy of request
 // and calculate signature and compare result with user request if signature is correct request is passed to next handler
 // otherwise it return 403
-// nolint: gocyclo
 func (s *S3Auth) Handler(next http.Handler) http.Handler {
-	mortConfig := s.mortConfig
 	fn := func(resWriter http.ResponseWriter, req *http.Request) {
 		path := req.URL.Path
 		auth := req.Header.Get("Authorization")
@@ -88,21 +86,11 @@ func (s *S3Auth) Handler(next http.Handler) http.Handler {
 
 		var accessKey string
 		var signedHeaders []string
-		var bucket config.Bucket
-		var credential awsauth.Credentials
 		var authAlg string
 
 		matches := autHeaderRegexpv4.FindStringSubmatch(auth)
 		if len(matches) == 5 {
 			authAlg = "v4"
-			alg := matches[1]
-			if alg != "AWS4-HMAC-SHA256" {
-				monitoring.Log().Warn("S3Auth invalid algorithm", zap.String("alg", alg))
-				res := response.NewString(400, "invalid algorithm")
-				res.Send(resWriter)
-				return
-			}
-
 			reqCredField := matches[2]
 			accessKey = strings.Split(reqCredField, "/")[0]
 			signedHeaders = strings.Split(matches[3], ";")
@@ -119,32 +107,8 @@ func (s *S3Auth) Handler(next http.Handler) http.Handler {
 			return
 		}
 
-		bucket, ok := mortConfig.Buckets[bucketName]
+		credential, ok := s.getCredentials(bucketName, accessKey, resWriter)
 		if !ok {
-			buckets := mortConfig.BucketsByAccessKey(accessKey)
-			if len(buckets) == 0 {
-				monitoring.Log().Warn("S3Auth no bucket for access key")
-				res := response.NewString(403, "")
-				res.Send(resWriter)
-				return
-			}
-
-			bucket = buckets[0]
-		}
-
-		keys := bucket.Keys
-		for _, key := range keys {
-			if accessKey == key.AccessKey {
-				credential.AccessKeyID = accessKey
-				credential.SecretAccessKey = key.SecretAccessKey
-				break
-			}
-
-		}
-		if credential.AccessKeyID == "" {
-			res := response.NewString(401, "")
-			monitoring.Log().Warn("S3Auth invalid bucket config no access key or invalid", zap.String("bucket", bucketName), zap.String("req.method", req.Method), zap.String("req.path", req.URL.Path))
-			res.Send(resWriter)
 			return
 		}
 
@@ -185,7 +149,6 @@ func (s *S3Auth) Handler(next http.Handler) http.Handler {
 
 		if auth == validiatonReq.Header.Get("Authorization") {
 			req.Body = validiatonReq.Body
-			//c.Set("accessKey", accessKey)
 			if path == "/" {
 				s.listAllMyBuckets(resWriter, accessKey)
 				return
@@ -204,6 +167,39 @@ func (s *S3Auth) Handler(next http.Handler) http.Handler {
 	}
 
 	return http.HandlerFunc(fn)
+}
+func (s *S3Auth) getCredentials(bucketName, accessKey string, w http.ResponseWriter) (awsauth.Credentials, bool) {
+	var credential awsauth.Credentials
+	bucket, ok := s.mortConfig.Buckets[bucketName]
+	if !ok {
+		buckets := s.mortConfig.BucketsByAccessKey(accessKey)
+		if len(buckets) == 0 {
+			monitoring.Log().Warn("S3Auth no bucket for access key")
+			res := response.NewString(403, "")
+			res.Send(w)
+			return credential, false
+		}
+
+		bucket = buckets[0]
+	}
+
+	keys := bucket.Keys
+	for _, key := range keys {
+		if accessKey == key.AccessKey {
+			credential.AccessKeyID = accessKey
+			credential.SecretAccessKey = key.SecretAccessKey
+			break
+		}
+
+	}
+	if credential.AccessKeyID == "" {
+		res := response.NewString(401, "")
+		monitoring.Log().Warn("S3Auth invalid bucket config no access key or invalid", zap.String("bucket", bucketName))
+		res.Send(w)
+		return credential, false
+	}
+
+	return credential, true
 }
 
 func (s *S3Auth) listAllMyBuckets(resWriter http.ResponseWriter, accessKey string) {
