@@ -22,7 +22,8 @@ var autHeaderRegexpv4 = regexp.MustCompile("^(:?[A-Za-z0-9-]+) Credential=(:?.+)
 // authHeaderRegexpv2 regular expression for Aws Auth v2 header mode
 var authHeaderRegexpv2 = regexp.MustCompile("^AWS ([A-Za-z0-9-]+):(.+)$")
 
-var AuthCtxKey = 123
+// S3AuthCtxKey flag if we have perform authorisation
+const S3AuthCtxKey = 123
 
 func isAuthRequired(req *http.Request, auth string, path string) bool {
 	method := req.Method
@@ -62,6 +63,7 @@ func NewS3AuthMiddleware(mortConfig *config.Config) *S3Auth {
 // Handler main method of S3AuthMiddleware it check if request should be signed. If so it create copy of request
 // and calculate signature and compare result with user request if signature is correct request is passed to next handler
 // otherwise it return 403
+// nolint: gocyclo
 func (s *S3Auth) Handler(next http.Handler) http.Handler {
 	mortConfig := s.mortConfig
 	fn := func(resWriter http.ResponseWriter, req *http.Request) {
@@ -189,7 +191,7 @@ func (s *S3Auth) Handler(next http.Handler) http.Handler {
 				return
 			}
 
-			ctx := context.WithValue(req.Context(), AuthCtxKey, true)
+			ctx := context.WithValue(req.Context(), S3AuthCtxKey, true)
 
 			next.ServeHTTP(resWriter, req.WithContext(ctx))
 			return
@@ -292,7 +294,7 @@ func (s *S3Auth) authByQuery(resWriter http.ResponseWriter, r *http.Request, buc
 	awsauth.PreSign(&validationReq, "mort", "s3", strings.Split(validationReq.URL.Query().Get("X-Amz-SignedHeaders"), ","), credential)
 
 	if validationReq.URL.Query().Get("X-Amz-Signature") == r.URL.Query().Get("X-Amz-Signature") {
-		ctx := context.WithValue(r.Context(), AuthCtxKey, true)
+		ctx := context.WithValue(r.Context(), S3AuthCtxKey, true)
 
 		next.ServeHTTP(resWriter, r.WithContext(ctx))
 		return

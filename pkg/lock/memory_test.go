@@ -113,13 +113,13 @@ func BenchmarkMemoryLock_NotifyAndRelease(b *testing.B) {
 	l := NewMemoryLock()
 	key := "aaa"
 	buf := make([]byte, 10)
-	result, acquired := l.Lock(key)
+	l.Lock(key)
 	go time.AfterFunc(time.Millisecond*time.Duration(500), func() {
 		l.NotifyAndRelease(key, response.NewBuf(200, buf))
 	})
 
 	for i := 0; i < b.N; i++ {
-		result, acquired = l.Lock(key)
+		result, acquired := l.Lock(key)
 		multi := 500 % (i + 1)
 		if acquired {
 			go time.AfterFunc(time.Millisecond*time.Duration(multi), func() {

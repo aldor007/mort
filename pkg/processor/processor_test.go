@@ -234,7 +234,7 @@ func TestPut(t *testing.T) {
 func TestS3GET(t *testing.T) {
 	req, _ := http.NewRequest("GET", "http://mort/local?maker=&max-keys=1000&delimter=&prefix=", nil)
 	ctx := req.Context()
-	ctx = context.WithValue(ctx, middleware.AuthCtxKey, true)
+	ctx = context.WithValue(ctx, middleware.S3AuthCtxKey, true)
 	req = req.WithContext(ctx)
 
 	mortConfig := config.Config{}
@@ -255,7 +255,7 @@ func TestS3GET(t *testing.T) {
 func TestS3GETNoCache(t *testing.T) {
 	req, _ := http.NewRequest("GET", "http://mort/local/small.jpg", nil)
 	ctx := req.Context()
-	ctx = context.WithValue(ctx, middleware.AuthCtxKey, true)
+	ctx = context.WithValue(ctx, middleware.S3AuthCtxKey, true)
 	req = req.WithContext(ctx)
 
 	mortConfig := config.Config{}

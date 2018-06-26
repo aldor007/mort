@@ -138,7 +138,7 @@ func (r *Response) CopyBody() ([]byte, error) {
 		r.reader = ioutil.NopCloser(bytes.NewReader(buf))
 	}
 
-	return r.body, nil
+	return buf, nil
 }
 
 // Close response reader

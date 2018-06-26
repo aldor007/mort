@@ -31,6 +31,7 @@ func decodeQuery(url *url.URL, bucketConfig config.Bucket, obj *FileObject) (str
 	return "", err
 }
 
+// nolint: gocyclo
 func queryToTransform(query url.Values) (transforms.Transforms, error) {
 	var trans transforms.Transforms
 	if len(query) == 0 {

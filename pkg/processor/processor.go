@@ -261,13 +261,15 @@ func (r *RequestProcessor) fetchResponseFromCache(key string, allowExpired bool)
 
 }
 
+// Handle single GET
+// nolint: gocyclo
 func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) *response.Response {
 	ctx := obj.Ctx
 	if cacheRes := r.fetchResponseFromCache(obj.Key, false); cacheRes != nil {
 		return cacheRes
 	}
 
-	var currObj *object.FileObject = obj
+	currObj := obj
 	var parentObj *object.FileObject
 	var transformsTab []transforms.Transforms
 	var res *response.Response
@@ -475,7 +477,7 @@ func updateHeaders(obj *object.FileObject, res *response.Response) *response.Res
 		}
 	}
 
-	if ctx.Value(middleware.AuthCtxKey) != nil {
+	if ctx.Value(middleware.S3AuthCtxKey) != nil {
 		res.Set("Cache-Control", "no-cache")
 	}
 

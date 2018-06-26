@@ -146,6 +146,7 @@ func Delete(obj *object.FileObject) *response.Response {
 }
 
 // List returns list of object in given path in S3 format
+// nolint: gocyclo
 func List(obj *object.FileObject, maxKeys int, _ string, prefix string, marker string) *response.Response {
 	client, err := getClient(obj)
 	if err != nil {
