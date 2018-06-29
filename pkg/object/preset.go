@@ -23,7 +23,7 @@ var presetCache = make(map[string]transforms.Transforms)
 var presetCacheLock = sync.RWMutex{}
 
 // decodePreset parse given url by matching user defined regexp with request path
-func decodePreset(url *url.URL, bucketConfig config.Bucket, obj *FileObject) (string, error) {
+func decodePreset(_ *url.URL, bucketConfig config.Bucket, obj *FileObject) (string, error) {
 	trans := bucketConfig.Transform
 	matches := trans.PathRegexp.FindStringSubmatch(obj.Key)
 	if matches == nil {
@@ -78,6 +78,8 @@ func decodePreset(url *url.URL, bucketConfig config.Bucket, obj *FileObject) (st
 	return parent, err
 }
 
+// presetToTransform convert preset config to transform
+// nolint: gocyclo
 func presetToTransform(preset config.Preset) (transforms.Transforms, error) {
 	var trans transforms.Transforms
 	filters := preset.Filters

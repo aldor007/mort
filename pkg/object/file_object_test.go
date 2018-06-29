@@ -186,10 +186,58 @@ func TestNewFileObjectQueryResize(t *testing.T) {
 	assert.Equal(t, 0, transCfg.Height, "invalid width for transform")
 }
 
+func TestNewFileObjectQueryResizeDef(t *testing.T) {
+	mortConfig := &config.Config{}
+	mortConfig.Load("testdata/bucket-transform-query-parent-storage.yml")
+	obj, err := NewFileObject(pathToURL("/bucket/parent.jpg?width=101&height=292"), mortConfig)
+
+	assert.Nil(t, err, "Unexpected to have error when parsing path")
+
+	assert.NotNil(t, obj, "obj should be nil")
+
+	assert.True(t, obj.HasParent(), "obj should have parent")
+	assert.True(t, obj.HasTransform(), "obj should have transforms")
+
+	parent := obj.Parent
+
+	assert.Equal(t, "/parent.jpg", parent.Key, "invalid parent key")
+
+	transCfg, err := obj.Transforms.BimgOptions(imageInfo)
+
+	assert.Nil(t, err, "Unexpected to have error when getting transforms")
+
+	assert.Equal(t, 101, transCfg.Width, "invalid width for transform")
+	assert.Equal(t, 292, transCfg.Height, "invalid width for transform")
+}
+
+func TestNewFileObjectQueryResize2(t *testing.T) {
+	mortConfig := &config.Config{}
+	mortConfig.Load("testdata/bucket-transform-query-parent-storage.yml")
+	obj, err := NewFileObject(pathToURL("/bucket/parent.jpg?width=100&operation=resize"), mortConfig)
+
+	assert.Nil(t, err, "Unexpected to have error when parsing path")
+
+	assert.NotNil(t, obj, "obj should be nil")
+
+	assert.True(t, obj.HasParent(), "obj should have parent")
+	assert.True(t, obj.HasTransform(), "obj should have transforms")
+
+	parent := obj.Parent
+
+	assert.Equal(t, "/parent.jpg", parent.Key, "invalid parent key")
+
+	transCfg, err := obj.Transforms.BimgOptions(imageInfo)
+
+	assert.Nil(t, err, "Unexpected to have error when getting transforms")
+
+	assert.Equal(t, 100, transCfg.Width, "invalid width for transform")
+	assert.Equal(t, 0, transCfg.Height, "invalid width for transform")
+}
+
 func TestNewFileObjectQueryCrop(t *testing.T) {
 	mortConfig := &config.Config{}
 	mortConfig.Load("testdata/bucket-transform-query-parent-storage.yml")
-	obj, err := NewFileObject(pathToURL("/bucket/parent.jpg?width=100&operation=crop"), mortConfig)
+	obj, err := NewFileObject(pathToURL("/bucket/parent.jpg?width=100&operation=crop&quality=20"), mortConfig)
 
 	assert.Nil(t, err, "Unexpected to have error when parsing path")
 
@@ -250,6 +298,56 @@ func TestNewFileObjectPresetQueryBlur(t *testing.T) {
 	assert.Equal(t, transCfg.Interpretation, bimg.InterpretationBW)
 }
 
+func TestNewFileObjectPresetQueryRotate(t *testing.T) {
+	mortConfig := &config.Config{}
+	mortConfig.Load("testdata/bucket-transform-query-parent-storage.yml")
+	obj, err := NewFileObject(pathToURL("/bucket/parent.jpg?width=100&operation=rotate&format=jpg&angle=90&format=tiff"), mortConfig)
+
+	assert.Nil(t, err, "Unexpected to have error when parsing path")
+
+	assert.NotNil(t, obj, "obj should be nil")
+
+	assert.True(t, obj.HasParent(), "obj should have parent")
+	assert.True(t, obj.HasTransform(), "obj should have transforms")
+
+	parent := obj.Parent
+
+	assert.Equal(t, "/parent.jpg", parent.Key, "invalid parent key")
+
+	transCfg, err := obj.Transforms.BimgOptions(imageInfo)
+
+	assert.Nil(t, err, "Unexpected to have error when getting transforms")
+
+	assert.Equal(t, 0, transCfg.Height, "invalid height for transform")
+	assert.Equal(t, bimg.D90, transCfg.Rotate)
+}
+
+func TestNewFileObjectPresetQueryWatermarkErr(t *testing.T) {
+	mortConfig := &config.Config{}
+	mortConfig.Load("testdata/bucket-transform-query-parent-storage.yml")
+	_, err := NewFileObject(pathToURL("/bucket/parent.jpg?width=100&operation=watermark&opacity=0.5&minAmpl=0.5&image=http://www"), mortConfig)
+	assert.NotNil(t, err)
+
+}
+
+func TestNewFileObjectPresetQueryWatermark(t *testing.T) {
+	mortConfig := &config.Config{}
+	mortConfig.Load("testdata/bucket-transform-query-parent-storage.yml")
+	obj, err := NewFileObject(pathToURL("/bucket/parent.jpg?width=100&operation=watermark&opacity=0.5&minAmpl=0.5&image=http://www&position=top-left"), mortConfig)
+	assert.Nil(t, err)
+
+	assert.True(t, obj.HasParent(), "obj should have parent")
+	assert.True(t, obj.HasTransform(), "obj should have transforms")
+
+	parent := obj.Parent
+
+	assert.Equal(t, "/parent.jpg", parent.Key, "invalid parent key")
+
+	_, err = obj.Transforms.BimgOptions(imageInfo)
+
+	assert.NotNil(t, err)
+}
+
 func TestNewFileObjectPresetPresetBlur(t *testing.T) {
 	mortConfig := &config.Config{}
 	err := mortConfig.Load("testdata/bucket-transform-preset-query.yml")
@@ -301,15 +399,15 @@ func BenchmarkNewFileObject(b *testing.B) {
 
 	b.ReportAllocs()
 	for _, bm := range benchmarks {
-		config := config.Config{}
-		err := config.Load(bm.configPath)
+		configInstance := config.Config{}
+		err := configInstance.Load(bm.configPath)
 		if err != nil {
 			panic(err)
 		}
 
 		b.Run(bm.path, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				NewFileObject(pathToURL(bm.path), &config)
+				NewFileObject(pathToURL(bm.path), &configInstance)
 			}
 		})
 	}

@@ -1,3 +1,7 @@
+* 0.11.2
+    * Bugfix: Fix compress plugin (don't compress on range or condition)
+* 0.11.1
+    * Bugfix: Fix compress plugin (it was returning invalid headers, Content-Encoding: gzip/br when no compression)
 * 0.11.0
     * Feature: Compress plugin (gzip, brotli)
 * 0.10.0

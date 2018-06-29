@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"compress/gzip"
+	"github.com/aldor007/mort/pkg/helpers"
 	"github.com/aldor007/mort/pkg/object"
 	"github.com/aldor007/mort/pkg/response"
 	brEnc "gopkg.in/kothar/brotli-go.v0/enc"
@@ -20,7 +21,7 @@ type compressConfig struct {
 	enabled bool
 }
 
-// WebpPlugin plugins that transform image to webp if web browser can handle that format
+// CompressPlugin plugins that transform image to webp if web browser can handle that format
 type CompressPlugin struct {
 	brotli compressConfig
 	gzip   compressConfig
@@ -60,7 +61,7 @@ func (c *CompressPlugin) configure(config interface{}) {
 }
 
 // PreProcess add webp transform to object
-func (_ CompressPlugin) preProcess(obj *object.FileObject, req *http.Request) {
+func (CompressPlugin) preProcess(obj *object.FileObject, req *http.Request) {
 
 }
 
@@ -68,15 +69,15 @@ func (_ CompressPlugin) preProcess(obj *object.FileObject, req *http.Request) {
 func (c CompressPlugin) postProcess(obj *object.FileObject, req *http.Request, res *response.Response) {
 	acceptEnc := req.Header.Get("Accept-Encoding")
 	contentType := res.Headers.Get("Content-Type")
-	if acceptEnc == "" || contentType == "" || (res.ContentLength < 1000 && res.ContentLength != -1) {
+	if acceptEnc == "" || contentType == "" || helpers.IsRangeOrCondition(req) || (res.ContentLength < 1000 && res.ContentLength != -1) {
 		return
 	}
 
 	if c.brotli.enabled && strings.Contains(acceptEnc, "br") {
-		res.Headers.Set("Content-Encoding", "br")
-		res.Headers.Add("Vary", "Accept-Encoding")
 		for _, supportedType := range c.brotli.types {
 			if contentType == supportedType {
+				res.Headers.Set("Content-Encoding", "br")
+				res.Headers.Add("Vary", "Accept-Encoding")
 				res.BodyTransformer(func(w io.Writer) io.WriteCloser {
 					params := brEnc.NewBrotliParams()
 					params.SetQuality(c.brotli.level)
@@ -90,10 +91,10 @@ func (c CompressPlugin) postProcess(obj *object.FileObject, req *http.Request, r
 	}
 
 	if c.gzip.enabled && strings.Contains(acceptEnc, "gzip") {
-		res.Headers.Set("Content-Encoding", "gzip")
-		res.Headers.Add("Vary", "Accept-Encoding")
 		for _, supportedType := range c.gzip.types {
 			if contentType == supportedType {
+				res.Headers.Set("Content-Encoding", "gzip")
+				res.Headers.Add("Vary", "Accept-Encoding")
 				res.BodyTransformer(func(w io.Writer) io.WriteCloser {
 					gzipW, err := gzip.NewWriterLevel(w, c.gzip.level)
 					if err != nil {

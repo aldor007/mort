@@ -137,14 +137,17 @@ func Delete(obj *object.FileObject) *response.Response {
 			monitoring.Logs().Warnw("Storage/Delete cannot delete", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 500), zap.Error(err))
 			return response.NewError(500, err)
 		}
+	} else if resHead.StatusCode == 404 {
+		res := response.NewNoContent(200)
+		return res
 	}
 
-	res := response.NewNoContent(200)
-	return res
+	return resHead
 }
 
 // List returns list of object in given path in S3 format
-func List(obj *object.FileObject, maxKeys int, delimeter string, prefix string, marker string) *response.Response {
+// nolint: gocyclo
+func List(obj *object.FileObject, maxKeys int, _ string, prefix string, marker string) *response.Response {
 	client, err := getClient(obj)
 	if err != nil {
 		monitoring.Logs().Warnw("Storage/List", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 503), zap.Error(err))

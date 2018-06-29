@@ -122,7 +122,7 @@ func configInvalidError(msg string) error {
 }
 
 func (c *Config) validateStorage(bucketName string, storages StorageTypes) error {
-	validStorageKind := false
+	var validStorageKind bool
 	var err error
 	basic := storages.Basic()
 	if basic.Kind == "" {
@@ -130,7 +130,6 @@ func (c *Config) validateStorage(bucketName string, storages StorageTypes) error
 	}
 
 	for storageName, storage := range storages {
-		validStorageKind = false
 		for _, k := range storageKinds {
 			if k == storage.Kind {
 				validStorageKind = true

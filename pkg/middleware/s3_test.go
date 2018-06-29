@@ -203,3 +203,47 @@ func TestS3Auth_Handler401S3Put_v4Query(t *testing.T) {
 	assert.False(t, next.called)
 	assert.Equal(t, recorder.Code, 401)
 }
+
+func TestS3Auth_Handler200S3Get_v4Query(t *testing.T) {
+	configData := config.GetInstance()
+	configData.Load("./config.yml")
+
+	s3 := NewS3AuthMiddleware(configData)
+
+	next := nextHandler{}
+	fn := s3.Handler(&next)
+
+	buf := bytes.Buffer{}
+	buf.WriteString("aaaa-s3")
+
+	req, _ := http.NewRequest("GET", "http://mort/local/test.jpg?X-Amz-Date=88888888888&X-Amz-Credential=acc/AWS", &buf)
+	awsauth.PreSign(req, "mort", "s3", []string{}, awsauth.Credentials{AccessKeyID: "acc", SecretAccessKey: "sec"})
+
+	recorder := httptest.NewRecorder()
+	fn.ServeHTTP(recorder, req)
+
+	assert.True(t, next.called)
+	assert.Equal(t, recorder.Code, 200)
+}
+
+func TestS3Auth_Handler401S3Get_v4Query2(t *testing.T) {
+	configData := config.GetInstance()
+	configData.Load("./config.yml")
+
+	s3 := NewS3AuthMiddleware(configData)
+
+	next := nextHandler{}
+	fn := s3.Handler(&next)
+
+	buf := bytes.Buffer{}
+	buf.WriteString("aaaa-s3")
+
+	req, _ := http.NewRequest("GET", "http://mort/local/test.jpg?X-Amz-Date=88888888888&X-Amz-Credential=ac5c/AWS", &buf)
+	awsauth.PreSign(req, "mort", "s3", []string{}, awsauth.Credentials{AccessKeyID: "acc", SecretAccessKey: "sec"})
+
+	recorder := httptest.NewRecorder()
+	fn.ServeHTTP(recorder, req)
+
+	assert.False(t, next.called)
+	assert.Equal(t, recorder.Code, 401)
+}

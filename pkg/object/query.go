@@ -31,18 +31,52 @@ func decodeQuery(url *url.URL, bucketConfig config.Bucket, obj *FileObject) (str
 	return "", err
 }
 
+// nolint: gocyclo
 func queryToTransform(query url.Values) (transforms.Transforms, error) {
-	var trans transforms.Transforms
 	if len(query) == 0 {
-		return trans, nil
+		return transforms.Transforms{}, nil
 	}
 
+	trans, err := parseOperation(query)
+
+	if err != nil {
+		return trans, err
+	}
+
+	var q int
+	if _, ok := query["quality"]; ok {
+		q, _ = queryToInt(query, "quality")
+		trans.Quality(q)
+	}
+
+	if format, ok := query["format"]; ok {
+		err = trans.Format(format[0])
+		if err != nil {
+			return trans, err
+		}
+	}
+
+	if _, ok := query["grayscale"]; ok {
+		trans.Grayscale()
+	}
+
+	return trans, err
+}
+
+func queryToInt(q url.Values, k string) (int, error) {
+	r, err := strconv.ParseInt(q.Get(k), 10, 32)
+	return int(r), err
+
+}
+
+func parseOperation(query url.Values) (transforms.Transforms, error) {
+	var trans transforms.Transforms
 	var err error
 	opt := query.Get("operation")
 	if opt == "" {
 		w, err1 := queryToInt(query, "width")
 		h, err2 := queryToInt(query, "height")
-		if (err1 != nil || err2 != nil) && (w != 0 || h != 0) {
+		if (err1 == nil || err2 == nil) && (w != 0 || h != 0) {
 			err = trans.Resize(w, h, false)
 			if err != nil {
 				return trans, err
@@ -64,8 +98,8 @@ func queryToTransform(query url.Values) (transforms.Transforms, error) {
 						}
 					case "crop":
 						var w, h int
-						w, err = queryToInt(query, "width")
-						h, err = queryToInt(query, "height")
+						w, _ = queryToInt(query, "width")
+						h, _ = queryToInt(query, "height")
 
 						err = trans.Crop(w, h, query.Get("gravity"), false)
 						if err != nil {
@@ -110,29 +144,6 @@ func queryToTransform(query url.Values) (transforms.Transforms, error) {
 			}
 		}
 	}
-
-	var q int
-	if _, ok := query["quality"]; ok {
-		q, _ = queryToInt(query, "quality")
-		trans.Quality(q)
-	}
-
-	if format, ok := query["format"]; ok {
-		err = trans.Format(format[0])
-		if err != nil {
-			return trans, err
-		}
-	}
-
-	if _, ok := query["grayscale"]; ok {
-		trans.Grayscale()
-	}
-
-	return trans, err
-}
-
-func queryToInt(q url.Values, k string) (int, error) {
-	r, err := strconv.ParseInt(q.Get(k), 10, 32)
-	return int(r), err
+	return trans, nil
 
 }

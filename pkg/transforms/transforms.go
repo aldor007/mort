@@ -201,7 +201,7 @@ func (t *Transforms) Format(format string) error {
 // Watermark merge two image in one
 func (t *Transforms) Watermark(image string, position string, opacity float32) error {
 	if image == "" || position == "" {
-		return errors.New("missing required params")
+		return errors.New("missing required params image or position")
 	}
 
 	p := strings.Split(position, "-")
