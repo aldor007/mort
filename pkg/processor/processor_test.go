@@ -277,6 +277,7 @@ func TestTransformWrongContentType(t *testing.T) {
 
 	mortConfig := config.Config{}
 	err := mortConfig.Load("./benchmark/small.yml")
+	assert.Nil(t, err)
 
 	obj, err := object.NewFileObject(req.URL, &mortConfig)
 	assert.Nil(t, err)

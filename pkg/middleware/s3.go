@@ -22,8 +22,10 @@ var autHeaderRegexpv4 = regexp.MustCompile("^(:?[A-Za-z0-9-]+) Credential=(:?.+)
 // authHeaderRegexpv2 regular expression for Aws Auth v2 header mode
 var authHeaderRegexpv2 = regexp.MustCompile("^AWS ([A-Za-z0-9-]+):(.+)$")
 
+type s3Context string
+
 // S3AuthCtxKey flag if we have perform authorisation
-const S3AuthCtxKey = iota
+var S3AuthCtxKey s3Context = "s3-auth"
 
 func isAuthRequired(req *http.Request, auth string, path string) bool {
 	method := req.Method

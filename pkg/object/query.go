@@ -82,67 +82,69 @@ func parseOperation(query url.Values) (transforms.Transforms, error) {
 				return trans, err
 			}
 		}
-	} else {
-		for qsKey, values := range query {
-			if qsKey == "operation" {
-				for _, o := range values {
-					switch o {
-					case "resize":
-						var w, h int
-						w, _ = queryToInt(query, "width")
-						h, _ = queryToInt(query, "height")
+		return trans, err
+	}
 
-						err = trans.Resize(w, h, false)
-						if err != nil {
-							return trans, err
-						}
-					case "crop":
-						var w, h int
-						w, _ = queryToInt(query, "width")
-						h, _ = queryToInt(query, "height")
+	for qsKey, values := range query {
+		if qsKey == "operation" {
+			for _, o := range values {
+				switch o {
+				case "resize":
+					var w, h int
+					w, _ = queryToInt(query, "width")
+					h, _ = queryToInt(query, "height")
 
-						err = trans.Crop(w, h, query.Get("gravity"), false)
-						if err != nil {
-							return trans, err
-						}
-					case "watermark":
-						var opacity float64
-						opacity, err = strconv.ParseFloat(query.Get("opacity"), 32)
-						if err != nil {
-							return trans, err
-						}
-						err = trans.Watermark(query.Get("image"), query.Get("position"), float32(opacity))
-						if err != nil {
-							return trans, err
-						}
-					case "blur":
-						var sigma, minAmpl float64
-						sigma, err = strconv.ParseFloat(query.Get("sigma"), 32)
-						if err != nil {
-							return trans, err
-						}
+					err = trans.Resize(w, h, false)
+					if err != nil {
+						return trans, err
+					}
+				case "crop":
+					var w, h int
+					w, _ = queryToInt(query, "width")
+					h, _ = queryToInt(query, "height")
 
-						minAmpl, _ = strconv.ParseFloat(query.Get("minAmpl"), 32)
-						err = trans.Blur(sigma, minAmpl)
-						if err != nil {
-							return trans, err
-						}
-					case "rotate":
-						var a int
-						a, err = queryToInt(query, "angle")
-						if err != nil {
-							return trans, err
-						}
-						err = trans.Rotate(a)
-						if err != nil {
-							return trans, err
-						}
+					err = trans.Crop(w, h, query.Get("gravity"), false)
+					if err != nil {
+						return trans, err
+					}
+				case "watermark":
+					var opacity float64
+					opacity, err = strconv.ParseFloat(query.Get("opacity"), 32)
+					if err != nil {
+						return trans, err
+					}
+					err = trans.Watermark(query.Get("image"), query.Get("position"), float32(opacity))
+					if err != nil {
+						return trans, err
+					}
+				case "blur":
+					var sigma, minAmpl float64
+					sigma, err = strconv.ParseFloat(query.Get("sigma"), 32)
+					if err != nil {
+						return trans, err
 					}
 
+					minAmpl, _ = strconv.ParseFloat(query.Get("minAmpl"), 32)
+					err = trans.Blur(sigma, minAmpl)
+					if err != nil {
+						return trans, err
+					}
+				case "rotate":
+					var a int
+					a, err = queryToInt(query, "angle")
+					if err != nil {
+						return trans, err
+					}
+					err = trans.Rotate(a)
+					if err != nil {
+						return trans, err
+					}
 				}
-				break
+
 			}
+			break
 		}
+
 	}
 	return trans, nil
 
