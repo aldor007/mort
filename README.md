@@ -1,9 +1,9 @@
 # Mort 
-[![Build Status](https://travis-ci.org/aldor007/mort.png)](https://travis-ci.org/aldor007/mort) ![Codecov](https://img.shields.io/codecov/c/github/aldor007/mort.svg) [![Docker](https://img.shields.io/badge/docker-aldor007/mort-blue.svg)](https://hub.docker.com/r/aldor007/mort/) [![Docker Registry](https://img.shields.io/docker/pulls/aldor007/mort.svg)](https://hub.docker.com/r/aldor007/mort/pkg/) [![Go Report Card](http://goreportcard.com/badge/aldor007/mort)](http://goreportcard.com/report/aldor007/mort) [![Godoc](http://img.shields.io/badge/go-documentation-blue.svg?style=flat-square)](https://godoc.org/github.com/aldor007/mort) [![Releases](https://img.shields.io/github/release/aldor007/mort/all.svg?style=flat-square)](https://github.com/aldor007/mort/releases)  [![LICENSE](https://img.shields.io/github/license/aldor007/mort.svg?style=flat-square)](https://github.com/aldor007/mort/blob/master/LICENSE.md)
+[![Build Status](https://travis-ci.org/aldor007/mort.png)](https://travis-ci.org/aldor007/mort) [![Codecov](https://img.shields.io/codecov/c/github/aldor007/mort.svg)](https://codecov.io/gh/aldor007/mort) [![Docker](https://img.shields.io/badge/docker-aldor007/mort-blue.svg)](https://hub.docker.com/r/aldor007/mort/) [![Docker Registry](https://img.shields.io/docker/pulls/aldor007/mort.svg)](https://hub.docker.com/r/aldor007/mort/pkg/) [![Go Report Card](http://goreportcard.com/badge/aldor007/mort)](http://goreportcard.com/report/aldor007/mort) [![Godoc](http://img.shields.io/badge/go-documentation-blue.svg?style=flat-square)](https://godoc.org/github.com/aldor007/mort) [![Releases](https://img.shields.io/github/release/aldor007/mort/all.svg?style=flat-square)](https://github.com/aldor007/mort/releases)  [![LICENSE](https://img.shields.io/github/license/aldor007/mort.svg?style=flat-square)](https://github.com/aldor007/mort/blob/master/LICENSE.md)
                                                                                                                                                                                                                                                                                                                                                                                                                                                            
 <img src="https://mort.mkaciuba.com/demo/medium/gopher.png" width="500px"/>
 
-S3 compatible image processing server written in Go. Still in active development.
+An S3-compatible image processing server written in Go. Still in active development.
 
 # Features
 
@@ -15,8 +15,8 @@ S3 compatible image processing server written in Go. Still in active development
 * S3 API for listing and uploading files
 * Request collapsing
 * Build in rate limiter
-* Handling range and Condition request
-* Compression
+* HTTP Range and Conditional request
+* Compression (gzip, brotli)
 
 And more see [changelog](CHANGELOG.md) for more info
 
@@ -24,7 +24,7 @@ And more see [changelog](CHANGELOG.md) for more info
 -------
 [Original image](https://mort.mkaciuba.com/demo/img.jpg)
 
-Click on result image to see it url. More examples can be found in [Image Operations list](doc/Image-Operations.md)
+Click on result image to see URL. More examples can be found in [Image Operations list](doc/Image-Operations.md)
 <table>
     <thead>
     <tr>
@@ -95,7 +95,8 @@ Click on result image to see it url. More examples can be found in [Image Operat
     
 # Usage
 
-Mort can be used direct from Internet and behind any proxy. 
+Mort can be used directly from the Internet and behind any proxy. 
+
 
 ## Install
 
