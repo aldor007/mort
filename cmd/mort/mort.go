@@ -143,7 +143,6 @@ func startServer(s *http.Server, ln net.Listener) {
 
 func main() {
 	configPath := flag.String("config", "/etc/mort/mort.yml", "Path to configuration")
-	debug := flag.Bool("debug", false, "enable debug mode")
 	version := flag.Bool("version", false, "get mort version")
 	flag.Parse()
 
@@ -162,7 +161,7 @@ func main() {
 	}
 
 	fmt.Printf(BANNER, "v"+Version)
-	fmt.Printf("Config file %s listen addr %s debug: %t pid: %d \n", *configPath, imgConfig.Server.Listen, *debug, os.Getpid())
+	fmt.Printf("Config file %s listen addr %s montoring: and debug listen %s pid: %d \n", *configPath, imgConfig.Server.Listen, imgConfig.Server.InternalListen, os.Getpid())
 
 	rp := processor.NewRequestProcessor(imgConfig.Server, lock.NewMemoryLock(), throttler.NewBucketThrottler(10))
 	s3Auth := mortMiddleware.NewS3AuthMiddleware(imgConfig)

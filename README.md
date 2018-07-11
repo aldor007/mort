@@ -9,13 +9,13 @@ An S3-compatible image processing server written in Go. Still in active developm
 
 * HTTP server
 * Resize, Rotate, SmartCrop
-* Convert (JPEG, , PNG , BMP, TIFF, ...)
+* Convert (JPEG, PNG , BMP, Webp)
 * Multiple storage backends (disk, S3, http)
 * Fully modular
 * S3 API for listing and uploading files
-* Request collapsing
+* Requests collapsing
 * Build in rate limiter
-* HTTP Range and Conditional request
+* HTTP Range and Conditional requests
 * Compression (gzip, brotli)
 
 And more see [changelog](CHANGELOG.md) for more info
@@ -213,6 +213,8 @@ Run docker
 docker run -p 8080:8080 myusername/mort
 ```
 
+Full example you can find [here](example/)
+ 
 # Development
 1. Make sure you have a Go language compiler >= 1.9 (required) and git installed.
 2. Install libvips like described on [bimg page](https://github.com/h2non/bimg)
