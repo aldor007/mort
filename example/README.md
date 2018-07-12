@@ -27,11 +27,11 @@
 
 * config.yml - mort configuration file (copy of demo config)
 * deploy-mort.sh - bash script for building and running mort instance
-* Dockerfile - simple docker file wit configuration for mort
+* Dockerfile - simple docker file with configuration for mort
 * mort-nginx.config - full nginx configuration that can be easy extanded for any use case
 * monitoring.json - example monitoring dashboard 
 
 ## Grafana dashboard
 
-<img src="https://mort.mkaciuba.com/demo/medium/dashboard.png" width="500px"/>
+<a href="https://mort.mkaciuba.com/demo/dashboard.png"><img src="https://mort.mkaciuba.com/demo/medium/dashboard.png" width="500px"/></a>
 
