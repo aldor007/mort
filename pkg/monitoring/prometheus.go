@@ -95,9 +95,9 @@ func (p *PrometheusReporter) Histogram(metric string, val float64) {
 
 // Timer allows you to measure time. It returns Timer object on which you have to call Done to end measurement
 func (p *PrometheusReporter) Timer(metric string) Timer {
-	t := Timer{time.Now(), func(start time.Time) {
+	t := Timer{time.Now(), metric, func(start time.Time, metricName string) {
 		timeDiff := time.Since(start)
-		p.Histogram(metric, float64(timeDiff.Nanoseconds()/1000))
+		p.Histogram(metricName, float64(timeDiff.Nanoseconds()/1000.0))
 	}}
 
 	return t
