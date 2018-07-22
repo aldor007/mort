@@ -121,43 +121,27 @@ func (r *RequestProcessor) replyWithError(obj *object.FileObject, sc int, err er
 		return cacheRes
 	}
 
-	lockResult, locked := r.collapse.Lock(key)
-	if locked {
-		defer r.collapse.Release(key)
-		monitoring.Log().Info("Lock acquired for error response", zap.String("obj.Key", obj.Key))
-		parent := response.NewBuf(200, r.serverConfig.PlaceholderBuf)
-		transformsTab := []transforms.Transforms{obj.Transforms}
+	go func() {
+		lockData, locked := r.collapse.Lock(key)
+		if locked {
+			defer r.collapse.Release(key)
+			monitoring.Log().Info("Lock acquired for error response", zap.String("obj.Key", obj.Key))
+			parent := response.NewBuf(200, r.serverConfig.PlaceholderBuf)
+			transformsTab := []transforms.Transforms{obj.Transforms}
 
-		eng := engine.NewImageEngine(parent)
-		res, errProcess := eng.Process(obj, transformsTab)
+			eng := engine.NewImageEngine(parent)
+			res, _ := eng.Process(obj, transformsTab)
+			monitoring.Report().Inc("cache_ratio;status:set")
+			r.cache.Set(key, res, time.Minute*10)
+		} else {
+			lockData.Cancel <- true
 
-		if errProcess != nil {
-			return response.NewError(sc, err)
 		}
+	}()
 
-		res.StatusCode = sc
-		resCpy, errCpy := res.Copy()
-		if errCpy != nil {
-			r.cache.Set(key, resCpy, time.Minute*10)
-		}
-		return res
-	}
-
-	timer := time.NewTimer(r.lockTimeout)
-
-	for {
-
-		select {
-		case <-timer.C:
-			return response.NewError(sc, err)
-		default:
-			if cacheRes := r.fetchResponseFromCache(key, false); cacheRes != nil {
-				lockResult.Cancel <- true
-				return cacheRes
-			}
-		}
-	}
-
+	res := response.NewBuf(sc, r.serverConfig.PlaceholderBuf)
+	res.SetContentType(http.DetectContentType(r.serverConfig.PlaceholderBuf))
+	return res
 }
 
 func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *response.Response {
@@ -448,6 +432,7 @@ func (r *RequestProcessor) processImage(obj *object.FileObject, parent *response
 
 	resCpy, err := res.Copy()
 	if err == nil {
+		monitoring.Report().Inc("cache_ratio;status:set")
 		r.cache.Set(obj.Key, resCpy, time.Minute*2)
 		go func(objS object.FileObject, resS *response.Response) {
 			storage.Set(&objS, resS.Headers, resS.ContentLength, resS.Stream())
