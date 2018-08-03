@@ -1,3 +1,6 @@
+* 0.12.0    
+    * Feature: Add new monitoring metrics (time of image generation and count of it)
+    * Feature: Do eror placeholder in background (returns it faster to user)
 * 0.11.2
     * Bugfix: Fix compress plugin (don't compress on range or condition)
 * 0.11.1
