@@ -315,6 +315,7 @@ func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) 
 
 			} else {
 				if res.StatusCode == 200 {
+					monitoring.Report().Inc("request_type;type:download")
 					if obj.CheckParent && parentObj != nil && parentRes.StatusCode == 200 {
 						return res
 					}
@@ -415,6 +416,7 @@ func handleS3Get(req *http.Request, obj *object.FileObject) *response.Response {
 }
 
 func (r *RequestProcessor) processImage(obj *object.FileObject, parent *response.Response, transforms []transforms.Transforms) *response.Response {
+	monitoring.Report().Inc("request_type;type:transform")
 	ctx := obj.Ctx
 	taked := r.throttler.Take(ctx)
 	if !taked {
