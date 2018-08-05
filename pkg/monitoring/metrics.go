@@ -14,9 +14,9 @@ type Reporter interface {
 
 // Timer is used for time measurement
 type Timer struct {
-	start time.Time
+	start  time.Time
 	metric string
-	done  func(start time.Time, metric string)
+	done   func(start time.Time, metric string)
 }
 
 // Done end time measurement
