@@ -37,6 +37,9 @@ func NewImageEngine(res *response.Response) *ImageEngine {
 
 // Process main ImageEngine function that create new image (stored in response object)
 func (c *ImageEngine) Process(obj *object.FileObject, trans []transforms.Transforms) (*response.Response, error) {
+	t := monitoring.Report().Timer("generation_time")
+	defer t.Done()
+
 	buf, err := c.parent.ReadBody()
 	if err != nil {
 		return response.NewError(500, err), err

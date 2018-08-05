@@ -30,7 +30,7 @@ import (
 
 const (
 	// Version of mort
-	Version = "0.11.2"
+	Version = "0.12.0"
 	// BANNER just fancy command line banner
 	BANNER = `
   /\/\   ___  _ __| |_
@@ -117,7 +117,7 @@ func configureMonitoring(mortConfig *config.Config) {
 		p.RegisterHistogramVec("storage_time", prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Name:    "mort_storage_time",
 			Help:    "mort storage times",
-			Buckets: []float64{10, 50, 100, 200, 300, 400, 500, 1000, 2000, 3000, 4000, 5000, 6000, 10000, 30000, 60000, 70000, 80000},
+			Buckets: []float64{10.0, 50.0, 100.0, 200.0, 300.0, 400.0, 500., 1000., 2000., 3000., 4000., 5000., 6000., 10000., 30000., 60000., 70000., 80000.},
 		},
 			[]string{"method", "storage"},
 		))
@@ -125,10 +125,23 @@ func configureMonitoring(mortConfig *config.Config) {
 		p.RegisterHistogramVec("response_time", prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Name:    "mort_response_time",
 			Help:    "mort response times",
-			Buckets: []float64{10, 50, 100, 200, 300, 400, 500, 1000, 2000, 3000, 4000, 5000, 6000, 10000, 30000, 60000, 70000, 80000},
+			Buckets: []float64{10.0, 50.0, 100.0, 200.0, 300.0, 400.0, 500., 1000., 2000., 3000., 4000., 5000., 6000., 10000., 30000., 60000., 70000., 80000.},
 		},
 			[]string{"method"},
 		))
+
+		p.RegisterCounterVec("request_type", prometheus.NewCounterVec(prometheus.CounterOpts{
+			Name: "mort_request_type_count",
+			Help: "mort count of given request type",
+		},
+			[]string{"type"},
+		))
+
+		p.RegisterHistogram("generation_time", prometheus.NewHistogram(prometheus.HistogramOpts{
+			Name:    "mort_generation_time",
+			Help:    "mort generation times",
+			Buckets: []float64{10.0, 50.0, 100.0, 200.0, 300.0, 400.0, 500., 1000., 2000., 3000., 4000., 5000., 6000., 10000., 30000., 60000., 70000., 80000.},
+		}))
 
 		monitoring.RegisterReporter(p)
 	}

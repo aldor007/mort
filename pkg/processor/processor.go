@@ -111,53 +111,37 @@ func (r *RequestProcessor) processChan(ctx context.Context) {
 }
 
 func (r *RequestProcessor) replyWithError(obj *object.FileObject, sc int, err error) *response.Response {
-	if !obj.HasTransform() || obj.Debug || r.serverConfig.Placeholder == "" {
+	if !obj.HasTransform() || obj.Debug || r.serverConfig.PlaceholderStr == "" {
 		return response.NewError(sc, err)
 	}
 
-	key := r.serverConfig.Placeholder + strconv.FormatUint(obj.Transforms.Hash().Sum64(), 16)
+	key := r.serverConfig.PlaceholderStr + strconv.FormatUint(obj.Transforms.Hash().Sum64(), 16)
 	if cacheRes := r.fetchResponseFromCache(key, true); cacheRes != nil {
 		cacheRes.StatusCode = sc
 		return cacheRes
 	}
 
-	lockResult, locked := r.collapse.Lock(key)
-	if locked {
-		defer r.collapse.Release(key)
-		monitoring.Log().Info("Lock acquired for error response", zap.String("obj.Key", obj.Key))
-		parent := response.NewBuf(200, r.serverConfig.PlaceholderBuf)
-		transformsTab := []transforms.Transforms{obj.Transforms}
+	go func() {
+		lockData, locked := r.collapse.Lock(key)
+		if locked {
+			defer r.collapse.Release(key)
+			monitoring.Log().Info("Lock acquired for error response", zap.String("obj.Key", obj.Key))
+			parent := response.NewBuf(200, r.serverConfig.Placeholder.Buf)
+			transformsTab := []transforms.Transforms{obj.Transforms}
 
-		eng := engine.NewImageEngine(parent)
-		res, errProcess := eng.Process(obj, transformsTab)
+			eng := engine.NewImageEngine(parent)
+			res, _ := eng.Process(obj, transformsTab)
+			monitoring.Report().Inc("cache_ratio;status:set")
+			r.cache.Set(key, res, time.Minute*10)
+		} else {
+			lockData.Cancel <- true
 
-		if errProcess != nil {
-			return response.NewError(sc, err)
 		}
+	}()
 
-		res.StatusCode = sc
-		resCpy, errCpy := res.Copy()
-		if errCpy != nil {
-			r.cache.Set(key, resCpy, time.Minute*10)
-		}
-		return res
-	}
-
-	timer := time.NewTimer(r.lockTimeout)
-
-	for {
-
-		select {
-		case <-timer.C:
-			return response.NewError(sc, err)
-		default:
-			if cacheRes := r.fetchResponseFromCache(key, false); cacheRes != nil {
-				lockResult.Cancel <- true
-				return cacheRes
-			}
-		}
-	}
-
+	res := response.NewBuf(sc, r.serverConfig.Placeholder.Buf)
+	res.SetContentType(r.serverConfig.Placeholder.ContentType)
+	return res
 }
 
 func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *response.Response {
@@ -331,6 +315,7 @@ func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) 
 
 			} else {
 				if res.StatusCode == 200 {
+					monitoring.Report().Inc("request_type;type:download")
 					if obj.CheckParent && parentObj != nil && parentRes.StatusCode == 200 {
 						return res
 					}
@@ -375,17 +360,6 @@ func (r *RequestProcessor) handleNotFound(obj, parentObj *object.FileObject, tra
 
 			defer parentRes.Close()
 
-			transLen := len(transformsTab)
-			if transLen > 1 {
-				// revers order of transforms
-				for i := 0; i < len(transformsTab)/2; i++ {
-					j := len(transformsTab) - i - 1
-					transformsTab[i], transformsTab[j] = transformsTab[j], transformsTab[i]
-				}
-
-			}
-
-			monitoring.Log().Info("Performing transforms", zap.String("obj.Bucket", obj.Bucket), zap.String("obj.Key", obj.Key), zap.Int("transformsLen", len(transformsTab)))
 			return r.processImage(obj, parentRes, transformsTab)
 		} else if obj.HasTransform() {
 			parentRes.Close()
@@ -430,7 +404,8 @@ func handleS3Get(req *http.Request, obj *object.FileObject) *response.Response {
 
 }
 
-func (r *RequestProcessor) processImage(obj *object.FileObject, parent *response.Response, transforms []transforms.Transforms) *response.Response {
+func (r *RequestProcessor) processImage(obj *object.FileObject, parent *response.Response, transformsTab []transforms.Transforms) *response.Response {
+	monitoring.Report().Inc("request_type;type:transform")
 	ctx := obj.Ctx
 	taked := r.throttler.Take(ctx)
 	if !taked {
@@ -440,14 +415,20 @@ func (r *RequestProcessor) processImage(obj *object.FileObject, parent *response
 	}
 	defer r.throttler.Release()
 
+	transformsLen := len(transformsTab)
+	mergedTrans := transforms.Merge(transformsTab)
+	mergedLen := len(mergedTrans)
+
+	monitoring.Log().Info("Performing transforms", zap.String("obj.Bucket", obj.Bucket), zap.String("obj.Key", obj.Key), zap.Int("transformsLen", transformsLen), zap.Int("mergedLen", mergedLen))
 	eng := engine.NewImageEngine(parent)
-	res, err := eng.Process(obj, transforms)
+	res, err := eng.Process(obj, mergedTrans)
 	if err != nil {
 		return response.NewError(400, err)
 	}
 
 	resCpy, err := res.Copy()
 	if err == nil {
+		monitoring.Report().Inc("cache_ratio;status:set")
 		r.cache.Set(obj.Key, resCpy, time.Minute*2)
 		go func(objS object.FileObject, resS *response.Response) {
 			storage.Set(&objS, resS.Headers, resS.ContentLength, resS.Stream())
