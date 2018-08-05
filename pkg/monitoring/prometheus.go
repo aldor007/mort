@@ -97,7 +97,7 @@ func (p *PrometheusReporter) Histogram(metric string, val float64) {
 func (p *PrometheusReporter) Timer(metric string) Timer {
 	t := Timer{time.Now(), metric, func(start time.Time, metricName string) {
 		timeDiff := time.Since(start)
-		p.Histogram(metricName, float64(timeDiff.Nanoseconds()) / 1000.0)
+		p.Histogram(metricName, float64(timeDiff.Nanoseconds())/1000.0)
 	}}
 
 	return t

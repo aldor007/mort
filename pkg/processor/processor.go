@@ -360,17 +360,6 @@ func (r *RequestProcessor) handleNotFound(obj, parentObj *object.FileObject, tra
 
 			defer parentRes.Close()
 
-			transLen := len(transformsTab)
-			if transLen > 1 {
-				// revers order of transforms
-				for i := 0; i < len(transformsTab)/2; i++ {
-					j := len(transformsTab) - i - 1
-					transformsTab[i], transformsTab[j] = transformsTab[j], transformsTab[i]
-				}
-
-			}
-
-			monitoring.Log().Info("Performing transforms", zap.String("obj.Bucket", obj.Bucket), zap.String("obj.Key", obj.Key), zap.Int("transformsLen", len(transformsTab)))
 			return r.processImage(obj, parentRes, transformsTab)
 		} else if obj.HasTransform() {
 			parentRes.Close()
@@ -415,7 +404,7 @@ func handleS3Get(req *http.Request, obj *object.FileObject) *response.Response {
 
 }
 
-func (r *RequestProcessor) processImage(obj *object.FileObject, parent *response.Response, transforms []transforms.Transforms) *response.Response {
+func (r *RequestProcessor) processImage(obj *object.FileObject, parent *response.Response, transformsTab []transforms.Transforms) *response.Response {
 	monitoring.Report().Inc("request_type;type:transform")
 	ctx := obj.Ctx
 	taked := r.throttler.Take(ctx)
@@ -426,8 +415,13 @@ func (r *RequestProcessor) processImage(obj *object.FileObject, parent *response
 	}
 	defer r.throttler.Release()
 
+	transformsLen := len(transformsTab)
+	mergedTrans := transforms.Merge(transformsTab)
+	mergedLen := len(mergedTrans)
+
+	monitoring.Log().Info("Performing transforms", zap.String("obj.Bucket", obj.Bucket), zap.String("obj.Key", obj.Key), zap.Int("transformsLen", transformsLen), zap.Int("mergedLen", mergedLen))
 	eng := engine.NewImageEngine(parent)
-	res, err := eng.Process(obj, transforms)
+	res, err := eng.Process(obj, mergedTrans)
 	if err != nil {
 		return response.NewError(400, err)
 	}
