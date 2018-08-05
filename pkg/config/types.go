@@ -112,7 +112,10 @@ type Server struct {
 	QueueLen       int                    `yaml:"queueLen"`
 	Listen         []string               `yaml:"listens"`
 	Monitoring     string                 `yaml:"monitoring"`
-	Placeholder    string                 `yaml:"placeholder"`
+	PlaceholderStr string                 `yaml:"placeholder"`
 	Plugins        map[string]interface{} `yaml:"plugins,omitempty"`
-	PlaceholderBuf []byte
+	Placeholder    struct {
+		Buf         []byte
+		ContentType string
+	} `yaml:"-"`
 }

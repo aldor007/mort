@@ -111,11 +111,11 @@ func (r *RequestProcessor) processChan(ctx context.Context) {
 }
 
 func (r *RequestProcessor) replyWithError(obj *object.FileObject, sc int, err error) *response.Response {
-	if !obj.HasTransform() || obj.Debug || r.serverConfig.Placeholder == "" {
+	if !obj.HasTransform() || obj.Debug || r.serverConfig.PlaceholderStr == "" {
 		return response.NewError(sc, err)
 	}
 
-	key := r.serverConfig.Placeholder + strconv.FormatUint(obj.Transforms.Hash().Sum64(), 16)
+	key := r.serverConfig.PlaceholderStr + strconv.FormatUint(obj.Transforms.Hash().Sum64(), 16)
 	if cacheRes := r.fetchResponseFromCache(key, true); cacheRes != nil {
 		cacheRes.StatusCode = sc
 		return cacheRes
@@ -126,7 +126,7 @@ func (r *RequestProcessor) replyWithError(obj *object.FileObject, sc int, err er
 		if locked {
 			defer r.collapse.Release(key)
 			monitoring.Log().Info("Lock acquired for error response", zap.String("obj.Key", obj.Key))
-			parent := response.NewBuf(200, r.serverConfig.PlaceholderBuf)
+			parent := response.NewBuf(200, r.serverConfig.Placeholder.Buf)
 			transformsTab := []transforms.Transforms{obj.Transforms}
 
 			eng := engine.NewImageEngine(parent)
@@ -139,8 +139,8 @@ func (r *RequestProcessor) replyWithError(obj *object.FileObject, sc int, err er
 		}
 	}()
 
-	res := response.NewBuf(sc, r.serverConfig.PlaceholderBuf)
-	res.SetContentType(http.DetectContentType(r.serverConfig.PlaceholderBuf))
+	res := response.NewBuf(sc, r.serverConfig.Placeholder.Buf)
+	res.SetContentType(r.serverConfig.Placeholder.ContentType)
 	return res
 }
 
