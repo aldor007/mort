@@ -26,6 +26,7 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+	"go.uber.org/zap/zapcore"
 )
 
 const (
@@ -91,8 +92,10 @@ func handleSignals(servers []*http.Server, socketPaths []string, wg *sync.WaitGr
 }
 
 func configureMonitoring(mortConfig *config.Config) {
-	logger, _ := zap.NewProduction()
-	//logger, _ := zap.NewDevelopment()
+	logCfg := zap.NewProductionConfig()
+	logCfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	logger, _ := logCfg.Build()
+
 	zap.ReplaceGlobals(logger)
 	monitoring.RegisterLogger(logger)
 	if mortConfig.Server.Monitoring == "prometheus" {
