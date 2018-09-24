@@ -20,13 +20,13 @@ import (
 	"github.com/aldor007/mort/pkg/throttler"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.uber.org/zap/zapcore"
 	"net"
 	"os"
 	"os/signal"
 	"strings"
 	"sync"
 	"syscall"
-	"go.uber.org/zap/zapcore"
 )
 
 const (
@@ -95,6 +95,17 @@ func configureMonitoring(mortConfig *config.Config) {
 	logCfg := zap.NewProductionConfig()
 	logCfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 	logger, _ := logCfg.Build()
+
+	host, err := os.Hostname()
+	if err != nil {
+		host = "unknown"
+	}
+
+	pid := os.Getpid()
+	logger = logger.With(
+		zap.String("hostname", host),
+		zap.Int("pid", pid),
+	)
 
 	zap.ReplaceGlobals(logger)
 	monitoring.RegisterLogger(logger)
