@@ -20,6 +20,7 @@ import (
 	"github.com/aldor007/mort/pkg/throttler"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.uber.org/zap/zapcore"
 	"net"
 	"os"
 	"os/signal"
@@ -91,8 +92,21 @@ func handleSignals(servers []*http.Server, socketPaths []string, wg *sync.WaitGr
 }
 
 func configureMonitoring(mortConfig *config.Config) {
-	logger, _ := zap.NewProduction()
-	//logger, _ := zap.NewDevelopment()
+	logCfg := zap.NewProductionConfig()
+	logCfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	logger, _ := logCfg.Build()
+
+	host, err := os.Hostname()
+	if err != nil {
+		host = "unknown"
+	}
+
+	pid := os.Getpid()
+	logger = logger.With(
+		zap.String("hostname", host),
+		zap.Int("pid", pid),
+	)
+
 	zap.ReplaceGlobals(logger)
 	monitoring.RegisterLogger(logger)
 	if mortConfig.Server.Monitoring == "prometheus" {

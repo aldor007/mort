@@ -2,8 +2,7 @@ FROM ubuntu:16.04 as builder
 
 ENV LIBVIPS_VERSION 8.6.2
 ENV DEP_VERSION v0.4.1
-ENV GOLANG_VERSION 1.10
-
+ENV GOLANG_VERSION 1.11
 
 # Installs libvips + required libraries
 RUN \
@@ -15,7 +14,7 @@ RUN \
     swig libmagickwand-dev libpango1.0-dev libmatio-dev libopenslide-dev libcfitsio-dev \
     libgsf-1-dev fftw3-dev liborc-0.4-dev librsvg2-dev && \
     cd /tmp && \
-    curl -OL https://github.com/jcupitt/libvips/releases/download/v${LIBVIPS_VERSION}/vips-${LIBVIPS_VERSION}.tar.gz && \
+    curl -OL https://github.com/libvips/libvips/releases/download/v${LIBVIPS_VERSION}/vips-${LIBVIPS_VERSION}.tar.gz && \
     tar zvxf vips-${LIBVIPS_VERSION}.tar.gz && \
     cd /tmp/vips-${LIBVIPS_VERSION} && \
     ./configure --enable-debug=no --without-python $1 && \

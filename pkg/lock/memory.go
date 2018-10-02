@@ -1,10 +1,10 @@
 package lock
 
 import (
-	"github.com/aldor007/mort/pkg/monitoring"
 	"github.com/aldor007/mort/pkg/response"
-	"go.uber.org/zap"
 	"sync"
+	"go.uber.org/zap"
+	"github.com/aldor007/mort/pkg/monitoring"
 )
 
 // MemoryLock is in memory lock for single mort instance
@@ -33,9 +33,10 @@ func (m *MemoryLock) NotifyAndRelease(key string, res *response.Response) {
 	m.lock.Unlock()
 
 	if len(result.notifyQueue) == 0 {
-		monitoring.Log().Warn("Empty notify queue", zap.String("key", key))
 		return
 	}
+
+	monitoring.Log().Warn("Notify queue", zap.String("key", key), zap.Int("len", len(result.notifyQueue)))
 
 	if res.IsBuffered() {
 		resCopy, err := res.Copy()
