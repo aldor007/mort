@@ -83,7 +83,7 @@ func (c *ImageEngine) Process(obj *object.FileObject, trans []transforms.Transfo
 		res.Set("x-amz-meta-public-height", strconv.Itoa(meta.Size.Height))
 
 	} else {
-		monitoring.Log().Warn("ImageEngine/process unable to get metadata", zap.String("obj.key", obj.Key), zap.Error(err))
+		monitoring.Log().Warn("ImageEngine/process unable to get metadata", zap.Error(err), obj.LogData()...)
 	}
 
 	return res, nil

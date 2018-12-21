@@ -7,6 +7,7 @@ import (
 	//"github.com/aldor007/mort/pkg/uri"
 	"context"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"net/url"
 )
 
@@ -39,8 +40,7 @@ func NewFileObjectFromPath(path string, mortConfig *config.Config) (*FileObject,
 
 	err := Parse(obj.Uri, mortConfig, &obj)
 
-	monitoring.Log().Info("FileObject", zap.String("path", path), zap.String("key", obj.Key), zap.String("bucket", obj.Bucket), zap.String("storage", obj.Storage.Kind),
-		zap.Bool("hasTransforms", obj.HasTransform()), zap.Bool("hasParent", obj.HasParent()))
+	monitoring.Log().Info("FileObject", obj.LogData()...)
 	return &obj, err
 }
 
@@ -56,8 +56,7 @@ func NewFileObject(uri *url.URL, mortConfig *config.Config) (*FileObject, error)
 
 	err := Parse(uri, mortConfig, &obj)
 
-	monitoring.Log().Info("FileObject", zap.String("path", uri.Path), zap.String("key", obj.Key), zap.String("bucket", obj.Bucket), zap.String("storage", obj.Storage.Kind),
-		zap.Bool("hasTransforms", obj.HasTransform()), zap.Bool("hasParent", obj.HasParent()))
+	monitoring.Log().Info("FileObject", obj.LogData()...)
 	return &obj, err
 }
 
@@ -75,4 +74,16 @@ func (o *FileObject) HasTransform() bool {
 func (o *FileObject) UpdateKey(str string) {
 	o.key = o.key + str
 	o.Key = o.Key + str
+}
+
+func (obj *FileObject) LogData() []zapcore.Field {
+	result := []zapcore.Field{zap.String("obj.path", obj.Uri.Path), zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.String("obj.Storage", obj.Storage.Kind),
+		zap.Bool("obj.HasTransforms", obj.HasTransform()), zap.Bool("obj.HasParent", obj.HasParent())}
+
+	if obj.HasParent() {
+		result = append(result, zap.String("parent.Key", obj.Parent.Key), zap.String("parent.Path", obj.Parent.Uri.Path))
+	}
+
+	return result
+
 }

@@ -1,0 +1,34 @@
+module github.com/aldor007/mort
+
+require (
+	github.com/aldor007/go-aws-auth v0.0.0-20180623204207-00898dfb9272
+	github.com/aldor007/stow v0.0.0-20171229203915-67ba3fffe7b8
+	github.com/aws/aws-sdk-go v1.12.28
+	github.com/beorn7/perks v0.0.0-20160804104726-4c0e84591b9a
+	github.com/davecgh/go-spew v1.1.0
+	github.com/djherbis/stream v0.0.0-20170408001054-5cf27428a014
+	github.com/go-chi/chi v3.3.0+incompatible
+	github.com/go-ini/ini v1.31.1
+	github.com/golang/protobuf v0.0.0-20171113180720-1e59b77b52bf
+	github.com/jmespath/go-jmespath v0.0.0-20160202185014-0b12d6b521d8
+	github.com/karlseguin/ccache v0.0.0-20170904064732-b425c9ca005a
+	github.com/matttproud/golang_protobuf_extensions v1.0.0
+	github.com/pkg/errors v0.8.0
+	github.com/pmezard/go-difflib v1.0.0
+	github.com/prometheus/client_golang v0.8.0
+	github.com/prometheus/client_model v0.0.0-20171117100541-99fa1f4be8e5
+	github.com/prometheus/common v0.0.0-20180110214958-89604d197083
+	github.com/prometheus/procfs v0.0.0-20171226183907-b15cd069a834
+	github.com/spaolacci/murmur3 v0.0.0-20170819071325-9f5d223c6079
+	github.com/stretchr/testify v1.1.4
+	github.com/vmihailenco/msgpack v3.2.0+incompatible
+	go.uber.org/atomic v1.3.1
+	go.uber.org/multierr v1.1.0
+	go.uber.org/zap v1.7.1
+	golang.org/x/net v0.0.0-20171115151908-9dfe39835686
+	google.golang.org/appengine v1.0.0
+	gopkg.in/h2non/bimg.v1 v1.0.18
+	gopkg.in/h2non/gock.v1 v1.0.9
+	gopkg.in/kothar/brotli-go.v0 v0.0.0-20170728081549-771231d473d6
+	gopkg.in/yaml.v2 v2.0.0-20171116090243-287cf08546ab
+)

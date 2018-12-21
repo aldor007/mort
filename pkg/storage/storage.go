@@ -40,7 +40,7 @@ func Get(obj *object.FileObject) *response.Response {
 	key := getKey(obj)
 	client, err := getClient(obj)
 	if err != nil {
-		monitoring.Log().Info("Storage/Get get client", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Error(err))
+		monitoring.Log().Info("Storage/Get get client", obj.LogData()..., zap.Error(err))
 		return response.NewError(503, err)
 	}
 
@@ -51,14 +51,14 @@ func Get(obj *object.FileObject) *response.Response {
 			return response.NewString(404, notFound)
 		}
 
-		monitoring.Log().Info("Storage/Get item response", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Error(err))
+		monitoring.Log().Info("Storage/Get item response", obj.LogData()..., zap.Error(err))
 		return response.NewError(500, err)
 	}
 
 	if isDir(item) == false {
 		reader, err := item.Open()
 		if err != nil {
-			monitoring.Logs().Warnw("Storage/Get open item", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 500), zap.Error(err))
+			monitoring.Logs().Warnw("Storage/Get open item", obj.LogData()..., zap.Int("sc", 500), zap.Error(err))
 			return response.NewError(500, err)
 		}
 		return prepareResponse(obj, reader, item)
@@ -77,18 +77,18 @@ func Head(obj *object.FileObject) *response.Response {
 	key := getKey(obj)
 	client, err := getClient(obj)
 	if err != nil {
-		monitoring.Logs().Infow("Storage/Head get client", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Error(err))
+		monitoring.Logs().Infow("Storage/Head get client", obj.LogData()..., zap.Error(err))
 		return response.NewError(503, err)
 	}
 
 	item, err := client.Item(key)
 	if err != nil {
 		if err == stow.ErrNotFound {
-			monitoring.Logs().Infow("Storage/Head item response", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 404))
+			monitoring.Logs().Infow("Storage/Head item response", obj.LogData()..., zap.Int("sc", 404))
 			return response.NewString(404, notFound)
 		}
 
-		monitoring.Logs().Infow("Storage/Head item response", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Error(err))
+		monitoring.Logs().Infow("Storage/Head item response", obj.LogData()..., zap.Error(err))
 		return response.NewError(500, err)
 	}
 
@@ -102,14 +102,14 @@ func Set(obj *object.FileObject, metaHeaders http.Header, contentLen int64, body
 	defer t.Done()
 	client, err := getClient(obj)
 	if err != nil {
-		monitoring.Logs().Warnw("Storage/Set create client", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 503), zap.Error(err))
+		monitoring.Logs().Warnw("Storage/Set create client", obj.LogData()..., zap.Int("sc", 503), zap.Error(err))
 		return response.NewError(503, err)
 	}
 
 	_, err = client.Put(getKey(obj), body, contentLen, prepareMetadata(obj, metaHeaders))
 
 	if err != nil {
-		monitoring.Logs().Warnw("Storage/Set cannot set", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 500), zap.Error(err))
+		monitoring.Logs().Warnw("Storage/Set cannot set", obj.LogData()..., zap.Int("sc", 500), zap.Error(err))
 		return response.NewError(500, err)
 	}
 
@@ -125,7 +125,7 @@ func Delete(obj *object.FileObject) *response.Response {
 	defer t.Done()
 	client, err := getClient(obj)
 	if err != nil {
-		monitoring.Logs().Warnw("Storage/Delete create client", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 503), zap.Error(err))
+		monitoring.Logs().Warnw("Storage/Delete create client", obj.LogData()..., zap.Int("sc", 503), zap.Error(err))
 		return response.NewError(503, err)
 	}
 
@@ -134,7 +134,7 @@ func Delete(obj *object.FileObject) *response.Response {
 		err = client.RemoveItem(getKey(obj))
 
 		if err != nil {
-			monitoring.Logs().Warnw("Storage/Delete cannot delete", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 500), zap.Error(err))
+			monitoring.Logs().Warnw("Storage/Delete cannot delete", obj.LogData()..., zap.Int("sc", 500), zap.Error(err))
 			return response.NewError(500, err)
 		}
 	} else if resHead.StatusCode == 404 {
@@ -150,7 +150,7 @@ func Delete(obj *object.FileObject) *response.Response {
 func List(obj *object.FileObject, maxKeys int, _ string, prefix string, marker string) *response.Response {
 	client, err := getClient(obj)
 	if err != nil {
-		monitoring.Logs().Warnw("Storage/List", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 503), zap.Error(err))
+		monitoring.Logs().Warnw("Storage/List", obj.LogData()..., zap.Int("sc", 503), zap.Error(err))
 		return response.NewError(503, err)
 	}
 
@@ -158,7 +158,7 @@ func List(obj *object.FileObject, maxKeys int, _ string, prefix string, marker s
 		_, err = client.Item(prefix)
 		if err != nil {
 			if err == stow.ErrNotFound {
-				monitoring.Logs().Infow("Storage/List item not fountresponse", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 404))
+				monitoring.Logs().Infow("Storage/List item not fountresponse", obj.LogData()..., zap.Int("sc", 404))
 				return response.NewString(404, obj.Key)
 			}
 		}
@@ -166,7 +166,7 @@ func List(obj *object.FileObject, maxKeys int, _ string, prefix string, marker s
 
 	items, resultMarker, err := client.Items(prefix, marker, maxKeys)
 	if err != nil {
-		monitoring.Logs().Warnw("Storage/List", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 500), zap.Error(err))
+		monitoring.Logs().Warnw("Storage/List", obj.LogData()..., zap.Int("sc", 500), zap.Error(err))
 		return response.NewError(500, err)
 	}
 
@@ -335,7 +335,7 @@ func prepareResponse(obj *object.FileObject, stream io.ReadCloser, item stow.Ite
 	metadata, err := item.Metadata()
 
 	if err != nil {
-		monitoring.Log().Warn("Storage/prepareResponse read metadata error", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 500), zap.Error(err))
+		monitoring.Log().Warn("Storage/prepareResponse read metadata error", obj.LogData()..., zap.Int("sc", 500), zap.Error(err))
 		return response.NewError(500, err)
 	}
 
@@ -343,13 +343,13 @@ func prepareResponse(obj *object.FileObject, stream io.ReadCloser, item stow.Ite
 
 	etag, err := item.ETag()
 	if err != nil {
-		monitoring.Log().Warn("Storage/prepareResponse read etag error", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 500), zap.Error(err))
+		monitoring.Log().Warn("Storage/prepareResponse read etag error", obj.LogData()..., zap.Int("sc", 500), zap.Error(err))
 		return response.NewError(500, err)
 	}
 
 	lastMod, err := item.LastMod()
 	if err != nil {
-		monitoring.Log().Warn("Storage/prepareResponse read lastmod error", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 500), zap.Error(err))
+		monitoring.Log().Warn("Storage/prepareResponse read lastmod error", obj.LogData()..., zap.Int("sc", 500), zap.Error(err))
 		return response.NewError(500, err)
 	}
 

@@ -4,7 +4,7 @@ install:
 	dep ensure
 
 unit:
-	@(go list ./... | grep -v "vendor/" | xargs -n1 go test -race -v -cover)
+	@(go list ./... | grep -v "vendor/" | xargs -n1 go test -race  -cover)
 
 unit-bench:
 	./scripts/unit-travis.sh
