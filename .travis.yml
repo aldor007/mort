@@ -27,6 +27,7 @@ addons:
       - libpango1.0-dev
       - libpoppler-glib-dev
       - libwebp-dev
+      - libbrotli-dev
 
 before_install:
   - wget https://github.com/jcupitt/libvips/archive/v$LIBVIPS.zip
