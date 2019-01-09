@@ -84,7 +84,7 @@ func (r *RequestProcessor) Process(req *http.Request, obj *object.FileObject) *r
 	case <-ctx.Done():
 		msg.cancel <- struct{}{}
 		close(msg.responseChan)
-		monitoring.Log().Warn("Process timeout", obj.LogData()..., zap.String("error", "Context.timeout"))
+		monitoring.Log().Warn("Process timeout", obj.LogData(zap.String("error", "Context.timeout"))...)
 		return r.replyWithError(obj, 499, errContextCancel)
 	case res := <-msg.responseChan:
 		r.plugins.PostProcess(obj, req, res)
@@ -169,6 +169,7 @@ func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *r
 }
 
 func handlePUT(req *http.Request, obj *object.FileObject) *response.Response {
+	defer req.Body.Close()
 	return storage.Set(obj, req.Header, req.ContentLength, req.Body)
 }
 
@@ -183,7 +184,7 @@ func (r *RequestProcessor) collapseGET(req *http.Request, obj *object.FileObject
 	}
 
 	monitoring.Report().Inc("collapsed_count")
-	monitoring.Log().Info("Lock not acquired",  obj.LogData()...)
+	monitoring.Log().Info("Lock not acquired", obj.LogData()...)
 	timer := time.NewTimer(r.lockTimeout)
 
 	for {
@@ -363,7 +364,8 @@ func (r *RequestProcessor) handleNotFound(obj, parentObj *object.FileObject, tra
 			return r.processImage(obj, parentRes, transformsTab)
 		} else if obj.HasTransform() {
 			parentRes.Close()
-			monitoring.Log().Warn("Not performing transforms", obj.LogData()..., zap.Int("parent.sc", parentRes.StatusCode), zap.String("parent.ContentType", parentRes.Headers.Get(response.HeaderContentType)), zap.Error(parentRes.Error()))
+			monitoring.Log().Warn("Not performing transforms", obj.LogData(zap.Int("parent.sc", parentRes.StatusCode),
+				zap.String("parent.ContentType", parentRes.Headers.Get(response.HeaderContentType)), zap.Error(parentRes.Error()))...)
 		}
 
 	}
@@ -408,7 +410,7 @@ func (r *RequestProcessor) processImage(obj *object.FileObject, parent *response
 	ctx := obj.Ctx
 	taked := r.throttler.Take(ctx)
 	if !taked {
-		monitoring.Log().Warn("Processor/processImage", obj.LogData()..., zap.String("error", "throttled"))
+		monitoring.Log().Warn("Processor/processImage", obj.LogData(zap.String("error", "throttled"))...)
 		monitoring.Report().Inc("throttled_count")
 		return r.replyWithError(obj, 503, errThrottled)
 	}
@@ -418,7 +420,7 @@ func (r *RequestProcessor) processImage(obj *object.FileObject, parent *response
 	mergedTrans := transforms.Merge(transformsTab)
 	mergedLen := len(mergedTrans)
 
-	monitoring.Log().Info("Performing transforms", obj.LogData()..., zap.Int("transformsLen", transformsLen), zap.Int("mergedLen", mergedLen))
+	monitoring.Log().Info("Performing transforms", obj.LogData(zap.Int("transformsLen", transformsLen), zap.Int("mergedLen", mergedLen))...)
 	eng := engine.NewImageEngine(parent)
 	res, err := eng.Process(obj, mergedTrans)
 	if err != nil {
@@ -435,7 +437,7 @@ func (r *RequestProcessor) processImage(obj *object.FileObject, parent *response
 			resS.Close()
 		}(*obj, resCpy)
 	} else {
-		monitoring.Log().Warn("Processor/processImage", obj.LogData()..., zap.Error(err))
+		monitoring.Log().Warn("Processor/processImage", obj.LogData(zap.Error(err))...)
 	}
 
 	return res

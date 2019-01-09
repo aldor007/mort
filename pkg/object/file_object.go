@@ -76,7 +76,7 @@ func (o *FileObject) UpdateKey(str string) {
 	o.Key = o.Key + str
 }
 
-func (obj *FileObject) LogData() []zapcore.Field {
+func (obj *FileObject) LogData(fields ...zapcore.Field) []zapcore.Field {
 	result := []zapcore.Field{zap.String("obj.path", obj.Uri.Path), zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.String("obj.Storage", obj.Storage.Kind),
 		zap.Bool("obj.HasTransforms", obj.HasTransform()), zap.Bool("obj.HasParent", obj.HasParent())}
 
@@ -84,6 +84,6 @@ func (obj *FileObject) LogData() []zapcore.Field {
 		result = append(result, zap.String("parent.Key", obj.Parent.Key), zap.String("parent.Path", obj.Parent.Uri.Path))
 	}
 
-	return result
+	return append(result, fields...)
 
 }

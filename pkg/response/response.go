@@ -319,7 +319,11 @@ func (r *Response) CopyWithStream() (*Response, error) {
 
 	r.bodyReader = r.reader
 
-	r.resStream = stream.NewMemStream()
+	var err error
+	r.resStream, err = stream.New("res")
+	if err != nil {
+		return nil, err
+	}
 	c.resStream = r.resStream
 	c.hasParent = true
 	r.reader = ioutil.NopCloser(io.TeeReader(r.bodyReader, r.resStream))
