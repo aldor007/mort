@@ -122,6 +122,14 @@
   version = "v1.2.0"
 
 [[projects]]
+  digest = "1:acc27c8f27da9682e170d84713e12951fca77331ff7bf217b05f914d975b5a95"
+  name = "github.com/google/brotli"
+  packages = ["go/cbrotli"]
+  pruneopts = "UT"
+  revision = "d6d98957ca8ccb1ef45922e978bb10efca0ea541"
+  version = "v1.0.7"
+
+[[projects]]
   branch = "master"
   digest = "1:1073b6851142e8f2b75558fcd995d3ff30fd39191de081c4180cebc520a74706"
   name = "github.com/google/readahead"
@@ -367,6 +375,7 @@
     "github.com/djherbis/stream",
     "github.com/go-chi/chi",
     "github.com/go-chi/chi/middleware",
+    "github.com/google/brotli/go/cbrotli",
     "github.com/karlseguin/ccache",
     "github.com/pkg/errors",
     "github.com/prometheus/client_golang/prometheus",

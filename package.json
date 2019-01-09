@@ -2,16 +2,13 @@
   "name": "mort-integrations-tests",
   "version": "1.0.0",
   "dependencies": {
-    "aws-sdk": "^2.131.0",
-    "chai": "^4.1.2",
-    "mocha": "^4.0.1",
-    "supertest": "^3.0.0"
-  },
-  "devDependencies": {
-    "mocha": "^4.0.1",
-    "moment": "^2.20.1",
-    "request": "^2.83.0",
-    "superagent-binary-parser": "^1.0.1"
+    "aws-sdk": "^2.327.0",
+    "chai": "^4.2.0",
+    "mocha": "^5.2.0",
+    "moment": "^2.22.1",
+    "request": "^2.88.0",
+    "superagent-binary-parser": "^1.0.1",
+    "supertest": "^3.3.0"
   },
   "scripts": {
     "test": "mocha tests/*Spec.js"

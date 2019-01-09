@@ -30,7 +30,7 @@ func TestNewRequestProcessor(t *testing.T) {
 	res := rp.Process(req, obj)
 
 	assert.Equal(t, res.StatusCode, 200)
-	assert.Equal(t, res.Headers.Get("x-amz-meta-public-width"), "150")
+	assert.Equal(t, res.Headers.Get("x-amz-meta-public-width"), "100")
 	assert.Equal(t, res.Headers.Get("ETag"), "W/\"7eaa484e8c841e7e\"")
 }
 
@@ -50,7 +50,7 @@ func TestNewRequestProcessorCheckParent(t *testing.T) {
 	res := rp.Process(req, obj)
 
 	assert.Equal(t, res.StatusCode, 200)
-	assert.Equal(t, res.Headers.Get("x-amz-meta-public-width"), "150")
+	assert.Equal(t, res.Headers.Get("x-amz-meta-public-width"), "10")
 	assert.Equal(t, res.Headers.Get("ETag"), "W/\"744899c0aad5789c\"")
 }
 
@@ -79,7 +79,7 @@ func TestFetchFromCache(t *testing.T) {
 	res = rp.Process(req, obj)
 
 	assert.Equal(t, res.StatusCode, 200)
-	assert.Equal(t, res.Headers.Get("x-amz-meta-public-width"), "150")
+	assert.Equal(t, res.Headers.Get("x-amz-meta-public-width"), "100")
 	assert.Equal(t, res.Headers.Get("ETag"), "W/\"7eaa484e8c841e7e\"")
 }
 

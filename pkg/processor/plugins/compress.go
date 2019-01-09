@@ -5,7 +5,7 @@ import (
 	"github.com/aldor007/mort/pkg/helpers"
 	"github.com/aldor007/mort/pkg/object"
 	"github.com/aldor007/mort/pkg/response"
-	brEnc "gopkg.in/kothar/brotli-go.v0/enc"
+	brEnc "github.com/google/brotli/go/cbrotli"
 	"io"
 	"net/http"
 	"strings"
@@ -79,9 +79,7 @@ func (c CompressPlugin) postProcess(obj *object.FileObject, req *http.Request, r
 				res.Headers.Set("Content-Encoding", "br")
 				res.Headers.Add("Vary", "Accept-Encoding")
 				res.BodyTransformer(func(w io.Writer) io.WriteCloser {
-					params := brEnc.NewBrotliParams()
-					params.SetQuality(c.brotli.level)
-					br := brEnc.NewBrotliWriter(params, w)
+					br := brEnc.NewWriter(w, brEnc.WriterOptions{Quality: c.brotli.level})
 					return br
 				})
 				return
