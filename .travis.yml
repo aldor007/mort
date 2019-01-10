@@ -29,9 +29,11 @@ addons:
       - libbrotli-dev
       - gtk-doc
       - pkg-config
+      - swig
+      - automake
    
 before_install:
-  - sudo apt-get install libbrotli-dev gtk-doc-tools pkg-config -y
+  - sudo apt-get install libbrotli-dev gtk-doc-tools pkg-config swig automake -y
   - wget https://github.com/libvips/libvips/archive/v$LIBVIPS.zip
   - unzip v$LIBVIPS
   - cd libvips-$LIBVIPS
