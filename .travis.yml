@@ -35,7 +35,7 @@ addons:
          
 before_install:
   - sudo apt-get install libbrotli-dev gtk-doc-tools pkg-config swig automake bc  gobject-introspection  -y
-  - sudo apt-get install -y automake build-essential   gobject-introspection gtk-doc-tools libglib2.0-dev libjpeg-turbo8-dev libpng-dev \
+  - sudo apt-get install -y automake build-essential   gobject-introspection gtk-doc-tools libglib2.0-dev libjpeg-turbo8-dev libpng-dev 
   - sudo apt-get install -y libwebp-dev libtiff5-dev libgif-dev libexif-dev libxml2-dev libpoppler-glib-dev 
   - sudo apt-get install -y  swig libmagickwand-dev libpango1.0-dev libmatio-dev libopenslide-dev libcfitsio-dev 
   - sudo apt-get install -y libgsf-1-dev fftw3-dev liborc-0.4-dev librsvg2-dev swig 
