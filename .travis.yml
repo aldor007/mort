@@ -9,8 +9,6 @@ go:
 env:
   - LIBVIPS=8.7.2
 
-cache: apt
-
 addons:
   apt:
     update: true
@@ -30,9 +28,10 @@ addons:
       - libwebp-dev
       - libbrotli-dev
       - gtk-doc
+      - pkg-config
    
 before_install:
-  - sudo apt-get install libbrotli-dev gtk-doc-tools -y
+  - sudo apt-get install libbrotli-dev gtk-doc-tools pkg-config -y
   - wget https://github.com/libvips/libvips/archive/v$LIBVIPS.zip
   - unzip v$LIBVIPS
   - cd libvips-$LIBVIPS
