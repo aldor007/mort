@@ -28,6 +28,7 @@ addons:
       - libpoppler-glib-dev
       - libwebp-dev
       - libbrotli-dev
+      - gtk-doc-tools
 
 before_install:
   - wget https://github.com/jcupitt/libvips/archive/v$LIBVIPS.zip
