@@ -13,6 +13,7 @@ cache: apt
 
 addons:
   apt:
+    update: true
     packages:
       - gobject-introspection
       - gtk-doc-tools
@@ -29,11 +30,7 @@ addons:
       - libwebp-dev
       - libbrotli-dev
       - gtk-doc
-
-addons:
-  apt:
-    update: true
-    
+   
 before_install:
   - sudo apt-get install libbrotli-dev gtk-doc-tools -y
   - wget https://github.com/libvips/libvips/archive/v$LIBVIPS.zip
