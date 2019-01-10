@@ -30,7 +30,7 @@ addons:
       - libbrotli-dev
       - gtk-doc
 
-before_install:
+install:
   - wget https://github.com/libvips/libvips/archive/v$LIBVIPS.zip
   - unzip v$LIBVIPS
   - cd libvips-$LIBVIPS
