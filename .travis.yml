@@ -7,7 +7,7 @@ go:
   - '1.10'
 
 env:
-  - LIBVIPS=8.6.4
+  - LIBVIPS=8.7.3
 
 cache: apt
 
