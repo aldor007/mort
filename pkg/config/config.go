@@ -11,6 +11,7 @@ import (
 
 	"github.com/aldor007/mort/pkg/helpers"
 	"github.com/aldor007/mort/pkg/monitoring"
+	"net/http"
 )
 
 // Config contains configuration for buckets etc
@@ -27,7 +28,7 @@ var instance *Config
 var once sync.Once
 
 // storageKinds is list of available storage kinds
-var storageKinds = []string{"local", "local-meta", "s3", "http", "noop"}
+var storageKinds = []string{"local", "local-meta", "s3", "http", "b2", "noop"}
 
 // transformKind is list of available kinds of transforms
 var transformKinds = []string{"query", "presets", "presets-query"}
@@ -245,12 +246,14 @@ func (c *Config) validateServer() error {
 		c.Server.QueueLen = 5
 	}
 
-	if c.Server.Placeholder != "" {
-		var err error
-		c.Server.PlaceholderBuf, err = helpers.FetchObject(c.Server.Placeholder)
+	if c.Server.PlaceholderStr != "" {
+		buf, err := helpers.FetchObject(c.Server.PlaceholderStr)
 		if err != nil {
 			return err
 		}
+
+		c.Server.Placeholder.Buf = buf
+		c.Server.Placeholder.ContentType = http.DetectContentType(buf)
 	}
 
 	return nil

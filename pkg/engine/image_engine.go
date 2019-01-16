@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/spaolacci/murmur3"
-	"go.uber.org/zap"
 	"gopkg.in/h2non/bimg.v1"
 
 	"bytes"
@@ -15,6 +14,7 @@ import (
 	"github.com/aldor007/mort/pkg/object"
 	"github.com/aldor007/mort/pkg/response"
 	"github.com/aldor007/mort/pkg/transforms"
+	"go.uber.org/zap"
 	"sync"
 )
 
@@ -37,6 +37,9 @@ func NewImageEngine(res *response.Response) *ImageEngine {
 
 // Process main ImageEngine function that create new image (stored in response object)
 func (c *ImageEngine) Process(obj *object.FileObject, trans []transforms.Transforms) (*response.Response, error) {
+	t := monitoring.Report().Timer("generation_time")
+	defer t.Done()
+
 	buf, err := c.parent.ReadBody()
 	if err != nil {
 		return response.NewError(500, err), err
@@ -72,7 +75,7 @@ func (c *ImageEngine) Process(obj *object.FileObject, trans []transforms.Transfo
 	res := response.NewBuf(200, buf)
 	res.SetContentType("image/" + bimg.DetermineImageTypeName(buf))
 	//res.Set("cache-control", "max-age=6000, public")
-	res.Set("Last-Modified", time.Now().Format(http.TimeFormat))
+	res.Set("Last-Modified", time.Now().UTC().Format(http.TimeFormat))
 	res.Set("ETag", createWeakEtag(strconv.FormatUint(hash.Sum64(), 16)))
 	meta, err := bimg.Metadata(buf)
 	if err == nil {
@@ -80,7 +83,7 @@ func (c *ImageEngine) Process(obj *object.FileObject, trans []transforms.Transfo
 		res.Set("x-amz-meta-public-height", strconv.Itoa(meta.Size.Height))
 
 	} else {
-		monitoring.Log().Warn("ImageEngine/process unable to get metadata", zap.String("obj.key", obj.Key), zap.Error(err))
+		monitoring.Log().Warn("ImageEngine/process unable to get metadata", obj.LogData(zap.Error(err))...)
 	}
 
 	return res, nil

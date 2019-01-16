@@ -14,13 +14,14 @@ type Reporter interface {
 
 // Timer is used for time measurement
 type Timer struct {
-	start time.Time
-	done  func(start time.Time)
+	start  time.Time
+	metric string
+	done   func(start time.Time, metric string)
 }
 
 // Done end time measurement
 func (t Timer) Done() {
-	t.done(t.start)
+	t.done(t.start, t.metric)
 }
 
 // NopReporter is reporter that does nothing
@@ -50,7 +51,7 @@ func (n NopReporter) Gauge(_ string, _ float64) {
 // Timer returns Timer object that measure time between its creation and calling Done Function
 func (n NopReporter) Timer(_ string) Timer {
 	t := Timer{}
-	t.done = func(_ time.Time) {
+	t.done = func(_ time.Time, _ string) {
 
 	}
 	return t

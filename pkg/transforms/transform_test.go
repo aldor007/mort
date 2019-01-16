@@ -248,3 +248,101 @@ func TestTransforms_Watermark(t *testing.T) {
 
 	assert.NotNil(t, err)
 }
+
+func TestTransforms_Merge_Resize(t *testing.T) {
+	tab := make([]Transforms, 2)
+	tab[0].Resize(100, 0, false)
+
+	tab[1].Resize(0, 300, true)
+
+	result := Merge(tab)
+
+	assert.Equal(t, len(result), 1)
+	assert.Equal(t, result[0].width, 100)
+	assert.Equal(t, result[0].height, 300)
+	assert.Equal(t, result[0].enlarge, true)
+}
+
+func TestTransforms_Merge_Crop(t *testing.T) {
+	tab := make([]Transforms, 2)
+	tab[0].Crop(4444, 0, "smart", false)
+
+	tab[1].Crop(0, 120, "smart", false)
+
+	result := Merge(tab)
+
+	assert.Equal(t, len(result), 1)
+	assert.Equal(t, result[0].width, 4444)
+	assert.Equal(t, result[0].height, 120)
+	assert.Equal(t, result[0].enlarge, false)
+	assert.Equal(t, result[0].crop, true)
+	assert.Equal(t, result[0].gravity, bimg.GravitySmart)
+}
+
+func TestTransforms_Merge_Blur(t *testing.T) {
+	tab := make([]Transforms, 3)
+	tab[0].Blur(1., 3.)
+	tab[1].Blur(2., 4.)
+	tab[2].Blur(3., 3.)
+
+	result := Merge(tab)
+
+	assert.Equal(t, len(result), 1)
+	assert.Equal(t, result[0].blur.sigma, 6.)
+	assert.Equal(t, result[0].blur.minAmpl, 10.)
+}
+
+func TestTransforms_Merge_Single(t *testing.T) {
+	tab := make([]Transforms, 1)
+	tab[0].Blur(1., 3.)
+
+	result := Merge(tab)
+
+	assert.Equal(t, len(result), 1)
+	assert.Equal(t, result[0].blur.sigma, 1.)
+	assert.Equal(t, result[0].blur.minAmpl, 3.)
+}
+
+func TestTransforms_Merge_MultiTrans(t *testing.T) {
+	tab := make([]Transforms, 4)
+	tab[0].Blur(1., 3.)
+	tab[0].Quality(10)
+	tab[1].Interlace()
+	tab[2].StripMetadata()
+	tab[3].Format("webp")
+
+	result := Merge(tab)
+
+	assert.Equal(t, len(result), 1)
+	assert.Equal(t, result[0].blur.sigma, 1.)
+	assert.Equal(t, result[0].blur.minAmpl, 3.)
+	assert.Equal(t, result[0].interlace, true)
+	assert.Equal(t, result[0].stripMetadata, true)
+	assert.Equal(t, result[0].format, bimg.WEBP)
+	assert.Equal(t, result[0].FormatStr, "webp")
+	assert.Equal(t, result[0].quality, 10)
+}
+
+func TestTransforms_Merge_Empty(t *testing.T) {
+	tab := make([]Transforms, 1)
+
+	result := Merge(tab)
+
+	assert.Equal(t, len(result), 1)
+	assert.Equal(t, result[0].NotEmpty, false)
+}
+
+func TestTransforms_Merge_Watermark(t *testing.T) {
+	tab := make([]Transforms, 3)
+	tab[0].Blur(1., 3.)
+	tab[0].Watermark("image2", "top-left", 2.)
+	tab[1].Watermark("image", "top-left", 2.)
+	tab[2].Blur(3., 3.)
+
+	result := Merge(tab)
+
+	assert.Equal(t, len(result), 2)
+	assert.Equal(t, result[0].blur.sigma, 3.)
+	assert.Equal(t, result[0].blur.minAmpl, 3.)
+	assert.Equal(t, result[1].watermark.image, "image2")
+}

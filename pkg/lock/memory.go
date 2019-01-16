@@ -33,9 +33,10 @@ func (m *MemoryLock) NotifyAndRelease(key string, res *response.Response) {
 	m.lock.Unlock()
 
 	if len(result.notifyQueue) == 0 {
-		monitoring.Log().Warn("Empty notify queue", zap.String("key", key))
 		return
 	}
+
+	monitoring.Log().Warn("Notify queue", zap.String("key", key), zap.Int("len", len(result.notifyQueue)))
 
 	if res.IsBuffered() {
 		resCopy, err := res.Copy()

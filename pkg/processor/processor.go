@@ -84,7 +84,7 @@ func (r *RequestProcessor) Process(req *http.Request, obj *object.FileObject) *r
 	case <-ctx.Done():
 		msg.cancel <- struct{}{}
 		close(msg.responseChan)
-		monitoring.Log().Warn("Process timeout", zap.String("obj.Key", obj.Key), zap.String("error", "Context.timeout"))
+		monitoring.Log().Warn("Process timeout", obj.LogData(zap.String("error", "Context.timeout"))...)
 		return r.replyWithError(obj, 499, errContextCancel)
 	case res := <-msg.responseChan:
 		r.plugins.PostProcess(obj, req, res)
@@ -111,53 +111,37 @@ func (r *RequestProcessor) processChan(ctx context.Context) {
 }
 
 func (r *RequestProcessor) replyWithError(obj *object.FileObject, sc int, err error) *response.Response {
-	if !obj.HasTransform() || obj.Debug || r.serverConfig.Placeholder == "" {
+	if !obj.HasTransform() || obj.Debug || r.serverConfig.PlaceholderStr == "" {
 		return response.NewError(sc, err)
 	}
 
-	key := r.serverConfig.Placeholder + strconv.FormatUint(obj.Transforms.Hash().Sum64(), 16)
+	key := r.serverConfig.PlaceholderStr + strconv.FormatUint(obj.Transforms.Hash().Sum64(), 16)
 	if cacheRes := r.fetchResponseFromCache(key, true); cacheRes != nil {
 		cacheRes.StatusCode = sc
 		return cacheRes
 	}
 
-	lockResult, locked := r.collapse.Lock(key)
-	if locked {
-		defer r.collapse.Release(key)
-		monitoring.Log().Info("Lock acquired for error response", zap.String("obj.Key", obj.Key))
-		parent := response.NewBuf(200, r.serverConfig.PlaceholderBuf)
-		transformsTab := []transforms.Transforms{obj.Transforms}
+	go func() {
+		lockData, locked := r.collapse.Lock(key)
+		if locked {
+			defer r.collapse.Release(key)
+			monitoring.Log().Info("Lock acquired for error response", obj.LogData()...)
+			parent := response.NewBuf(200, r.serverConfig.Placeholder.Buf)
+			transformsTab := []transforms.Transforms{obj.Transforms}
 
-		eng := engine.NewImageEngine(parent)
-		res, errProcess := eng.Process(obj, transformsTab)
+			eng := engine.NewImageEngine(parent)
+			res, _ := eng.Process(obj, transformsTab)
+			monitoring.Report().Inc("cache_ratio;status:set")
+			r.cache.Set(key, res, time.Minute*10)
+		} else {
+			lockData.Cancel <- true
 
-		if errProcess != nil {
-			return response.NewError(sc, err)
 		}
+	}()
 
-		res.StatusCode = sc
-		resCpy, errCpy := res.Copy()
-		if errCpy != nil {
-			r.cache.Set(key, resCpy, time.Minute*10)
-		}
-		return res
-	}
-
-	timer := time.NewTimer(r.lockTimeout)
-
-	for {
-
-		select {
-		case <-timer.C:
-			return response.NewError(sc, err)
-		default:
-			if cacheRes := r.fetchResponseFromCache(key, false); cacheRes != nil {
-				lockResult.Cancel <- true
-				return cacheRes
-			}
-		}
-	}
-
+	res := response.NewBuf(sc, r.serverConfig.Placeholder.Buf)
+	res.SetContentType(r.serverConfig.Placeholder.ContentType)
+	return res
 }
 
 func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *response.Response {
@@ -185,6 +169,7 @@ func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *r
 }
 
 func handlePUT(req *http.Request, obj *object.FileObject) *response.Response {
+	defer req.Body.Close()
 	return storage.Set(obj, req.Header, req.ContentLength, req.Body)
 }
 
@@ -192,14 +177,14 @@ func (r *RequestProcessor) collapseGET(req *http.Request, obj *object.FileObject
 	ctx := obj.Ctx
 	lockResult, locked := r.collapse.Lock(obj.Key)
 	if locked {
-		monitoring.Log().Info("Lock acquired", zap.String("obj.Key", obj.Key))
+		monitoring.Log().Info("Lock acquired", obj.LogData()...)
 		res := r.handleGET(req, obj)
 		r.collapse.NotifyAndRelease(obj.Key, res)
 		return res
 	}
 
 	monitoring.Report().Inc("collapsed_count")
-	monitoring.Log().Info("Lock not acquired", zap.String("obj.Key", obj.Key))
+	monitoring.Log().Info("Lock not acquired", obj.LogData()...)
 	timer := time.NewTimer(r.lockTimeout)
 
 	for {
@@ -331,6 +316,7 @@ func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) 
 
 			} else {
 				if res.StatusCode == 200 {
+					monitoring.Report().Inc("request_type;type:download")
 					if obj.CheckParent && parentObj != nil && parentRes.StatusCode == 200 {
 						return res
 					}
@@ -364,7 +350,7 @@ func (r *RequestProcessor) handleNotFound(obj, parentObj *object.FileObject, tra
 		if parentRes.HasError() {
 			return r.replyWithError(obj, parentRes.StatusCode, parentRes.Error())
 		} else if parentRes.StatusCode == 404 {
-			monitoring.Log().Warn("Missing parent for object", zap.String("obj.Key", obj.Key), zap.String("parent.Key", parentObj.Key))
+			monitoring.Log().Warn("Missing parent for object", obj.LogData()...)
 			return parentRes
 		}
 
@@ -375,22 +361,11 @@ func (r *RequestProcessor) handleNotFound(obj, parentObj *object.FileObject, tra
 
 			defer parentRes.Close()
 
-			transLen := len(transformsTab)
-			if transLen > 1 {
-				// revers order of transforms
-				for i := 0; i < len(transformsTab)/2; i++ {
-					j := len(transformsTab) - i - 1
-					transformsTab[i], transformsTab[j] = transformsTab[j], transformsTab[i]
-				}
-
-			}
-
-			monitoring.Log().Info("Performing transforms", zap.String("obj.Bucket", obj.Bucket), zap.String("obj.Key", obj.Key), zap.Int("transformsLen", len(transformsTab)))
 			return r.processImage(obj, parentRes, transformsTab)
 		} else if obj.HasTransform() {
 			parentRes.Close()
-			monitoring.Log().Warn("Not performing transforms", zap.String("obj.Bucket", obj.Bucket), zap.String("obj.Key", obj.Key),
-				zap.String("parent.Key", parentObj.Key), zap.Int("parent.sc", parentRes.StatusCode), zap.String("parent.ContentType", parentRes.Headers.Get(response.HeaderContentType)), zap.Error(parentRes.Error()))
+			monitoring.Log().Warn("Not performing transforms", obj.LogData(zap.Int("parent.sc", parentRes.StatusCode),
+				zap.String("parent.ContentType", parentRes.Headers.Get(response.HeaderContentType)), zap.Error(parentRes.Error()))...)
 		}
 
 	}
@@ -430,24 +405,31 @@ func handleS3Get(req *http.Request, obj *object.FileObject) *response.Response {
 
 }
 
-func (r *RequestProcessor) processImage(obj *object.FileObject, parent *response.Response, transforms []transforms.Transforms) *response.Response {
+func (r *RequestProcessor) processImage(obj *object.FileObject, parent *response.Response, transformsTab []transforms.Transforms) *response.Response {
+	monitoring.Report().Inc("request_type;type:transform")
 	ctx := obj.Ctx
 	taked := r.throttler.Take(ctx)
 	if !taked {
-		monitoring.Log().Warn("Processor/processImage", zap.String("obj.Key", obj.Key), zap.String("error", "throttled"))
+		monitoring.Log().Warn("Processor/processImage", obj.LogData(zap.String("error", "throttled"))...)
 		monitoring.Report().Inc("throttled_count")
 		return r.replyWithError(obj, 503, errThrottled)
 	}
 	defer r.throttler.Release()
 
+	transformsLen := len(transformsTab)
+	mergedTrans := transforms.Merge(transformsTab)
+	mergedLen := len(mergedTrans)
+
+	monitoring.Log().Info("Performing transforms", obj.LogData(zap.Int("transformsLen", transformsLen), zap.Int("mergedLen", mergedLen))...)
 	eng := engine.NewImageEngine(parent)
-	res, err := eng.Process(obj, transforms)
+	res, err := eng.Process(obj, mergedTrans)
 	if err != nil {
 		return response.NewError(400, err)
 	}
 
 	resCpy, err := res.Copy()
 	if err == nil {
+		monitoring.Report().Inc("cache_ratio;status:set")
 		r.cache.Set(obj.Key, resCpy, time.Minute*2)
 		go func(objS object.FileObject, resS *response.Response) {
 			storage.Set(&objS, resS.Headers, resS.ContentLength, resS.Stream())
@@ -455,7 +437,7 @@ func (r *RequestProcessor) processImage(obj *object.FileObject, parent *response
 			resS.Close()
 		}(*obj, resCpy)
 	} else {
-		monitoring.Log().Warn("Processor/processImage", zap.String("obj.Key", obj.Key), zap.Error(err))
+		monitoring.Log().Warn("Processor/processImage", obj.LogData(zap.Error(err))...)
 	}
 
 	return res
