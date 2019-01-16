@@ -20,7 +20,7 @@ describe('Image processing', function () {
                     }
 
                     const body = res.body;
-                    expect(body.length).to.be.within(9300, 9600);
+                    expect(body.length).to.be.within(9300, 9700);
 
                     expect(res.headers['x-amz-meta-public-width']).to.eql('150');
                     expect(res.headers['x-amz-meta-public-height']).to.eql('200');
@@ -54,7 +54,7 @@ describe('Image processing', function () {
                     }
 
                     const body = res.body;
-                    expect(body.length).to.be.eql(30959);
+                    expect(body.length).to.be.within(30950, 33000);
 
                     expect(res.headers['x-amz-meta-public-width']).to.eql(width);
                     expect(res.headers['x-amz-meta-public-height']).to.eql(height);
@@ -89,7 +89,7 @@ describe('Image processing', function () {
                     }
 
                     const body = res.body;
-                    expect(body.length).to.be.eql(10228);
+                    expect(body.length).to.be.within(10222, 11000);
 
                     expect(res.headers['x-amz-meta-public-width']).to.eql(width);
                     expect(res.headers['x-amz-meta-public-height']).to.eql(height);
@@ -123,7 +123,7 @@ describe('Image processing', function () {
                     }
 
                     const body = res.body;
-                    expect(body.length).to.be.eql(4502);
+                    expect(body.length).to.be.within(4500, 4600);
 
                     expect(res.headers['x-amz-meta-public-width']).to.eql(width);
                     expect(res.headers['x-amz-meta-public-height']).to.eql(height);
@@ -158,7 +158,7 @@ describe('Image processing', function () {
                     }
 
                     const body = res.body;
-                    expect(body.length).to.be.eql(2488);
+                    expect(body.length).to.be.within(2400, 2700);
 
                     expect(res.headers['x-amz-meta-public-width']).to.eql(width);
                     expect(res.headers['x-amz-meta-public-height']).to.eql(height);
@@ -244,7 +244,7 @@ describe('Image processing', function () {
                     }
 
                     const body = res.body;
-                    expect(body.length).to.be.within(1651, 1654);
+                    expect(body.length).to.be.within(1600, 1654);
 
                     expect(res.headers['x-amz-meta-public-width']).to.eql('100');
                     expect(res.headers['x-amz-meta-public-height']).to.eql('100');
@@ -279,7 +279,7 @@ describe('Image processing', function () {
                     const body = res.body;
                     const width = '400';
                     const height = '100';
-                    expect(body.length).to.be.eql(1164);
+                    expect(body.length).to.be.within(1160, 1300);
 
                     expect(res.headers['x-amz-meta-public-width']).to.eql(width);
                     expect(res.headers['x-amz-meta-public-height']).to.eql(height);
@@ -313,7 +313,7 @@ describe('Image processing', function () {
                     const body = res.body;
                     const width = '400';
                     const height = '320';
-                    expect(body.length).to.be.eql(18189);
+                    expect(body.length).to.be.within(18100, 18300);
 
                     expect(res.headers['x-amz-meta-public-width']).to.eql(width);
                     expect(res.headers['x-amz-meta-public-height']).to.eql(height);
@@ -347,7 +347,7 @@ describe('Image processing', function () {
                     const body = res.body;
                     const width = '400';
                     const height = '100';
-                    expect(body.length).to.be.eql(4505);
+                    expect(body.length).to.be.within(4000, 4600);
 
                     expect(res.headers['x-amz-meta-public-width']).to.eql(width);
                     expect(res.headers['x-amz-meta-public-height']).to.eql(height);

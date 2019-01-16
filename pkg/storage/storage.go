@@ -7,18 +7,18 @@ import (
 	fileStorage "github.com/aldor007/stow/local"
 	metaStorage "github.com/aldor007/stow/local-meta"
 	// import blank to register noop adapter in stow.Register
-	_ "github.com/aldor007/stow/noop"
-	s3Storage "github.com/aldor007/stow/s3"
-	"io"
-	"mime"
-	"net/http"
-	"path"
-
 	"encoding/xml"
 	"github.com/aldor007/mort/pkg/monitoring"
 	"github.com/aldor007/mort/pkg/object"
 	"github.com/aldor007/mort/pkg/response"
+	b2Storage "github.com/aldor007/stow/b2"
+	_ "github.com/aldor007/stow/noop"
+	s3Storage "github.com/aldor007/stow/s3"
 	"go.uber.org/zap"
+	"io"
+	"mime"
+	"net/http"
+	"path"
 	"strings"
 	"sync"
 	"time"
@@ -40,7 +40,7 @@ func Get(obj *object.FileObject) *response.Response {
 	key := getKey(obj)
 	client, err := getClient(obj)
 	if err != nil {
-		monitoring.Log().Info("Storage/Get get client", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Error(err))
+		monitoring.Log().Info("Storage/Get get client", obj.LogData(zap.Error(err))...)
 		return response.NewError(503, err)
 	}
 
@@ -51,14 +51,14 @@ func Get(obj *object.FileObject) *response.Response {
 			return response.NewString(404, notFound)
 		}
 
-		monitoring.Log().Info("Storage/Get item response", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Error(err))
+		monitoring.Log().Info("Storage/Get item response", obj.LogData(zap.Error(err))...)
 		return response.NewError(500, err)
 	}
 
 	if isDir(item) == false {
 		reader, err := item.Open()
 		if err != nil {
-			monitoring.Logs().Warnw("Storage/Get open item", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 500), zap.Error(err))
+			monitoring.Log().Warn("Storage/Get open item", obj.LogData(zap.Int("sc", 500), zap.Error(err))...)
 			return response.NewError(500, err)
 		}
 		return prepareResponse(obj, reader, item)
@@ -77,18 +77,18 @@ func Head(obj *object.FileObject) *response.Response {
 	key := getKey(obj)
 	client, err := getClient(obj)
 	if err != nil {
-		monitoring.Logs().Infow("Storage/Head get client", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Error(err))
+		monitoring.Log().Info("Storage/Head get client", obj.LogData(zap.Error(err))...)
 		return response.NewError(503, err)
 	}
 
 	item, err := client.Item(key)
 	if err != nil {
 		if err == stow.ErrNotFound {
-			monitoring.Logs().Infow("Storage/Head item response", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 404))
+			monitoring.Log().Info("Storage/Head item response", obj.LogData(zap.Int("sc", 404))...)
 			return response.NewString(404, notFound)
 		}
 
-		monitoring.Logs().Infow("Storage/Head item response", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Error(err))
+		monitoring.Log().Info("Storage/Head item response", obj.LogData(zap.Error(err))...)
 		return response.NewError(500, err)
 	}
 
@@ -102,14 +102,14 @@ func Set(obj *object.FileObject, metaHeaders http.Header, contentLen int64, body
 	defer t.Done()
 	client, err := getClient(obj)
 	if err != nil {
-		monitoring.Logs().Warnw("Storage/Set create client", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 503), zap.Error(err))
+		monitoring.Log().Warn("Storage/Set create client", obj.LogData(zap.Int("sc", 503), zap.Error(err))...)
 		return response.NewError(503, err)
 	}
 
 	_, err = client.Put(getKey(obj), body, contentLen, prepareMetadata(obj, metaHeaders))
 
 	if err != nil {
-		monitoring.Logs().Warnw("Storage/Set cannot set", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 500), zap.Error(err))
+		monitoring.Log().Warn("Storage/Set cannot set", obj.LogData(zap.Int("sc", 500), zap.Error(err))...)
 		return response.NewError(500, err)
 	}
 
@@ -125,7 +125,7 @@ func Delete(obj *object.FileObject) *response.Response {
 	defer t.Done()
 	client, err := getClient(obj)
 	if err != nil {
-		monitoring.Logs().Warnw("Storage/Delete create client", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 503), zap.Error(err))
+		monitoring.Log().Warn("Storage/Delete create client", obj.LogData(zap.Int("sc", 503), zap.Error(err))...)
 		return response.NewError(503, err)
 	}
 
@@ -134,7 +134,7 @@ func Delete(obj *object.FileObject) *response.Response {
 		err = client.RemoveItem(getKey(obj))
 
 		if err != nil {
-			monitoring.Logs().Warnw("Storage/Delete cannot delete", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 500), zap.Error(err))
+			monitoring.Log().Warn("Storage/Delete cannot delete", obj.LogData(zap.Int("sc", 500), zap.Error(err))...)
 			return response.NewError(500, err)
 		}
 	} else if resHead.StatusCode == 404 {
@@ -150,7 +150,7 @@ func Delete(obj *object.FileObject) *response.Response {
 func List(obj *object.FileObject, maxKeys int, _ string, prefix string, marker string) *response.Response {
 	client, err := getClient(obj)
 	if err != nil {
-		monitoring.Logs().Warnw("Storage/List", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 503), zap.Error(err))
+		monitoring.Log().Warn("Storage/List", obj.LogData(zap.Int("sc", 503), zap.Error(err))...)
 		return response.NewError(503, err)
 	}
 
@@ -158,7 +158,7 @@ func List(obj *object.FileObject, maxKeys int, _ string, prefix string, marker s
 		_, err = client.Item(prefix)
 		if err != nil {
 			if err == stow.ErrNotFound {
-				monitoring.Logs().Infow("Storage/List item not fountresponse", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 404))
+				monitoring.Log().Info("Storage/List item not fountresponse", obj.LogData(zap.Int("sc", 404))...)
 				return response.NewString(404, obj.Key)
 			}
 		}
@@ -166,7 +166,7 @@ func List(obj *object.FileObject, maxKeys int, _ string, prefix string, marker s
 
 	items, resultMarker, err := client.Items(prefix, marker, maxKeys)
 	if err != nil {
-		monitoring.Logs().Warnw("Storage/List", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 500), zap.Error(err))
+		monitoring.Log().Warn("Storage/List", obj.LogData(zap.Int("sc", 500), zap.Error(err))...)
 		return response.NewError(500, err)
 	}
 
@@ -287,6 +287,11 @@ func getClient(obj *object.FileObject) (stow.Container, error) {
 		config = stow.ConfigMap{
 			metaStorage.ConfigKeyPath: storageCfg.RootPath,
 		}
+	case "b2":
+		config = stow.ConfigMap{
+			b2Storage.ConfigAccountID:      storageCfg.Account,
+			b2Storage.ConfigApplicationKey: storageCfg.Key,
+		}
 
 	}
 
@@ -306,7 +311,7 @@ func getClient(obj *object.FileObject) (stow.Container, error) {
 	container, err := client.Container(bucketName)
 
 	if err != nil {
-		monitoring.Log().Info("Storage/getClient error", zap.String("kind", storageCfg.Kind), zap.String("bucket", obj.Bucket), zap.Error(err))
+		monitoring.Log().Info("Storage/getClient container get error", zap.String("kind", storageCfg.Kind), zap.String("bucket", bucketName), zap.Error(err))
 		if err == stow.ErrNotFound && strings.HasPrefix(storageCfg.Kind, "local") {
 			container, err = client.CreateContainer(obj.Bucket)
 			if err != nil {
@@ -326,7 +331,13 @@ func getClient(obj *object.FileObject) (stow.Container, error) {
 }
 
 func getKey(obj *object.FileObject) string {
-	return path.Join(obj.Storage.PathPrefix, obj.Key)
+	switch obj.Storage.Kind {
+	case "b2":
+		return strings.TrimPrefix(path.Join(obj.Storage.PathPrefix, obj.Key), "/")
+	default:
+		return path.Join(obj.Storage.PathPrefix, obj.Key)
+
+	}
 }
 
 func prepareResponse(obj *object.FileObject, stream io.ReadCloser, item stow.Item) *response.Response {
@@ -335,7 +346,7 @@ func prepareResponse(obj *object.FileObject, stream io.ReadCloser, item stow.Ite
 	metadata, err := item.Metadata()
 
 	if err != nil {
-		monitoring.Log().Warn("Storage/prepareResponse read metadata error", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 500), zap.Error(err))
+		monitoring.Log().Warn("Storage/prepareResponse read metadata error", obj.LogData(zap.Int("sc", 500), zap.Error(err))...)
 		return response.NewError(500, err)
 	}
 
@@ -343,13 +354,13 @@ func prepareResponse(obj *object.FileObject, stream io.ReadCloser, item stow.Ite
 
 	etag, err := item.ETag()
 	if err != nil {
-		monitoring.Log().Warn("Storage/prepareResponse read etag error", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 500), zap.Error(err))
+		monitoring.Log().Warn("Storage/prepareResponse read etag error", obj.LogData(zap.Int("sc", 500), zap.Error(err))...)
 		return response.NewError(500, err)
 	}
 
 	lastMod, err := item.LastMod()
 	if err != nil {
-		monitoring.Log().Warn("Storage/prepareResponse read lastmod error", zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.Int("sc", 500), zap.Error(err))
+		monitoring.Log().Warn("Storage/prepareResponse read lastmod error", obj.LogData(zap.Int("sc", 500), zap.Error(err))...)
 		return response.NewError(500, err)
 	}
 
@@ -361,9 +372,11 @@ func prepareResponse(obj *object.FileObject, stream io.ReadCloser, item stow.Ite
 	if etag != "" {
 		res.Set("ETag", etag)
 	}
-	res.Set("Last-Modified", lastMod.Format(http.TimeFormat))
+	res.Set("Last-Modified", lastMod.UTC().Format(http.TimeFormat))
 
 	if contentType, ok := metadata["Content-Type"]; ok {
+		res.SetContentType(contentType.(string))
+	} else if contentType, ok := metadata["content-type"]; ok {
 		res.SetContentType(contentType.(string))
 	} else {
 		ct := mime.TypeByExtension(path.Ext(obj.Uri.Path))
@@ -391,7 +404,7 @@ func prepareMetadata(obj *object.FileObject, metaHeaders http.Header) map[string
 		default:
 			keyLower := strings.ToLower(k)
 			if strings.HasPrefix(keyLower, "x-amz-meta") || keyLower == "content-type" || keyLower == "etag" {
-				metadata[k] = v[0]
+				metadata[keyLower] = v[0]
 			}
 		}
 	}
@@ -401,13 +414,14 @@ func prepareMetadata(obj *object.FileObject, metaHeaders http.Header) map[string
 
 func parseMetadata(obj *object.FileObject, metadata map[string]interface{}, res *response.Response) {
 	for k, v := range metadata {
+		k = strings.ToLower(k)
 		switch k {
-		case "Cache-Control":
+		case "cache-control":
 			res.Set(k, v.(string))
 
 		}
 
-		if strings.HasPrefix(k, "X-") {
+		if strings.HasPrefix(k, "x-") {
 			res.Set(k, v.(string))
 		}
 	}

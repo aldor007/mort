@@ -144,7 +144,7 @@ func TestPrometheusReporter_TimerVec(t *testing.T) {
 	tr.Done()
 
 	result := dto.Metric{}
-	p.histogramsVec["test-2-hist-vec"].With(prometheus.Labels{"label": "elo"}).Write(&result)
+	p.histogramsVec["test-2-hist-vec"].With(prometheus.Labels{"label": "elo"}).(prometheus.Metric).Write(&result)
 
 	assert.InEpsilon(t, *result.Histogram.SampleSum, 100, 5)
 }

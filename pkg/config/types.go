@@ -52,7 +52,7 @@ type Transform struct {
 // Storage contains information about kind of used storage
 type Storage struct {
 	RootPath        string            `yaml:"rootPath,omitempty"`        // root path for local-* storage
-	Kind            string            `yaml:"kind"`                      // type of storage from list ("local", "local-meta", "s3", "http", "noop")
+	Kind            string            `yaml:"kind"`                      // type of storage from list ("local", "local-meta", "s3", "http", "b2","noop")
 	Url             string            `yaml:"url,omitempty"`             // Url for http storage
 	Headers         map[string]string `yaml:"headers,omitempty"`         // request headers for http storage
 	AccessKey       string            `yaml:"accessKey,omitempty"`       // access key for s3 storage
@@ -61,6 +61,8 @@ type Storage struct {
 	Endpoint        string            `yaml:"endpoint,omitempty"`        // endpoint for s3 storage
 	PathPrefix      string            `yaml:"pathPrefix,omitempty"`      // prefix in path for all storage
 	Bucket          string            `yaml:"bucket"`
+	Account         string            `yaml:"account"` // account name for b2
+	Key             string            `yaml:"key"`     // key for b2
 	Hash            string            // unique hash for given storage
 }
 

@@ -42,7 +42,7 @@ func decodePreset(_ *url.URL, bucketConfig config.Bucket, obj *FileObject) (stri
 	parent := subMatchMap["parent"]
 
 	if _, ok := trans.Presets[presetName]; !ok {
-		monitoring.Log().Warn("FileObject decodePreset unknown preset", zap.String("obj.Key", obj.Key), zap.String("parent", parent), zap.String("presetName", presetName),
+		monitoring.Log().Warn("FileObject decodePreset unknown preset", zap.String("obj.path", obj.Uri.Path), zap.String("obj.Key", obj.Key), zap.String("parent", parent), zap.String("presetName", presetName),
 			zap.String("regexp", trans.Path))
 		return "", errors.New("unknown preset " + presetName)
 	}

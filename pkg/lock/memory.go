@@ -1,10 +1,10 @@
 package lock
 
 import (
-	"github.com/aldor007/mort/pkg/response"
-	"sync"
-	"go.uber.org/zap"
 	"github.com/aldor007/mort/pkg/monitoring"
+	"github.com/aldor007/mort/pkg/response"
+	"go.uber.org/zap"
+	"sync"
 )
 
 // MemoryLock is in memory lock for single mort instance

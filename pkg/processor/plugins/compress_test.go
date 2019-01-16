@@ -5,7 +5,7 @@ import (
 	"compress/gzip"
 	"github.com/aldor007/mort/pkg/response"
 	"github.com/stretchr/testify/assert"
-	brEnc "gopkg.in/kothar/brotli-go.v0/enc"
+	brEnc "github.com/google/brotli/go/cbrotli"
 	"gopkg.in/yaml.v2"
 	"net/http"
 	"net/http/httptest"
@@ -245,9 +245,7 @@ func TestCompressBrotliType(t *testing.T) {
 
 	var buf bytes.Buffer
 
-	params := brEnc.NewBrotliParams()
-	params.SetQuality(4)
-	br := brEnc.NewBrotliWriter(params, &buf)
+	br := brEnc.NewWriter(&buf, brEnc.WriterOptions{Quality:4})
 	br.Write(body)
 	br.Close()
 
