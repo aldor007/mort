@@ -2,9 +2,9 @@ package object
 
 import (
 	"bytes"
+	"encoding/hex"
 	"errors"
 	"github.com/aldor007/mort/pkg/config"
-	"hash"
 	"net/url"
 	"strconv"
 	"strings"
@@ -63,8 +63,11 @@ func Parse(url *url.URL, mortConfig *config.Config, obj *FileObject) error {
 			obj.CheckParent = bucketConfig.Transform.CheckParent
 			if obj.Transforms.NotEmpty {
 				obj.Storage = bucketConfig.Storages.Transform()
-				if obj.allowChangeKey == true && bucketConfig.Transform.ResultKey == "hash" {
-					obj.Key = hashKey(obj.Transforms.Hash(), parentObj.key)
+				switch bucketConfig.Transform.ResultKey {
+				case "hash":
+					obj.Key = hashKey(obj)
+				case "hashParent":
+					obj.Key = hashKeyParent(obj)
 				}
 			} else {
 				obj.Storage = bucketConfig.Storages.Basic()
@@ -80,10 +83,10 @@ func Parse(url *url.URL, mortConfig *config.Config, obj *FileObject) error {
 	return errors.New("unknown bucket")
 }
 
-func hashKey(h hash.Hash64, suffix string) string {
-	hashB := []byte(strconv.FormatUint(uint64(h.Sum64()), 16))
+func hashKey(obj *FileObject) string {
+	hashB := []byte(strconv.FormatUint(uint64(obj.Transforms.Hash().Sum64()), 16))
 	buf := bufPool.Get().(*bytes.Buffer)
-	safePath := strings.Replace(suffix, "/", "-", -1)
+	safePath := strings.Replace(obj.Parent.key, "/", "-", -1)
 	sliceRange := 3
 
 	if l := len(safePath); l < 3 {
@@ -99,7 +102,32 @@ func hashKey(h hash.Hash64, suffix string) string {
 	buf.WriteString(safePath)
 	buf.WriteByte('-')
 	buf.Write(hashB)
-	defer bufPool.Put(buf)
+	bufPool.Put(buf)
+	return buf.String()
+}
+
+func hashKeyParent(obj *FileObject) string {
+	var currObj *FileObject
+	currObj = obj.Parent
+	transHash := currObj.Transforms.Hash()
+	buf := bufPool.Get().(*bytes.Buffer)
+	for currObj.HasParent() {
+		buf.Reset()
+		hSum := currObj.Transforms.Hash().Sum(nil)
+		buf.WriteString(currObj.Key)
+		buf.Write(hSum)
+		transHash.Sum(buf.Bytes())
+		currObj = currObj.Parent
+	}
+	hashB := transHash.Sum(nil)
+	safePath := strings.Replace(currObj.key, "/", "-", -1)
+
+	buf.Reset()
+	buf.WriteByte('/')
+	buf.WriteString(safePath)
+	buf.WriteByte('/')
+	buf.WriteString(hex.EncodeToString(hashB))
+	bufPool.Put(buf)
 	return buf.String()
 }
 

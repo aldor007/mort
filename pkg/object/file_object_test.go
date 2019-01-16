@@ -162,6 +162,42 @@ func TestNewFileObjecWithNestedParent(t *testing.T) {
 	assert.Equal(t, "/parent.jpg", parent.Parent.Key, "parent of parent should have correct path")
 }
 
+func TestNewFileObjecWithNestedParentHash(t *testing.T) {
+	mortConfig := config.GetInstance()
+	mortConfig.Load("testdata/bucket-transform-hash.yml")
+	obj, err := NewFileObject(pathToURL("/bucket/width/bucket/height/bucket/parent.jpg"), mortConfig)
+
+	assert.Nil(t, err, "Unexpected to have error when parsing path")
+
+	assert.NotNil(t, obj, "obj should be nil")
+
+	assert.True(t, obj.HasParent(), "obj should have parent")
+
+	parent := obj.Parent
+
+	assert.True(t, parent.HasParent(), "parent should have parent")
+
+	assert.Equal(t, "/6ca/hei/height-bucket-parent.jpg-6ca0dabe9909875a", obj.Key)
+}
+
+func TestNewFileObjecWithNestedParentHashParent(t *testing.T) {
+	mortConfig := config.GetInstance()
+	mortConfig.Load("testdata/bucket-transform-hashParent.yml")
+	obj, err := NewFileObject(pathToURL("/bucket/width/bucket/height/bucket/parent.jpg"), mortConfig)
+
+	assert.Nil(t, err, "Unexpected to have error when parsing path")
+
+	assert.NotNil(t, obj, "obj should be nil")
+
+	assert.True(t, obj.HasParent(), "obj should have parent")
+
+	parent := obj.Parent
+
+	assert.True(t, parent.HasParent(), "parent should have parent")
+
+	assert.Equal(t, "/parent.jpg/545d03ded959a5c0", obj.Key)
+}
+
 func TestNewFileObjectQueryResize(t *testing.T) {
 	mortConfig := &config.Config{}
 	mortConfig.Load("testdata/bucket-transform-query-parent-storage.yml")

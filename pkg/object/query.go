@@ -24,7 +24,6 @@ func decodeQuery(url *url.URL, bucketConfig config.Bucket, obj *FileObject) (str
 			parent = "/" + path.Join(trans.ParentBucket, obj.Key)
 		}
 
-		obj.Key = hashKey(obj.Transforms.Hash(), parent)
 		return parent, err
 	}
 

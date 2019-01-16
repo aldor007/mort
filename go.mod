@@ -1,4 +1,4 @@
-module github.com/Aldor007/mort
+module github.com/aldor007/mort
 
 require (
 	github.com/aldor007/go-aws-auth v0.0.0-20180623204207-00898dfb9272
@@ -11,6 +11,7 @@ require (
 	github.com/go-chi/chi v3.3.3+incompatible
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/golang/protobuf v1.2.0
+	github.com/google/brotli v1.0.7
 	github.com/google/readahead v0.0.0-20161222183148-eaceba169032
 	github.com/graymeta/stow v0.0.0-20181228161447-b469cfb112f8
 	github.com/jmespath/go-jmespath v0.0.0-20180206201540-c2b33e8439af

@@ -11,7 +11,7 @@
 
 [[projects]]
   branch = "develop"
-  digest = "1:3da15e2ab879a6d15a175eda02ed868e19ea36fe1c7f1649a2916ab9e94a86c1"
+  digest = "1:6521bf74452fe2c579b7e99fa555613f33e9a21801eaf29f297e47ad509692e8"
   name = "github.com/aldor007/stow"
   packages = [
     ".",
@@ -335,17 +335,6 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:6de28cf34c450cfcfc25d28230311872599ccfcb9c2aba3a8d177a9225582130"
-  name = "gopkg.in/kothar/brotli-go.v0"
-  packages = [
-    "enc",
-    "shared",
-  ]
-  pruneopts = "UT"
-  revision = "771231d473d6c4896e97c2b6e3855f1afc0cdada"
-
-[[projects]]
-  branch = "master"
   digest = "1:863b86a1a9cb2aca2ae27e576c345f7eec79ef99bdd74a4d8fdd966af299f2f2"
   name = "gopkg.in/kothar/go-backblaze.v0"
   packages = ["."]
@@ -388,7 +377,6 @@
     "golang.org/x/net/context",
     "gopkg.in/h2non/bimg.v1",
     "gopkg.in/h2non/gock.v1",
-    "gopkg.in/kothar/brotli-go.v0/enc",
     "gopkg.in/yaml.v2",
   ]
   solver-name = "gps-cdcl"

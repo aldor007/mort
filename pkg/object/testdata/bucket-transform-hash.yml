@@ -1,0 +1,33 @@
+buckets:
+    bucket:
+        transform:
+            path: "\\/(?P<presetName>[a-z0-9_]+)\\/(?P<parent>.*)"
+            kind: "presets"
+            resultKey: "hash"
+            presets:
+                blog_small:
+                    quality: 75
+                    filters:
+                        thumbnail:
+                            width: 100
+                            height: 100
+                            mode: outbound
+                width:
+                    quality: 75
+                    filters:
+                        thumbnail:
+                            width: 100
+                            mode: outbound
+                height:
+                    quality: 75
+                    filters:
+                        thumbnail:
+                            height: 100
+                            mode: outbound
+        storages:
+            basic:
+                kind: "local"
+                rootPath: "/Users/aldor/workspace/mkaciubacom/web"
+            transform:
+                kind: "local"
+                rootPath: "/Users/aldor/workspace/mkaciubacom/web"
