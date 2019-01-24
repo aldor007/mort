@@ -84,7 +84,6 @@ func Head(obj *object.FileObject) *response.Response {
 	item, err := client.Item(key)
 	if err != nil {
 		if err == stow.ErrNotFound {
-
 			monitoring.Log().Info("Storage/Head item response", obj.LogData(zap.Int("sc", 404))...)
 			return response.NewString(404, notFound)
 		}
@@ -412,7 +411,7 @@ func prepareMetadata(obj *object.FileObject, metaHeaders http.Header) map[string
 		case "s3":
 			keyLower := strings.ToLower(k)
 			if strings.HasPrefix(keyLower, "x-amz-meta") || keyLower == "content-type" {
-				metadata[strings.Replace(strings.ToLower(k), "x-amz-meta-", "", 1)] = v[0]
+				metadata[strings.Replace(keyLower, "x-amz-meta-", "", 1)] = v[0]
 			}
 		default:
 			keyLower := strings.ToLower(k)
@@ -445,10 +444,11 @@ func parseMetadata(obj *object.FileObject, metadata map[string]interface{}, res 
 			switch k {
 			case "cache-control", "content-type":
 				res.Set(k, v.(string))
+			default:
+				res.Set(strings.Join([]string{"x-amz-meta", k}, "-"), v.(string))
 
 			}
 
-			res.Set(strings.Join([]string{"x-amz-meta", k}, "-"), v.(string))
 		}
 	}
 

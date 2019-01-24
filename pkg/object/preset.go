@@ -70,10 +70,10 @@ func decodePreset(_ *url.URL, bucketConfig config.Bucket, obj *FileObject) (stri
 		parent = "/" + parent
 	}
 
-	if bucketConfig.Transform.ResultKey == "hash" {
-		obj.Key = hashKey(obj.Transforms.Hash(), subMatchMap["parent"])
-		obj.allowChangeKey = false
-	}
+	//if bucketConfig.Transform.ResultKey == "hash" {
+	//	obj.Key = hashKey(obj.Transforms.Hash(), subMatchMap["parent"])
+	//	obj.allowChangeKey = false
+	//}
 
 	return parent, err
 }

@@ -1,8 +1,7 @@
-module github.com/Aldor007/mort
+module github.com/aldor007/mort
 
 require (
 	github.com/aldor007/go-aws-auth v0.0.0-20180623204207-00898dfb9272
-	github.com/aldor007/mort v0.12.0
 	github.com/aldor007/stow v0.0.0-20190109171535-d59ae5fea5cf
 	github.com/aws/aws-sdk-go v1.16.14
 	github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973
