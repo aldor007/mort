@@ -84,6 +84,7 @@ func Head(obj *object.FileObject) *response.Response {
 	item, err := client.Item(key)
 	if err != nil {
 		if err == stow.ErrNotFound {
+
 			monitoring.Log().Info("Storage/Head item response", obj.LogData(zap.Int("sc", 404))...)
 			return response.NewString(404, notFound)
 		}
@@ -106,6 +107,16 @@ func Set(obj *object.FileObject, metaHeaders http.Header, contentLen int64, body
 		return response.NewError(503, err)
 	}
 
+	key := getKey(obj)
+	switch obj.Storage.Kind {
+	case "s3":
+		// in such case we want to create dir but s3 is key/value store so it is not handling it
+		if contentLen == 0 && strings.HasSuffix(key, "/") {
+			res := response.NewNoContent(200)
+			return res
+		}
+
+	}
 	_, err = client.Put(getKey(obj), body, contentLen, prepareMetadata(obj, metaHeaders))
 
 	if err != nil {
@@ -154,7 +165,9 @@ func List(obj *object.FileObject, maxKeys int, _ string, prefix string, marker s
 		return response.NewError(503, err)
 	}
 
-	if prefix != "" && prefix != "/" {
+	prefix = path.Join(obj.Storage.PathPrefix, prefix)
+
+	if prefix != "" && prefix != "/" && obj.Storage.Kind == "local-meta" {
 		_, err = client.Item(prefix)
 		if err != nil {
 			if err == stow.ErrNotFound {
