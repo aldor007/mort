@@ -1,12 +1,10 @@
 package engine
 
 import (
-	"encoding/binary"
 	"net/http"
 	"strconv"
 	"time"
 
-	"github.com/spaolacci/murmur3"
 	"gopkg.in/h2non/bimg.v1"
 
 	"bytes"
@@ -16,6 +14,8 @@ import (
 	"github.com/aldor007/mort/pkg/transforms"
 	"go.uber.org/zap"
 	"sync"
+	"crypto/md5"
+	"encoding/hex"
 )
 
 // bufPool for string concatenations
@@ -45,7 +45,6 @@ func (c *ImageEngine) Process(obj *object.FileObject, trans []transforms.Transfo
 		return response.NewError(500, err), err
 	}
 
-	var transHash uint64
 	for _, tran := range trans {
 		image := bimg.NewImage(buf)
 		meta, err := image.Metadata()
@@ -62,21 +61,17 @@ func (c *ImageEngine) Process(obj *object.FileObject, trans []transforms.Transfo
 		if err != nil {
 			return response.NewError(500, err), err
 		}
-		transHash = transHash + tran.Hash().Sum64()
 	}
 
-	transHashB := make([]byte, 8)
-	binary.LittleEndian.PutUint64(transHashB, transHash)
 
-	hash := murmur3.New64()
-	hash.Write([]byte(obj.Key))
-	hash.Write(transHashB)
+	bodyHash := md5.New()
+	bodyHash.Write(buf)
 
 	res := response.NewBuf(200, buf)
 	res.SetContentType("image/" + bimg.DetermineImageTypeName(buf))
 	//res.Set("cache-control", "max-age=6000, public")
 	res.Set("Last-Modified", time.Now().UTC().Format(http.TimeFormat))
-	res.Set("ETag", createWeakEtag(strconv.FormatUint(hash.Sum64(), 16)))
+	res.Set("ETag", hex.EncodeToString(bodyHash.Sum(nil)))
 	meta, err := bimg.Metadata(buf)
 	if err == nil {
 		res.Set("x-amz-meta-public-width", strconv.Itoa(meta.Size.Width))
@@ -89,14 +84,3 @@ func (c *ImageEngine) Process(obj *object.FileObject, trans []transforms.Transfo
 	return res, nil
 }
 
-func createWeakEtag(transHash string) string {
-	buf := bufPool.Get().(*bytes.Buffer)
-	buf.Reset()
-	buf.WriteByte('W')
-	buf.WriteByte('/')
-	buf.WriteByte('"')
-	buf.WriteString(transHash)
-	buf.WriteByte('"')
-	defer bufPool.Put(buf)
-	return buf.String()
-}

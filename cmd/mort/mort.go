@@ -31,7 +31,7 @@ import (
 
 const (
 	// Version of mort
-	Version = "0.12.0"
+	Version = "0.13.0"
 	// BANNER just fancy command line banner
 	BANNER = `
   /\/\   ___  _ __| |_
@@ -92,7 +92,13 @@ func handleSignals(servers []*http.Server, socketPaths []string, wg *sync.WaitGr
 }
 
 func configureMonitoring(mortConfig *config.Config) {
-	logCfg := zap.NewProductionConfig()
+	var logCfg zap.Config
+	if mortConfig.Server.LogLevel == "debug" {
+		logCfg = zap.NewDevelopmentConfig()
+	} else {
+		logCfg = zap.NewProductionConfig()
+	}
+
 	logCfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 	logger, _ := logCfg.Build()
 
@@ -219,6 +225,7 @@ func main() {
 			res.Set("Access-Control-Allow-Headers", "Content-Type, X-Amz-Public-Width, X-Amz-Public-Height")
 			res.Set("Access-Control-Expose-Headers", "Content-Type, X-Amz-Public-Width, X-Amz-Public-Height")
 			res.Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, HEAD")
+			res.Set("Access-Control-Allow-Origin", "*")
 			defer monitoring.Log().Sync() // flushes buffer, if any
 			if res.HasError() {
 				monitoring.Log().Warn("Mort process error", zap.String("obj.Key", obj.Key), zap.Error(res.Error()))

@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"path"
 	"sync"
+	"strings"
 )
 
 func init() {
@@ -66,7 +67,7 @@ func decodePreset(_ *url.URL, bucketConfig config.Bucket, obj *FileObject) (stri
 
 	if trans.ParentBucket != "" {
 		parent = "/" + path.Join(trans.ParentBucket, parent)
-	} else {
+	} else if !strings.HasPrefix(parent, "/"){
 		parent = "/" + parent
 	}
 
@@ -81,7 +82,7 @@ func decodePreset(_ *url.URL, bucketConfig config.Bucket, obj *FileObject) (stri
 // presetToTransform convert preset config to transform
 // nolint: gocyclo
 func presetToTransform(preset config.Preset) (transforms.Transforms, error) {
-	var trans transforms.Transforms
+	trans := transforms.New()
 	filters := preset.Filters
 
 	if filters.Thumbnail != nil {

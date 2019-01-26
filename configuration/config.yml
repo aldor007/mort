@@ -1,4 +1,5 @@
 server:
+  logLevel: "debug"
   listens:
     - ":8080"
     - "unix:/tmp/mort.sock"

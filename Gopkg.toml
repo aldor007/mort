@@ -30,7 +30,7 @@
   name = "github.com/aldor007/go-aws-auth"
 
 [[constraint]]
-  branch = "develop"
+  branch = "master"
   name = "github.com/aldor007/stow"
 
 [[constraint]]
@@ -80,10 +80,6 @@
 [[constraint]]
   name = "gopkg.in/h2non/gock.v1"
   version = "1.0.12"
-
-[[constraint]]
-  branch = "master"
-  name = "gopkg.in/kothar/brotli-go.v0"
 
 [[constraint]]
   name = "gopkg.in/yaml.v2"

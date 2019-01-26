@@ -9,9 +9,15 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"github.com/spaolacci/murmur3"
 )
 
 var bufPool = sync.Pool{
+	New: func() interface{} {
+		return &bytes.Buffer{}
+	},
+}
+var bufHashPool = sync.Pool{
 	New: func() interface{} {
 		return &bytes.Buffer{}
 	},
@@ -56,12 +62,14 @@ func Parse(url *url.URL, mortConfig *config.Config, obj *FileObject) error {
 				return err
 			}
 
-			parentObj, err = NewFileObjectFromPath(parent, mortConfig)
-			parentObj.Storage = bucketConfig.Storages.Get(bucketConfig.Transform.ParentStorage)
+			parentObj, err = newFileObjectFromPath(parent, mortConfig, false)
+			if parentObj.Bucket == obj.Bucket {
+				parentObj.Storage = bucketConfig.Storages.Get(bucketConfig.Transform.ParentStorage)
+			}
 
 			obj.Parent = parentObj
 			obj.CheckParent = bucketConfig.Transform.CheckParent
-			if obj.Transforms.NotEmpty {
+			if obj.Transforms.NotEmpty && obj.allowChangeKey {
 				obj.Storage = bucketConfig.Storages.Transform()
 				switch bucketConfig.Transform.ResultKey {
 				case "hash":
@@ -109,26 +117,32 @@ func hashKey(obj *FileObject) string {
 func hashKeyParent(obj *FileObject) string {
 	var currObj *FileObject
 	currObj = obj.Parent
-	transHash := currObj.Transforms.Hash()
-	buf := bufPool.Get().(*bytes.Buffer)
+	currObj.allowChangeKey = false
+	buf := bufHashPool.Get().(*bytes.Buffer)
+	defer bufHashPool.Put(buf)
+	buf.Reset()
+	buf.Write(obj.Transforms.Hash().Sum(nil))
+	buf.WriteString(currObj.Key)
 	for currObj.HasParent() {
-		buf.Reset()
-		hSum := currObj.Transforms.Hash().Sum(nil)
 		buf.WriteString(currObj.Key)
-		buf.Write(hSum)
-		transHash.Sum(buf.Bytes())
+		buf.Write(currObj.Transforms.Hash().Sum(nil))
 		currObj = currObj.Parent
 	}
-	hashB := transHash.Sum(nil)
+	hashB := buf.Bytes()
+	buf.WriteString(currObj.Key)
 	safePath := strings.Replace(currObj.key, "/", "-", -1)
-
+	murHash := murmur3.New128()
+	murHash.Write(hashB)
 	buf.Reset()
-	buf.WriteByte('/')
-	buf.WriteString(safePath)
-	buf.WriteByte('/')
-	buf.WriteString(hex.EncodeToString(hashB))
-	bufPool.Put(buf)
-	return buf.String()
+
+	bufKey := bufPool.Get().(*bytes.Buffer)
+	defer bufPool.Put(bufKey)
+	bufKey.Reset()
+	bufKey.WriteByte('/')
+	bufKey.WriteString(safePath)
+	bufKey.WriteByte('/')
+	bufKey.WriteString(hex.EncodeToString(murHash.Sum(nil)))
+	return bufKey.String()
 }
 
 // RegisterParser add new kind of function to map of decoders and for config validator

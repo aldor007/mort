@@ -69,7 +69,7 @@ func queryToInt(q url.Values, k string) (int, error) {
 }
 
 func parseOperation(query url.Values) (transforms.Transforms, error) {
-	var trans transforms.Transforms
+	trans := transforms.New()
 	var err error
 	opt := query.Get("operation")
 	if opt == "" {
