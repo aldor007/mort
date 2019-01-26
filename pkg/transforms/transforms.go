@@ -108,6 +108,11 @@ type Transforms struct {
 	transHash fnvI64
 }
 
+func New() Transforms  {
+	t  := Transforms{}
+	return t
+}
+
 // Resize change image width and height
 func (t *Transforms) Resize(width, height int, enlarge bool) error {
 	t.width = width

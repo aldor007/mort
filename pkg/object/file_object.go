@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"net/url"
+	"net/http"
 )
 
 // FileObject is representing parsed request for image or file
@@ -24,19 +25,24 @@ type FileObject struct {
 	allowChangeKey bool                  // parser can allow or not changing key by this flag
 	Debug          bool                  // flag for debug requests
 	Ctx            context.Context       // context of request
+	Range          string                // HTTP range in request
 }
 
 // NewFileObjectFromPath create new instance of FileObject
 // path should be request path
 // mortConfig should be pointer to current buckets config
 func NewFileObjectFromPath(path string, mortConfig *config.Config) (*FileObject, error) {
+	return newFileObjectFromPath(path, mortConfig, true)
+}
+
+func newFileObjectFromPath(path string, mortConfig *config.Config, allowChangeKey bool) (*FileObject, error) {
 	obj := FileObject{}
 	obj.Uri = &url.URL{}
 	obj.Uri.Path = path
 
 	//obj.uriBytes = []byte(uri)
 	obj.CheckParent = false
-	obj.allowChangeKey = true
+	obj.allowChangeKey = allowChangeKey
 
 	err := Parse(obj.Uri, mortConfig, &obj)
 
@@ -76,6 +82,13 @@ func (o *FileObject) UpdateKey(str string) {
 	o.Key = o.Key + str
 }
 
+// FillWithRequest assign to object request and HTTP range data
+func (o *FileObject) FillWithRequest(req *http.Request, ctx context.Context)  {
+	o.Ctx = ctx
+	o.Range = req.Header.Get("Range")
+}
+
+// LogData log data for given object
 func (obj *FileObject) LogData(fields ...zapcore.Field) []zapcore.Field {
 	result := []zapcore.Field{zap.String("obj.path", obj.Uri.Path), zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.String("obj.Storage", obj.Storage.Kind),
 		zap.Bool("obj.HasTransforms", obj.HasTransform()), zap.Bool("obj.HasParent", obj.HasParent())}

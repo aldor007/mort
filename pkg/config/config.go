@@ -212,6 +212,10 @@ func (c *Config) validateTransform(bucketName string, bucket Bucket) error {
 }
 
 func (c *Config) validateServer() error {
+	if c.Server.LogLevel == "" {
+		c.Server.LogLevel = "prod"
+	}
+
 	if c.Server.SingleListen == "" {
 		c.Server.SingleListen = ":8080"
 	}

@@ -68,7 +68,7 @@ type requestMessage struct {
 func (r *RequestProcessor) Process(req *http.Request, obj *object.FileObject) *response.Response {
 	pCtx := req.Context()
 	ctx, timeout := context.WithTimeout(pCtx, r.processTimeout)
-	obj.Ctx = ctx
+	obj.FillWithRequest(req, ctx)
 	defer timeout()
 	r.plugins.PreProcess(obj, req)
 	msg := requestMessage{}
@@ -280,7 +280,7 @@ func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) 
 			select {
 			case <-ctx.Done():
 				return
-			case resChan <- storage.Get(o):
+			case resChan <- storage.Get(o, ):
 				return
 			default:
 

@@ -106,6 +106,7 @@ type HeaderYaml struct {
 
 // Server configure HTTP server
 type Server struct {
+	LogLevel       string                 `yaml:"logLevel"`
 	InternalListen string                 `yaml:"internalListen"`
 	SingleListen   string                 `yaml:"listen"`
 	CacheSize      int64                  `yaml:"cacheSize"`
