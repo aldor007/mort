@@ -52,14 +52,20 @@ func (c *ImageEngine) Process(obj *object.FileObject, trans []transforms.Transfo
 			return response.NewError(500, err), err
 		}
 
-		opts, err := tran.BimgOptions(transforms.NewImageInfo(meta, bimg.DetermineImageTypeName(buf)))
+		optsArr, err := tran.BimgOptions(transforms.NewImageInfo(meta, bimg.DetermineImageTypeName(buf)))
 		if err != nil {
 			return response.NewError(500, err), err
 		}
+		optsLen := len(optsArr)
+		for i, opts  := range optsArr {
+			buf, err = image.Process(opts)
+			if err != nil {
+				return response.NewError(500, err), err
+			}
 
-		buf, err = image.Process(opts)
-		if err != nil {
-			return response.NewError(500, err), err
+			if i <= optsLen -1  {
+				image = bimg.NewImage(buf)
+			}
 		}
 	}
 

@@ -9,6 +9,7 @@ import (
 	"github.com/aldor007/mort/pkg/helpers"
 	"github.com/spaolacci/murmur3"
 	"gopkg.in/h2non/bimg.v1"
+	"math"
 )
 
 var watermarkPosX = map[string]float32{
@@ -67,11 +68,12 @@ type ImageInfo struct {
 	width  int    // width of image in px
 	height int    // height of image in px
 	format string // format of image in string e.x. "jpg"
+	orientation int
 }
 
 // NewImageInfo create new ImageInfo object from bimg metadata
 func NewImageInfo(metadata bimg.ImageMetadata, format string) ImageInfo {
-	return ImageInfo{width: metadata.Size.Width, height: metadata.Size.Height, format: format}
+	return ImageInfo{width: metadata.Size.Width, height: metadata.Size.Height, format: format, orientation: metadata.Orientation}
 }
 
 // Transforms struct hold information about what operations should be performed on image
@@ -104,6 +106,10 @@ type Transforms struct {
 	watermark watermark
 
 	NotEmpty bool
+	NoMerge bool
+
+	autoCropWidth int
+	autoCropHeight int
 
 	transHash fnvI64
 }
@@ -130,11 +136,12 @@ func (t *Transforms) Resize(width, height int, enlarge bool) error {
 }
 
 // Crop extract part of image
-func (t *Transforms) Crop(width, height int, gravity string, enlarge bool) error {
+func (t *Transforms) Crop(width, height int, gravity string, enlarge, embed bool) error {
 	t.width = width
 	t.height = height
 	t.enlarge = enlarge
 	t.crop = true
+	t.embed = embed
 	t.NotEmpty = true
 	if g, ok := cropGravity[gravity]; ok {
 		t.gravity = g
@@ -143,6 +150,25 @@ func (t *Transforms) Crop(width, height int, gravity string, enlarge bool) error
 	}
 
 	t.transHash.write(1212, uint64(t.width)*5, uint64(t.height), uint64(t.gravity))
+	if t.embed {
+		t.transHash.write(3333)
+	}
+
+	if t.enlarge {
+		t.transHash.write(54324)
+	}
+
+	return nil
+}
+
+// Crop extract part of image
+func (t *Transforms) ResizeCropAuto(width, height int) error {
+	t.NotEmpty = true
+	t.autoCropWidth = width
+	t.autoCropHeight = height
+	t.NoMerge = true
+
+	t.transHash.write(31229, uint64(width)*2, uint64(height))
 	return nil
 }
 
@@ -252,7 +278,11 @@ func (t *Transforms) Rotate(angle int) error {
 
 // Merge append transformation from other object
 func (t *Transforms) Merge(other Transforms) error {
-	if other.NotEmpty == false {
+	if other.NoMerge == true || t.NoMerge == true {
+		return errors.New("unable to merge")
+	}
+
+	if other.NotEmpty == false  {
 		return nil
 	}
 
@@ -274,6 +304,13 @@ func (t *Transforms) Merge(other Transforms) error {
 	if other.crop {
 		t.crop = other.crop
 	}
+
+	if other.embed {
+		t.embed = other.embed
+	}
+
+	t.autoCropWidth = other.autoCropWidth
+	t.autoCropHeight = other.autoCropHeight
 
 	if other.gravity != 0 {
 		t.gravity = other.gravity
@@ -354,13 +391,42 @@ func imageFormat(format string) (bimg.ImageType, error) {
 	}
 }
 
+func (t *Transforms) calculateAutoCrop(info ImageInfo)  (int, int, int, int) {
+	if t.width != 0 {
+		info.width = t.width
+	}
+
+	if t.height != 0 {
+		info.height = t.height
+	}
+
+	wFactor := float64(info.width / t.autoCropWidth)
+	hFactor := float64(info.height / t.autoCropHeight)
+
+	var cropWidth, cropHeight float64
+	if wFactor < hFactor {
+		cropWidth = float64(info.width)
+		cropHeight = math.Ceil(float64(t.autoCropHeight) * wFactor)
+	} else {
+		cropWidth = math.Ceil(float64(t.autoCropWidth) * hFactor)
+		cropHeight = float64(info.height)
+	}
+
+	cropX := math.Floor((float64(info.width) - cropWidth) / 2.)
+	cropY := math.Floor((float64(info.height) - cropHeight) / 5.)
+
+	return int(cropX), int(cropY), int(cropWidth), int(cropHeight)
+}
+
 // BimgOptions return complete options for bimg lib
-func (t *Transforms) BimgOptions(imageInfo ImageInfo) (bimg.Options, error) {
+func (t *Transforms) BimgOptions(imageInfo ImageInfo) ([]bimg.Options, error) {
+	var opts []bimg.Options
 	b := bimg.Options{
 		Width:         t.width,
 		Height:        t.height,
 		Enlarge:       t.enlarge,
 		Crop:          t.crop,
+		Embed:         t.embed,
 		Interlace:     t.interlace,
 		Quality:       t.quality,
 		StripMetadata: t.stripMetadata,
@@ -370,6 +436,7 @@ func (t *Transforms) BimgOptions(imageInfo ImageInfo) (bimg.Options, error) {
 		},
 		Rotate: t.rotate,
 	}
+
 
 	if t.gravity != 0 {
 		b.Gravity = t.gravity
@@ -387,7 +454,7 @@ func (t *Transforms) BimgOptions(imageInfo ImageInfo) (bimg.Options, error) {
 		// fetch image
 		buf, err := t.watermark.fetchImage()
 		if err != nil {
-			return b, err
+			return opts, err
 		}
 
 		// calculate correct image dimensions
@@ -415,7 +482,16 @@ func (t *Transforms) BimgOptions(imageInfo ImageInfo) (bimg.Options, error) {
 		}
 	}
 
-	return b, nil
+	opts = append(opts, b)
+
+	if t.autoCropHeight != 0 || t.autoCropWidth != 0 {
+		bAutoCrop := bimg.Options{}
+		bAutoCrop.Left, bAutoCrop.Top, bAutoCrop.AreaWidth, bAutoCrop.AreaHeight =  t.calculateAutoCrop(imageInfo)
+		opts = append(opts, bAutoCrop)
+		opts = append(opts, bimg.Options{Width:t.autoCropWidth, Height:t.autoCropHeight, Crop: true, Gravity: bimg.GravityCentre})
+	}
+
+	return opts, nil
 }
 
 //  FNV  for uint64

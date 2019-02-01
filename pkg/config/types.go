@@ -18,7 +18,12 @@ type Preset struct {
 			Height  int    `yaml:"height"`
 			Gravity string `yaml:"gravity"`
 			Mode    string `yaml:"mode"`
+			Embed   bool   `yaml:"embed"`
 		} `yaml:"crop,omitempty"`
+		ResizeCropAuto      *struct {
+			Width   int    `yaml:"width"`
+			Height  int    `yaml:"height"`
+		} `yaml:"resizeCropAuto,omitempty"`
 		AutoRotate bool `yaml:"auto_rotate"`
 		Grayscale  bool `yaml:"grayscale"`
 		Strip      bool `yaml:"strip"`

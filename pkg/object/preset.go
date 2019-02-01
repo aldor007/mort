@@ -93,12 +93,19 @@ func presetToTransform(preset config.Preset) (transforms.Transforms, error) {
 	}
 
 	if filters.Crop != nil {
-		err := trans.Crop(filters.Crop.Width, filters.Crop.Height, filters.Crop.Gravity, filters.Crop.Mode == "outbound")
+		err := trans.Crop(filters.Crop.Width, filters.Crop.Height, filters.Crop.Gravity, filters.Crop.Mode == "outbound", filters.Crop.Embed)
 		if err != nil {
 			return trans, err
 		}
 	}
 
+
+	if filters.ResizeCropAuto != nil {
+		err := trans.ResizeCropAuto(filters.ResizeCropAuto.Width, filters.ResizeCropAuto.Height)
+		if err != nil {
+			return trans, err
+		}
+	}
 	trans.Quality(preset.Quality)
 
 	if filters.Interlace == true {

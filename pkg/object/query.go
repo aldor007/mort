@@ -102,7 +102,7 @@ func parseOperation(query url.Values) (transforms.Transforms, error) {
 					w, _ = queryToInt(query, "width")
 					h, _ = queryToInt(query, "height")
 
-					err = trans.Crop(w, h, query.Get("gravity"), false)
+					err = trans.Crop(w, h, query.Get("gravity"), false, query.Get("embed") != "")
 					if err != nil {
 						return trans, err
 					}
