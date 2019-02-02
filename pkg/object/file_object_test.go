@@ -59,7 +59,8 @@ func TestNewFileObjectTransform(t *testing.T) {
 
 	assert.True(t, obj.HasTransform(), "obj should have transform")
 
-	transCfg, err := obj.Transforms.BimgOptions(imageInfo)
+	transCfgArr, err := obj.Transforms.BimgOptions(imageInfo)
+	transCfg := transCfgArr[0]
 
 	assert.Nil(t, err, "Unexpected to have error when getting transforms")
 
@@ -89,9 +90,9 @@ func TestNewFileObjectTransformParentBucket(t *testing.T) {
 
 	assert.True(t, obj.HasTransform(), "obj should have transform")
 
-	transCfg, err := obj.Transforms.BimgOptions(imageInfo)
-
+	transCfgArr, err := obj.Transforms.BimgOptions(imageInfo)
 	assert.Nil(t, err, "Unexpected to have error when getting transforms")
+	transCfg := transCfgArr[0]
 
 	assert.Equal(t, 100, transCfg.Width, "invalid width for transform")
 
@@ -135,9 +136,9 @@ func TestNewFileObjectTransformOnlyWitdh(t *testing.T) {
 
 	assert.True(t, obj.HasTransform(), "obj should have transform")
 
-	transCfg, err := obj.Transforms.BimgOptions(imageInfo)
-
+	transCfgArr, err := obj.Transforms.BimgOptions(imageInfo)
 	assert.Nil(t, err, "Unexpected to have error when getting transforms")
+	transCfg := transCfgArr[0]
 
 	assert.Equal(t, 100, transCfg.Width, "invalid width for transform")
 
@@ -195,7 +196,7 @@ func TestNewFileObjecWithNestedParentHashParent(t *testing.T) {
 
 	assert.True(t, parent.HasParent(), "parent should have parent")
 
-	assert.Equal(t, "/parent.jpg/545d03ded959a5c0", obj.Key)
+	assert.Equal(t, "/parent.jpg/2e805241bb54d7f7a200a56572d63805", obj.Key)
 }
 
 func TestNewFileObjectQueryResize(t *testing.T) {
@@ -214,9 +215,9 @@ func TestNewFileObjectQueryResize(t *testing.T) {
 
 	assert.Equal(t, "/parent.jpg", parent.Key, "invalid parent key")
 
-	transCfg, err := obj.Transforms.BimgOptions(imageInfo)
-
+	transCfgArr, err := obj.Transforms.BimgOptions(imageInfo)
 	assert.Nil(t, err, "Unexpected to have error when getting transforms")
+	transCfg := transCfgArr[0]
 
 	assert.Equal(t, 100, transCfg.Width, "invalid width for transform")
 	assert.Equal(t, 0, transCfg.Height, "invalid width for transform")
@@ -238,9 +239,9 @@ func TestNewFileObjectQueryResizeDef(t *testing.T) {
 
 	assert.Equal(t, "/parent.jpg", parent.Key, "invalid parent key")
 
-	transCfg, err := obj.Transforms.BimgOptions(imageInfo)
-
+	transCfgArr, err := obj.Transforms.BimgOptions(imageInfo)
 	assert.Nil(t, err, "Unexpected to have error when getting transforms")
+	transCfg := transCfgArr[0]
 
 	assert.Equal(t, 101, transCfg.Width, "invalid width for transform")
 	assert.Equal(t, 292, transCfg.Height, "invalid width for transform")
@@ -262,9 +263,9 @@ func TestNewFileObjectQueryResize2(t *testing.T) {
 
 	assert.Equal(t, "/parent.jpg", parent.Key, "invalid parent key")
 
-	transCfg, err := obj.Transforms.BimgOptions(imageInfo)
-
+	transCfgArr, err := obj.Transforms.BimgOptions(imageInfo)
 	assert.Nil(t, err, "Unexpected to have error when getting transforms")
+	transCfg := transCfgArr[0]
 
 	assert.Equal(t, 100, transCfg.Width, "invalid width for transform")
 	assert.Equal(t, 0, transCfg.Height, "invalid width for transform")
@@ -286,9 +287,9 @@ func TestNewFileObjectQueryCrop(t *testing.T) {
 
 	assert.Equal(t, "/parent.jpg", parent.Key, "invalid parent key")
 
-	transCfg, err := obj.Transforms.BimgOptions(imageInfo)
-
+	transCfgArr, err := obj.Transforms.BimgOptions(imageInfo)
 	assert.Nil(t, err, "Unexpected to have error when getting transforms")
+	transCfg := transCfgArr[0]
 
 	assert.Equal(t, 100, transCfg.Width, "invalid width for transform")
 	assert.Equal(t, 0, transCfg.Height, "invalid height for transform")
@@ -324,9 +325,9 @@ func TestNewFileObjectPresetQueryBlur(t *testing.T) {
 
 	assert.Equal(t, "/parent.jpg", parent.Key, "invalid parent key")
 
-	transCfg, err := obj.Transforms.BimgOptions(imageInfo)
-
+	transCfgArr, err := obj.Transforms.BimgOptions(imageInfo)
 	assert.Nil(t, err, "Unexpected to have error when getting transforms")
+	transCfg := transCfgArr[0]
 
 	assert.Equal(t, 0, transCfg.Height, "invalid height for transform")
 	assert.Equal(t, transCfg.GaussianBlur.Sigma, 1.)
@@ -350,9 +351,9 @@ func TestNewFileObjectPresetQueryRotate(t *testing.T) {
 
 	assert.Equal(t, "/parent.jpg", parent.Key, "invalid parent key")
 
-	transCfg, err := obj.Transforms.BimgOptions(imageInfo)
-
+	transCfgArr, err := obj.Transforms.BimgOptions(imageInfo)
 	assert.Nil(t, err, "Unexpected to have error when getting transforms")
+	transCfg := transCfgArr[0]
 
 	assert.Equal(t, 0, transCfg.Height, "invalid height for transform")
 	assert.Equal(t, bimg.D90, transCfg.Rotate)
@@ -402,9 +403,9 @@ func TestNewFileObjectPresetPresetBlur(t *testing.T) {
 
 	assert.Equal(t, "/parent.jpg", parent.Key, "invalid parent key")
 
-	transCfg, err := obj.Transforms.BimgOptions(imageInfo)
-
+	transCfgArr, err := obj.Transforms.BimgOptions(imageInfo)
 	assert.Nil(t, err, "Unexpected to have error when getting transforms")
+	transCfg := transCfgArr[0]
 
 	assert.Equal(t, 0, transCfg.Height, "invalid height for transform")
 	assert.Equal(t, transCfg.GaussianBlur.Sigma, 2.)

@@ -22,9 +22,10 @@ func TestTransformsBlur(t *testing.T) {
 	trans := Transforms{}
 	trans.Blur(1, 2)
 
-	opts, err := trans.BimgOptions(ImageInfo{})
-
+	optsArr, err := trans.BimgOptions(ImageInfo{})
 	assert.Nil(t, err)
+	opts := optsArr[0]
+
 	assert.NotNil(t, opts)
 	assert.True(t, trans.NotEmpty)
 
@@ -45,9 +46,9 @@ func TestTransformsResize(t *testing.T) {
 	trans := Transforms{}
 	trans.Resize(5, 100, true)
 
-	opts, err := trans.BimgOptions(ImageInfo{})
-
+	optsArr, err := trans.BimgOptions(ImageInfo{})
 	assert.Nil(t, err)
+	opts := optsArr[0]
 	assert.NotNil(t, opts)
 	assert.True(t, trans.NotEmpty)
 
@@ -67,11 +68,11 @@ func TestTransformsResize(t *testing.T) {
 
 func TestTransformsCrop(t *testing.T) {
 	trans := Transforms{}
-	trans.Crop(11, 12, "smart", false)
+	trans.Crop(11, 12, "smart", false, false)
 
-	opts, err := trans.BimgOptions(ImageInfo{})
-
+	optsArr, err := trans.BimgOptions(ImageInfo{})
 	assert.Nil(t, err)
+	opts := optsArr[0]
 	assert.NotNil(t, opts)
 	assert.True(t, trans.NotEmpty)
 
@@ -84,7 +85,7 @@ func TestTransformsCrop(t *testing.T) {
 	assert.Equal(t, "276ec67309d8039b", hashStr)
 
 	trans2 := Transforms{}
-	trans.Crop(12, 11, "unknown", false)
+	trans.Crop(12, 11, "unknown", false, false)
 
 	hashStr2 := strconv.FormatUint(uint64(trans2.Hash().Sum64()), 16)
 	assert.NotEqual(t, hashStr, hashStr2)
@@ -94,9 +95,9 @@ func TestTransformsQuality(t *testing.T) {
 	trans := Transforms{}
 	trans.Quality(60)
 
-	opts, err := trans.BimgOptions(ImageInfo{})
-
+	optsArr, err := trans.BimgOptions(ImageInfo{})
 	assert.Nil(t, err)
+	opts := optsArr[0]
 	assert.NotNil(t, opts)
 	assert.True(t, trans.NotEmpty)
 
@@ -116,9 +117,9 @@ func TestTransformsInterlace(t *testing.T) {
 	trans := Transforms{}
 	trans.Interlace()
 
-	opts, err := trans.BimgOptions(ImageInfo{})
-
+	optsArr, err := trans.BimgOptions(ImageInfo{})
 	assert.Nil(t, err)
+	opts := optsArr[0]
 	assert.NotNil(t, opts)
 	assert.True(t, trans.NotEmpty)
 
@@ -132,9 +133,9 @@ func TestTransformsStripMetadata(t *testing.T) {
 	trans := Transforms{}
 	trans.StripMetadata()
 
-	opts, err := trans.BimgOptions(ImageInfo{})
-
+	optsArr, err := trans.BimgOptions(ImageInfo{})
 	assert.Nil(t, err)
+	opts := optsArr[0]
 	assert.NotNil(t, opts)
 	assert.True(t, trans.NotEmpty)
 
@@ -148,9 +149,9 @@ func TestTransformsFormat(t *testing.T) {
 	trans := Transforms{}
 	trans.Format("jpeg")
 
-	opts, err := trans.BimgOptions(ImageInfo{})
-
+	optsArr, err := trans.BimgOptions(ImageInfo{})
 	assert.Nil(t, err)
+	opts := optsArr[0]
 	assert.NotNil(t, opts)
 	assert.True(t, trans.NotEmpty)
 
@@ -189,9 +190,9 @@ func TestTransformsGrayscale(t *testing.T) {
 	trans := Transforms{}
 	trans.Grayscale()
 
-	opts, err := trans.BimgOptions(ImageInfo{})
-
+	optsArr, err := trans.BimgOptions(ImageInfo{})
 	assert.Nil(t, err)
+	opts := optsArr[0]
 	assert.NotNil(t, opts)
 	assert.True(t, trans.NotEmpty)
 
@@ -205,9 +206,9 @@ func TestTransformsRotate(t *testing.T) {
 	trans := Transforms{}
 	trans.Rotate(90)
 
-	opts, err := trans.BimgOptions(ImageInfo{})
-
+	optsArr, err := trans.BimgOptions(ImageInfo{})
 	assert.Nil(t, err)
+	opts := optsArr[0]
 	assert.NotNil(t, opts)
 	assert.True(t, trans.NotEmpty)
 
@@ -226,9 +227,9 @@ func TestTransforms_Watermark(t *testing.T) {
 	trans := Transforms{}
 	trans.Watermark("../processor/benchmark/local/small.jpg", "top-left", 0.5)
 
-	opts, err := trans.BimgOptions(ImageInfo{})
-
+	optsArr, err := trans.BimgOptions(ImageInfo{})
 	assert.Nil(t, err)
+	opts := optsArr[0]
 	assert.NotNil(t, opts)
 	assert.True(t, trans.NotEmpty)
 
@@ -265,9 +266,9 @@ func TestTransforms_Merge_Resize(t *testing.T) {
 
 func TestTransforms_Merge_Crop(t *testing.T) {
 	tab := make([]Transforms, 2)
-	tab[0].Crop(4444, 0, "smart", false)
+	tab[0].Crop(4444, 0, "smart", false, false)
 
-	tab[1].Crop(0, 120, "smart", false)
+	tab[1].Crop(0, 120, "smart", false, true)
 
 	result := Merge(tab)
 
@@ -275,6 +276,7 @@ func TestTransforms_Merge_Crop(t *testing.T) {
 	assert.Equal(t, result[0].width, 4444)
 	assert.Equal(t, result[0].height, 120)
 	assert.Equal(t, result[0].enlarge, false)
+	assert.Equal(t, result[0].embed, true)
 	assert.Equal(t, result[0].crop, true)
 	assert.Equal(t, result[0].gravity, bimg.GravitySmart)
 }

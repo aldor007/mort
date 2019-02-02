@@ -46,6 +46,6 @@ func TestImageEngine_Process(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, res.StatusCode, 200)
 	assert.Equal(t, res.Headers.Get("content-type"), "image/jpeg")
-	assert.Equal(t, res.Headers.Get("etag"), "W/\"4a4e9789cc1e902c\"")
+	assert.Equal(t, res.Headers.Get("etag"), "d0ef925d35fa2be0a2f3b5ea552a216a")
 	assert.Equal(t, res.Headers.Get("x-amz-meta-public-width"), "300")
 }

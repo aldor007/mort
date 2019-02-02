@@ -31,7 +31,7 @@ func TestNewRequestProcessor(t *testing.T) {
 
 	assert.Equal(t, res.StatusCode, 200)
 	assert.Equal(t, res.Headers.Get("x-amz-meta-public-width"), "100")
-	assert.Equal(t, res.Headers.Get("ETag"), "W/\"7eaa484e8c841e7e\"")
+	assert.Equal(t, res.Headers.Get("ETag"), "a588dc2b8c531cd7a1418824963c962d")
 }
 
 func TestNewRequestProcessorCheckParent(t *testing.T) {
@@ -51,7 +51,7 @@ func TestNewRequestProcessorCheckParent(t *testing.T) {
 
 	assert.Equal(t, res.StatusCode, 200)
 	assert.Equal(t, res.Headers.Get("x-amz-meta-public-width"), "10")
-	assert.Equal(t, res.Headers.Get("ETag"), "W/\"744899c0aad5789c\"")
+	assert.Equal(t, res.Headers.Get("ETag"), "3b953319fd6b85711d8074bd70417f4a")
 }
 
 func TestFetchFromCache(t *testing.T) {
@@ -80,7 +80,7 @@ func TestFetchFromCache(t *testing.T) {
 
 	assert.Equal(t, res.StatusCode, 200)
 	assert.Equal(t, res.Headers.Get("x-amz-meta-public-width"), "100")
-	assert.Equal(t, res.Headers.Get("ETag"), "W/\"7eaa484e8c841e7e\"")
+	assert.Equal(t, res.Headers.Get("ETag"), "a588dc2b8c531cd7a1418824963c962d")
 }
 
 func TestReturn404WhenParentNotFound(t *testing.T) {
