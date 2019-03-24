@@ -7,6 +7,9 @@ import (
 	"github.com/aldor007/mort/pkg/helpers"
 	"github.com/aldor007/mort/pkg/object"
 	"github.com/djherbis/stream"
+	"github.com/pquerna/cachecontrol/cacheobject"
+	"github.com/vmihailenco/msgpack"
+
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -37,6 +40,8 @@ type Response struct {
 	resStream   *stream.Stream   // response stream dispatcher
 	hasParent   bool             // flag indicated that response is a copy
 	transformer bodyTransformFnc // function that can transform body writner
+	cachable    bool             // flag indicating if response can be cached
+	ttl         int              // time to live in cache
 }
 
 // New create response object with io.ReadCloser
@@ -262,6 +267,40 @@ func (r *Response) CopyHeadersFrom(src *Response) {
 	r.ContentLength = src.ContentLength
 	r.debug = src.debug
 	r.errorValue = src.errorValue
+}
+
+func (r *Response) IsCachable() bool {
+	r.parseCacheHeaders()
+	return r.StatusCode > 199 && r.StatusCode < 299 && r.cachable
+}
+
+func (r *Response) GetTTL() int {
+	r.parseCacheHeaders()
+	return r.ttl
+}
+
+func (r *Response) parseCacheHeaders() {
+	if r.cachable {
+		return
+	}
+
+	reqDir, err := cacheobject.ParseRequestCacheControl(r.Headers.Get("Cache-Control"))
+	if err != nil {
+		r.cachable = false
+		return
+	}
+
+	r.ttl = int(reqDir.MaxAge)
+	if r.ttl > 0 {
+		r.cachable = true
+	}
+}
+func (r *Response) EncodeMsgpack(enc *msgpack.Encoder) error {
+	return enc.EncodeMulti(r.StatusCode, r.Headers, r.ttl, r.ContentLength, r.body, r.cachable)
+}
+
+func (r *Response) DecodeMsgpack(dec *msgpack.Decoder) error {
+	return dec.DecodeMulti(&r.StatusCode, &r.Headers, &r.ttl, &r.ContentLength, &r.body, &r.cachable)
 }
 
 // Copy create complete response copy with headers and body

@@ -14,11 +14,14 @@ import (
 	"net/http"
 	"sync"
 	"testing"
+	"gopkg.in/h2non/bimg.v1"
 )
 
+var etagMap = map[string]string{"8.6.2":}
 func TestNewRequestProcessor(t *testing.T) {
 	req, _ := http.NewRequest("GET", "http://mort/local/small.jpg-m", nil)
 
+	bimg.VipsVersion
 	mortConfig := config.Config{}
 	err := mortConfig.Load("./benchmark/small.yml")
 	assert.Nil(t, err)

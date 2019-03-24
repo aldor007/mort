@@ -3,6 +3,7 @@ package processor
 import (
 	"context"
 	"errors"
+	"github.com/aldor007/mort/pkg/cache"
 	"net/http"
 	"strconv"
 	"time"
@@ -37,11 +38,12 @@ func NewRequestProcessor(serverConfig config.Server, l lock.Lock, throttler thro
 	rp.collapse = l
 	rp.throttler = throttler
 	rp.queue = make(chan requestMessage, serverConfig.QueueLen)
-	rp.cache = ccache.New(ccache.Configure().MaxSize(serverConfig.CacheSize))
+	rp.cache = ccache.New(ccache.Configure().MaxSize(serverConfig.Cache.CacheSize))
 	rp.processTimeout = time.Duration(serverConfig.RequestTimeout) * time.Second
 	rp.lockTimeout = time.Duration(serverConfig.LockTimeout) * time.Second
 	rp.serverConfig = serverConfig
 	rp.plugins = plugins.NewPluginsManager(serverConfig.Plugins)
+	rp.responseCache = cache.Create(serverConfig.Cache)
 	return rp
 }
 
@@ -55,6 +57,7 @@ type RequestProcessor struct {
 	lockTimeout    time.Duration          // lock timeout for collapsed request it equal processTimeout - 1 s
 	plugins        plugins.PluginsManager // plugins run plugins before some phases of requests processing
 	serverConfig   config.Server
+	responseCache  cache.ResponseCache
 }
 
 type requestMessage struct {
@@ -152,11 +155,29 @@ func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *r
 			return handleS3Get(req, obj)
 		}
 
-		if obj.HasTransform() {
-			return updateHeaders(obj, r.collapseGET(req, obj))
+		res, err := r.responseCache.Get(obj)
+		if err == nil {
+			return res
 		}
 
-		return updateHeaders(obj, r.handleGET(req, obj))
+		if obj.HasTransform() {
+			res = updateHeaders(obj, r.collapseGET(req, obj))
+		}
+
+		res = updateHeaders(obj, r.handleGET(req, obj))
+		if res.IsCachable() && res.IsBuffered() && res.ContentLength < r.serverConfig.Cache.MaxCacheItemSize {
+			resCpy, err := res.Copy()
+			if err == nil {
+				go func() {
+					err = r.responseCache.Set(obj, resCpy)
+					if err != nil {
+						monitoring.Log().Error("response cache error set", obj.LogData(zap.Error(err))...)
+					}
+				}()
+			}
+		}
+
+		return res
 	case "PUT":
 		return handlePUT(req, obj)
 	case "DELETE":
@@ -203,7 +224,7 @@ func (r *RequestProcessor) collapseGET(req *http.Request, obj *object.FileObject
 			lockResult.Cancel <- true
 			return r.replyWithError(obj, 504, errTimeout)
 		default:
-			if cacheRes := r.fetchResponseFromCache(obj.Key, true); cacheRes != nil {
+			if cacheRes, err := r.responseCache.Get(obj); err != nil {
 				lockResult.Cancel <- true
 				return cacheRes
 			}
@@ -250,9 +271,6 @@ func (r *RequestProcessor) fetchResponseFromCache(key string, allowExpired bool)
 // nolint: gocyclo
 func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) *response.Response {
 	ctx := obj.Ctx
-	if cacheRes := r.fetchResponseFromCache(obj.Key, false); cacheRes != nil {
-		return cacheRes
-	}
 
 	currObj := obj
 	var parentObj *object.FileObject
@@ -280,7 +298,7 @@ func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) 
 			select {
 			case <-ctx.Done():
 				return
-			case resChan <- storage.Get(o, ):
+			case resChan <- storage.Get(o):
 				return
 			default:
 
@@ -430,7 +448,6 @@ func (r *RequestProcessor) processImage(obj *object.FileObject, parent *response
 	resCpy, err := res.Copy()
 	if err == nil {
 		monitoring.Report().Inc("cache_ratio;status:set")
-		r.cache.Set(obj.Key, resCpy, time.Minute*2)
 		go func(objS object.FileObject, resS *response.Response) {
 			storage.Set(&objS, resS.Headers, resS.ContentLength, resS.Stream())
 			//r.cache.Delete(objS.Key)

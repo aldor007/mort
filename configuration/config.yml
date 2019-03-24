@@ -1,5 +1,10 @@
 server:
   logLevel: "debug"
+  cache:
+      type: "redis"
+      address:
+        - "localhost:6379"
+      maxCacheItemSizeMB: 50
   listens:
     - ":8080"
     - "unix:/tmp/mort.sock"

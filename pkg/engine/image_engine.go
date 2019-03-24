@@ -8,14 +8,14 @@ import (
 	"gopkg.in/h2non/bimg.v1"
 
 	"bytes"
+	"crypto/md5"
+	"encoding/hex"
 	"github.com/aldor007/mort/pkg/monitoring"
 	"github.com/aldor007/mort/pkg/object"
 	"github.com/aldor007/mort/pkg/response"
 	"github.com/aldor007/mort/pkg/transforms"
 	"go.uber.org/zap"
 	"sync"
-	"crypto/md5"
-	"encoding/hex"
 )
 
 // bufPool for string concatenations
@@ -57,18 +57,17 @@ func (c *ImageEngine) Process(obj *object.FileObject, trans []transforms.Transfo
 			return response.NewError(500, err), err
 		}
 		optsLen := len(optsArr)
-		for i, opts  := range optsArr {
+		for i, opts := range optsArr {
 			buf, err = image.Process(opts)
 			if err != nil {
 				return response.NewError(500, err), err
 			}
 
-			if i <= optsLen -1  {
+			if i <= optsLen-1 {
 				image = bimg.NewImage(buf)
 			}
 		}
 	}
-
 
 	bodyHash := md5.New()
 	bodyHash.Write(buf)
@@ -89,4 +88,3 @@ func (c *ImageEngine) Process(obj *object.FileObject, trans []transforms.Transfo
 
 	return res, nil
 }
-
