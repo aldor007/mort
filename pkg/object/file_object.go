@@ -8,8 +8,8 @@ import (
 	"context"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"net/url"
 	"net/http"
+	"net/url"
 )
 
 // FileObject is representing parsed request for image or file
@@ -83,9 +83,13 @@ func (o *FileObject) UpdateKey(str string) {
 }
 
 // FillWithRequest assign to object request and HTTP range data
-func (o *FileObject) FillWithRequest(req *http.Request, ctx context.Context)  {
+func (o *FileObject) FillWithRequest(req *http.Request, ctx context.Context) {
 	o.Ctx = ctx
 	o.Range = req.Header.Get("Range")
+}
+
+func (o *FileObject) GetResponseCacheKey() string {
+	return o.Key + o.Range
 }
 
 // LogData log data for given object

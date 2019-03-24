@@ -20,9 +20,9 @@ type Preset struct {
 			Mode    string `yaml:"mode"`
 			Embed   bool   `yaml:"embed"`
 		} `yaml:"crop,omitempty"`
-		ResizeCropAuto      *struct {
-			Width   int    `yaml:"width"`
-			Height  int    `yaml:"height"`
+		ResizeCropAuto *struct {
+			Width  int `yaml:"width"`
+			Height int `yaml:"height"`
 		} `yaml:"resizeCropAuto,omitempty"`
 		AutoRotate bool `yaml:"auto_rotate"`
 		Grayscale  bool `yaml:"grayscale"`
@@ -109,12 +109,18 @@ type HeaderYaml struct {
 	Values      map[string]string `yaml:"values"`
 }
 
+type CacheCfg struct {
+	Type             string   `yaml:"type"`
+	Address          []string `yaml:"address"`
+	MaxCacheItemSize int64    `yaml:"maxCacheItemSizeMB"`
+	CacheSize        int64    `yaml:"cacheSize"`
+}
+
 // Server configure HTTP server
 type Server struct {
 	LogLevel       string                 `yaml:"logLevel"`
 	InternalListen string                 `yaml:"internalListen"`
 	SingleListen   string                 `yaml:"listen"`
-	CacheSize      int64                  `yaml:"cacheSize"`
 	RequestTimeout int                    `yaml:"requestTimeout"`
 	LockTimeout    int                    `yaml:"lockTimeout"`
 	QueueLen       int                    `yaml:"queueLen"`
@@ -122,6 +128,7 @@ type Server struct {
 	Monitoring     string                 `yaml:"monitoring"`
 	PlaceholderStr string                 `yaml:"placeholder"`
 	Plugins        map[string]interface{} `yaml:"plugins,omitempty"`
+	Cache          CacheCfg               `yaml:"cache"`
 	Placeholder    struct {
 		Buf         []byte
 		ContentType string

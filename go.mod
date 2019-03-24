@@ -9,6 +9,8 @@ require (
 	github.com/davecgh/go-spew v1.1.1
 	github.com/djherbis/stream v1.2.0
 	github.com/go-chi/chi v3.3.3+incompatible
+	github.com/go-redis/cache v6.3.5+incompatible
+	github.com/go-redis/redis v6.15.2+incompatible
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/golang/protobuf v1.2.0
 	github.com/google/brotli v1.0.7
@@ -20,6 +22,7 @@ require (
 	github.com/matttproud/golang_protobuf_extensions v1.0.1
 	github.com/pkg/errors v0.8.1
 	github.com/pmezard/go-difflib v1.0.0
+	github.com/pquerna/cachecontrol v0.0.0-20180517163645-1555304b9b35
 	github.com/pquerna/ffjson v0.0.0-20181028064349-e517b90714f7
 	github.com/prometheus/client_golang v0.9.2
 	github.com/prometheus/client_model v0.0.0-20180712105110-5c3871d89910

@@ -5,11 +5,11 @@ import (
 	"encoding/hex"
 	"errors"
 	"github.com/aldor007/mort/pkg/config"
+	"github.com/spaolacci/murmur3"
 	"net/url"
 	"strconv"
 	"strings"
 	"sync"
-	"github.com/spaolacci/murmur3"
 )
 
 var bufPool = sync.Pool{

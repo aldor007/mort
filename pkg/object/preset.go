@@ -9,8 +9,8 @@ import (
 	"go.uber.org/zap"
 	"net/url"
 	"path"
-	"sync"
 	"strings"
+	"sync"
 )
 
 func init() {
@@ -67,7 +67,7 @@ func decodePreset(_ *url.URL, bucketConfig config.Bucket, obj *FileObject) (stri
 
 	if trans.ParentBucket != "" {
 		parent = "/" + path.Join(trans.ParentBucket, parent)
-	} else if !strings.HasPrefix(parent, "/"){
+	} else if !strings.HasPrefix(parent, "/") {
 		parent = "/" + parent
 	}
 
@@ -98,7 +98,6 @@ func presetToTransform(preset config.Preset) (transforms.Transforms, error) {
 			return trans, err
 		}
 	}
-
 
 	if filters.ResizeCropAuto != nil {
 		err := trans.ResizeCropAuto(filters.ResizeCropAuto.Width, filters.ResizeCropAuto.Height)

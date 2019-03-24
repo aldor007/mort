@@ -65,9 +65,9 @@ func (w watermark) calculatePostion(width, height int) (top int, left int) {
 
 // ImageInfo holds information about image
 type ImageInfo struct {
-	width  int    // width of image in px
-	height int    // height of image in px
-	format string // format of image in string e.x. "jpg"
+	width       int    // width of image in px
+	height      int    // height of image in px
+	format      string // format of image in string e.x. "jpg"
 	orientation int
 }
 
@@ -106,16 +106,16 @@ type Transforms struct {
 	watermark watermark
 
 	NotEmpty bool
-	NoMerge bool
+	NoMerge  bool
 
-	autoCropWidth int
+	autoCropWidth  int
 	autoCropHeight int
 
 	transHash fnvI64
 }
 
-func New() Transforms  {
-	t  := Transforms{}
+func New() Transforms {
+	t := Transforms{}
 	return t
 }
 
@@ -282,7 +282,7 @@ func (t *Transforms) Merge(other Transforms) error {
 		return errors.New("unable to merge")
 	}
 
-	if other.NotEmpty == false  {
+	if other.NotEmpty == false {
 		return nil
 	}
 
@@ -391,7 +391,7 @@ func imageFormat(format string) (bimg.ImageType, error) {
 	}
 }
 
-func (t *Transforms) calculateAutoCrop(info ImageInfo)  (int, int, int, int) {
+func (t *Transforms) calculateAutoCrop(info ImageInfo) (int, int, int, int) {
 	if t.width != 0 {
 		info.width = t.width
 	}
@@ -436,7 +436,6 @@ func (t *Transforms) BimgOptions(imageInfo ImageInfo) ([]bimg.Options, error) {
 		},
 		Rotate: t.rotate,
 	}
-
 
 	if t.gravity != 0 {
 		b.Gravity = t.gravity
@@ -486,9 +485,9 @@ func (t *Transforms) BimgOptions(imageInfo ImageInfo) ([]bimg.Options, error) {
 
 	if t.autoCropHeight != 0 || t.autoCropWidth != 0 {
 		bAutoCrop := bimg.Options{}
-		bAutoCrop.Left, bAutoCrop.Top, bAutoCrop.AreaWidth, bAutoCrop.AreaHeight =  t.calculateAutoCrop(imageInfo)
+		bAutoCrop.Left, bAutoCrop.Top, bAutoCrop.AreaWidth, bAutoCrop.AreaHeight = t.calculateAutoCrop(imageInfo)
 		opts = append(opts, bAutoCrop)
-		opts = append(opts, bimg.Options{Width:t.autoCropWidth, Height:t.autoCropHeight, Crop: true, Gravity: bimg.GravityCentre})
+		opts = append(opts, bimg.Options{Width: t.autoCropWidth, Height: t.autoCropHeight, Crop: true, Gravity: bimg.GravityCentre})
 	}
 
 	return opts, nil
