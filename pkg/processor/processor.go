@@ -19,7 +19,6 @@ import (
 	"github.com/aldor007/mort/pkg/storage"
 	"github.com/aldor007/mort/pkg/throttler"
 	"github.com/aldor007/mort/pkg/transforms"
-	"github.com/karlseguin/ccache"
 	"go.uber.org/zap"
 )
 
@@ -38,7 +37,6 @@ func NewRequestProcessor(serverConfig config.Server, l lock.Lock, throttler thro
 	rp.collapse = l
 	rp.throttler = throttler
 	rp.queue = make(chan requestMessage, serverConfig.QueueLen)
-	rp.cache = ccache.New(ccache.Configure().MaxSize(serverConfig.Cache.CacheSize))
 	rp.processTimeout = time.Duration(serverConfig.RequestTimeout) * time.Second
 	rp.lockTimeout = time.Duration(serverConfig.LockTimeout) * time.Second
 	rp.serverConfig = serverConfig
@@ -52,7 +50,6 @@ type RequestProcessor struct {
 	collapse       lock.Lock              // interface used for request collapsing
 	throttler      throttler.Throttler    // interface used for rate limiting creating of new images
 	queue          chan requestMessage    // request queue
-	cache          *ccache.Cache          // cache for created image transformations
 	processTimeout time.Duration          // request processing timeout
 	lockTimeout    time.Duration          // lock timeout for collapsed request it equal processTimeout - 1 s
 	plugins        plugins.PluginsManager // plugins run plugins before some phases of requests processing
@@ -118,24 +115,27 @@ func (r *RequestProcessor) replyWithError(obj *object.FileObject, sc int, err er
 		return response.NewError(sc, err)
 	}
 
-	key := r.serverConfig.PlaceholderStr + strconv.FormatUint(obj.Transforms.Hash().Sum64(), 16)
-	if cacheRes := r.fetchResponseFromCache(key, true); cacheRes != nil {
+	errorObject, errCreate := object.NewFileErrorObject(r.serverConfig.PlaceholderStr, obj)
+	if errCreate != nil {
+		return response.NewError(sc, err)
+	}
+
+	if cacheRes, errCache := r.responseCache.Get(errorObject); errCache == nil {
 		cacheRes.StatusCode = sc
 		return cacheRes
 	}
 
 	go func() {
-		lockData, locked := r.collapse.Lock(key)
+		lockData, locked := r.collapse.Lock(errorObject.Key)
 		if locked {
-			defer r.collapse.Release(key)
+			defer r.collapse.Release(errorObject.Key)
 			monitoring.Log().Info("Lock acquired for error response", obj.LogData()...)
 			parent := response.NewBuf(200, r.serverConfig.Placeholder.Buf)
 			transformsTab := []transforms.Transforms{obj.Transforms}
 
 			eng := engine.NewImageEngine(parent)
 			res, _ := eng.Process(obj, transformsTab)
-			monitoring.Report().Inc("cache_ratio;status:set")
-			r.cache.Set(key, res, time.Minute*10)
+			r.responseCache.Set(errorObject, updateHeaders(errorObject, res))
 		} else {
 			lockData.Cancel <- true
 
@@ -230,40 +230,6 @@ func (r *RequestProcessor) collapseGET(req *http.Request, obj *object.FileObject
 			}
 		}
 	}
-
-}
-
-func (r *RequestProcessor) fetchResponseFromCache(key string, allowExpired bool) *response.Response {
-	cacheValue := r.cache.Get(key)
-	if cacheValue != nil {
-		if cacheValue.Expired() == false {
-			monitoring.Log().Info("Handle Get cache", zap.String("cache", "hit"), zap.String("obj.Key", key))
-			monitoring.Report().Inc("cache_ratio;status:hit")
-			res := cacheValue.Value().(*response.Response)
-			resCp, err := res.Copy()
-			if err == nil {
-				return resCp
-			}
-
-		} else {
-			monitoring.Log().Info("Handle Get cache", zap.String("cache", "expired"), zap.String("obj.Key", key))
-			monitoring.Report().Inc("cache_ratio;status:expired")
-			res := cacheValue.Value().(*response.Response)
-			if allowExpired {
-				resCp, err := res.Copy()
-				if err == nil {
-					return resCp
-				}
-			} else {
-				res.Close()
-				r.cache.Delete(key)
-			}
-		}
-	}
-
-	monitoring.Report().Inc("cache_ratio;status:miss")
-
-	return nil
 
 }
 
@@ -450,7 +416,6 @@ func (r *RequestProcessor) processImage(obj *object.FileObject, parent *response
 		monitoring.Report().Inc("cache_ratio;status:set")
 		go func(objS object.FileObject, resS *response.Response) {
 			storage.Set(&objS, resS.Headers, resS.ContentLength, resS.Stream())
-			//r.cache.Delete(objS.Key)
 			resS.Close()
 		}(*obj, resCpy)
 	} else {

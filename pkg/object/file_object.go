@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap/zapcore"
 	"net/http"
 	"net/url"
+	"strconv"
 )
 
 // FileObject is representing parsed request for image or file
@@ -35,6 +36,17 @@ func NewFileObjectFromPath(path string, mortConfig *config.Config) (*FileObject,
 	return newFileObjectFromPath(path, mortConfig, true)
 }
 
+func NewFileErrorObject(parent string, erroredObject *FileObject)  (*FileObject, error) {
+	obj := *erroredObject
+	obj.key = parent
+	obj.Key = parent
+	if erroredObject != nil {
+		obj.Key += strconv.FormatUint(erroredObject.Transforms.Hash().Sum64(), 16)
+		obj.key += strconv.FormatUint(erroredObject.Transforms.Hash().Sum64(), 16)
+	}
+
+	return &obj, nil
+}
 func newFileObjectFromPath(path string, mortConfig *config.Config, allowChangeKey bool) (*FileObject, error) {
 	obj := FileObject{}
 	obj.Uri = &url.URL{}
