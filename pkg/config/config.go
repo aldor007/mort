@@ -250,6 +250,14 @@ func (c *Config) validateServer() error {
 		c.Server.QueueLen = 5
 	}
 
+	if c.Server.Cache.MaxCacheItemSize == 0 {
+		c.Server.Cache.MaxCacheItemSize = 50 * 1024
+	}
+
+	if c.Server.Cache.Type == "" {
+		c.Server.Cache.Type = "memory"
+	}
+
 	if c.Server.PlaceholderStr != "" {
 		buf, err := helpers.FetchObject(c.Server.PlaceholderStr)
 		if err != nil {
