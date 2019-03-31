@@ -299,8 +299,13 @@ func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) 
 				}()
 
 			} else {
+				monitoring.Report().Inc("request_type;type:download")
+
+				if res.StatusCode == 404 {
+					return r.handleNotFound(obj, parentObj, transformsTab, parentRes, res)
+				}
+
 				if res.StatusCode == 200 {
-					monitoring.Report().Inc("request_type;type:download")
 					if obj.CheckParent && parentObj != nil && parentRes.StatusCode == 200 {
 						return res
 					}
@@ -308,9 +313,6 @@ func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) 
 					return res
 				}
 
-				if res.StatusCode == 404 {
-					return r.handleNotFound(obj, parentObj, transformsTab, parentRes, res)
-				}
 
 				return res
 			}
