@@ -129,6 +129,13 @@ func configureMonitoring(mortConfig *config.Config) {
 			Help: "mort count of throttled requests",
 		}))
 
+		p.RegisterGaugeVec("storage_throughput", prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "mort_storage_throughput",
+			Help: "mort requests storage",
+		},
+			[]string{"method", "storage"},
+		))
+
 		p.RegisterCounter("collapsed_count", prometheus.NewCounter(prometheus.CounterOpts{
 			Name: "mort_request_collapsed_count",
 			Help: "mort count of collapsed requests",

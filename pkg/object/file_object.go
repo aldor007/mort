@@ -36,7 +36,7 @@ func NewFileObjectFromPath(path string, mortConfig *config.Config) (*FileObject,
 	return newFileObjectFromPath(path, mortConfig, true)
 }
 
-func NewFileErrorObject(parent string, erroredObject *FileObject)  (*FileObject, error) {
+func NewFileErrorObject(parent string, erroredObject *FileObject) (*FileObject, error) {
 	obj := *erroredObject
 	obj.key = parent
 	obj.Key = parent

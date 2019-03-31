@@ -87,6 +87,7 @@ func Get(obj *object.FileObject) *response.Response {
 	if isDir(item) == false {
 		resData := newResponseData()
 		var reader io.ReadCloser
+
 		if instance.client.HasRanges() && obj.Range != "" {
 			params := make(map[string]interface{}, 1)
 			params["range"] = obj.Range
@@ -144,6 +145,7 @@ func Set(obj *object.FileObject, metaHeaders http.Header, contentLen int64, body
 	metric := "storage_time;method:set,storage:" + obj.Storage.Kind
 	t := monitoring.Report().Timer(metric)
 	defer t.Done()
+	monitoring.Report().Gauge("storage_throughput;method:set,storage:"+obj.Storage.Kind, float64(contentLen))
 	instance, err := getClient(obj)
 	client := instance.container
 	if err != nil {
@@ -447,8 +449,15 @@ func prepareResponse(obj *object.FileObject, resData responseData) *response.Res
 		}
 	}
 
-	if resData.statusCode == http.StatusPartialContent {
+	var resSize int64
+
+	if res.ContentLength != 0 && res.ContentLength != -1 {
+		resSize = res.ContentLength
+	} else {
+		resSize, _ = item.Size()
 	}
+
+	monitoring.Report().Gauge("storage_throughput;method:get,storage:"+obj.Storage.Kind, float64(resSize))
 
 	if etag != "" {
 		res.Set("ETag", etag)

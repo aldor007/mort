@@ -1,10 +1,9 @@
-
 package cache
 
 import (
 	"github.com/aldor007/mort/pkg/monitoring"
 	"github.com/aldor007/mort/pkg/object"
-"github.com/aldor007/mort/pkg/response"
+	"github.com/aldor007/mort/pkg/response"
 	"github.com/karlseguin/ccache"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -12,7 +11,7 @@ import (
 )
 
 type MemoryCache struct {
-	cache          *ccache.Cache          // cache for created image transformations
+	cache *ccache.Cache // cache for created image transformations
 }
 
 func NewMemoryCache(maxSize int64) *MemoryCache {
@@ -20,7 +19,8 @@ func NewMemoryCache(maxSize int64) *MemoryCache {
 }
 
 func (c *MemoryCache) Set(obj *object.FileObject, res *response.Response) error {
-	c.cache.Set(obj.GetResponseCacheKey(), res, time.Second * time.Duration(res.GetTTL()))
+	c.cache.Set(obj.GetResponseCacheKey(), res, time.Second*time.Duration(res.GetTTL()))
+
 	return nil
 }
 
