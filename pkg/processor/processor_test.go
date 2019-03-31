@@ -14,14 +14,11 @@ import (
 	"net/http"
 	"sync"
 	"testing"
-	"gopkg.in/h2non/bimg.v1"
 )
 
-var etagMap = map[string]string{"8.6.2":}
 func TestNewRequestProcessor(t *testing.T) {
 	req, _ := http.NewRequest("GET", "http://mort/local/small.jpg-m", nil)
 
-	bimg.VipsVersion
 	mortConfig := config.Config{}
 	err := mortConfig.Load("./benchmark/small.yml")
 	assert.Nil(t, err)
@@ -36,7 +33,6 @@ func TestNewRequestProcessor(t *testing.T) {
 	assert.Equal(t, res.Headers.Get("x-amz-meta-public-width"), "100")
 	assert.Equal(t, res.Headers.Get("ETag"), "a588dc2b8c531cd7a1418824963c962d")
 }
-
 func TestNewRequestProcessorCheckParent(t *testing.T) {
 	req, _ := http.NewRequest("GET", "http://mort/local/small.jpg-mm", nil)
 
