@@ -94,7 +94,7 @@ buckets:
                 headers:
                   "x--key": "sec"
             transform:
-                kind: "local-meta"
+                kind: "noop"
                 rootPath: "/tmp/mort"
                 pathPrefix: "transforms"
 
