@@ -162,9 +162,10 @@ func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *r
 
 		if obj.HasTransform() {
 			res = updateHeaders(obj, r.collapseGET(req, obj))
+		} else {
+			res = updateHeaders(obj, r.handleGET(req, obj))
 		}
 
-		res = updateHeaders(obj, r.handleGET(req, obj))
 		if res.IsCachable() && res.IsBuffered() && res.ContentLength < r.serverConfig.Cache.MaxCacheItemSize {
 			resCpy, err := res.Copy()
 			if err == nil {
@@ -224,7 +225,7 @@ func (r *RequestProcessor) collapseGET(req *http.Request, obj *object.FileObject
 			lockResult.Cancel <- true
 			return r.replyWithError(obj, 504, errTimeout)
 		default:
-			if cacheRes, err := r.responseCache.Get(obj); err != nil {
+			if cacheRes, err := r.responseCache.Get(obj); err == nil {
 				lockResult.Cancel <- true
 				return cacheRes
 			}
