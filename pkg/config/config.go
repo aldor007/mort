@@ -251,7 +251,9 @@ func (c *Config) validateServer() error {
 	}
 
 	if c.Server.Cache.MaxCacheItemSize == 0 {
-		c.Server.Cache.MaxCacheItemSize = 50 * 1024
+		c.Server.Cache.MaxCacheItemSize = 50 * 2 << 20
+	} else {
+		c.Server.Cache.MaxCacheItemSize = c.Server.Cache.MaxCacheItemSize * 2 << 20
 	}
 
 	if c.Server.Cache.Type == "" {

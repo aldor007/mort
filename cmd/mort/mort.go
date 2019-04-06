@@ -223,6 +223,7 @@ func main() {
 			obj.Debug = debug
 
 			res := rp.Process(req, obj)
+			defer res.Close()
 			res.SetDebug(obj)
 			if debug {
 				res.Set("X-Mort-Version", Version)

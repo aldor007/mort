@@ -166,10 +166,11 @@ func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *r
 			res = updateHeaders(obj, r.handleGET(req, obj))
 		}
 
-		if res.IsCachable() && res.IsBuffered() && res.ContentLength < r.serverConfig.Cache.MaxCacheItemSize {
+		if res.IsCachable() && res.ContentLength != -1  && res.ContentLength < r.serverConfig.Cache.MaxCacheItemSize {
 			resCpy, err := res.Copy()
 			if err == nil {
 				go func() {
+					resCpy.ReadBody()
 					err = r.responseCache.Set(obj, resCpy)
 					if err != nil {
 						monitoring.Log().Error("response cache error set", obj.LogData(zap.Error(err))...)
@@ -177,6 +178,7 @@ func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *r
 				}()
 			}
 		}
+
 
 		return res
 	case "PUT":
@@ -300,13 +302,13 @@ func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) 
 				}()
 
 			} else {
-				monitoring.Report().Inc("request_type;type:download")
-
 				if res.StatusCode == 404 {
 					return r.handleNotFound(obj, parentObj, transformsTab, parentRes, res)
 				}
 
-				if res.StatusCode == 200 {
+				monitoring.Report().Inc("request_type;type:download")
+
+				if res.StatusCode > 199 && res.StatusCode < 299 {
 					if obj.CheckParent && parentObj != nil && parentRes.StatusCode == 200 {
 						return res
 					}
