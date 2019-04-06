@@ -457,7 +457,9 @@ func prepareResponse(obj *object.FileObject, resData responseData) *response.Res
 		resSize, _ = item.Size()
 	}
 
-	monitoring.Report().Gauge("storage_throughput;method:get,storage:"+obj.Storage.Kind, float64(resSize))
+	if resData.stream != nil {
+		monitoring.Report().Gauge("storage_throughput;method:get,storage:"+obj.Storage.Kind, float64(resSize))
+	}
 
 	if etag != "" {
 		res.Set("ETag", etag)

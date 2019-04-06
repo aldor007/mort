@@ -50,7 +50,12 @@ func FetchObject(uri string) ([]byte, error) {
 
 	defer f.Close()
 
-	return ioutil.ReadAll(f)
+	buf, err := ioutil.ReadAll(f)
+	if err != nil {
+		return nil, err
+	}
+
+	return buf, nil
 }
 
 // IsRangeOrCondition check if request is range or condition

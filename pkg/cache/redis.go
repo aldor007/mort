@@ -15,7 +15,7 @@ func parseAddress(addrs []string) map[string]string {
 
 	for _, addr := range addrs {
 		parts := strings.Split(addr, ":")
-		mp[parts[0]] = ":" + parts[1]
+		mp[parts[0]] = parts[0] + ":" + parts[1]
 	}
 
 	return mp

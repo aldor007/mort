@@ -109,11 +109,13 @@ type HeaderYaml struct {
 	Values      map[string]string `yaml:"values"`
 }
 
+// CacheCfg configure type of cache
 type CacheCfg struct {
 	Type             string   `yaml:"type"`
 	Address          []string `yaml:"address"`
 	MaxCacheItemSize int64    `yaml:"maxCacheItemSizeMB"`
 	CacheSize        int64    `yaml:"cacheSize"`
+	ClientConfig     map[string]string `yaml:"clientConfig"`
 }
 
 // Server configure HTTP server
