@@ -348,3 +348,22 @@ func TestTransforms_Merge_Watermark(t *testing.T) {
 	assert.Equal(t, result[0].blur.minAmpl, 3.)
 	assert.Equal(t, result[1].watermark.image, "image2")
 }
+
+func TestTransforms_Extract(t *testing.T) {
+	trans := Transforms{}
+	trans.Extract(3, 1, 100, 200 )
+
+	optsArr, err := trans.BimgOptions(ImageInfo{})
+	assert.Nil(t, err)
+	opts := optsArr[0]
+	assert.NotNil(t, opts)
+	assert.True(t, trans.NotEmpty)
+
+	assert.Equal(t, opts.Top, 3)
+	assert.Equal(t, opts.Left, 1)
+	assert.Equal(t, opts.AreaWidth, 100)
+	assert.Equal(t, opts.AreaHeight, 200)
+
+	hashStr := strconv.FormatUint(uint64(trans.Hash().Sum64()), 16)
+	assert.Equal(t, "76e63c06a9aacad3", hashStr)
+}

@@ -244,7 +244,7 @@ describe('Image processing', function () {
                     }
 
                     const body = res.body;
-                    expect(body.length).to.be.within(1600, 1654);
+                    expect(body.length).to.be.within(1600, 2054);
 
                     expect(res.headers['x-amz-meta-public-width']).to.eql('100');
                     expect(res.headers['x-amz-meta-public-height']).to.eql('100');
@@ -279,7 +279,7 @@ describe('Image processing', function () {
                     const body = res.body;
                     const width = '400';
                     const height = '100';
-                    expect(body.length).to.be.within(1160, 1300);
+                    expect(body.length).to.be.within(1160, 2000);
 
                     expect(res.headers['x-amz-meta-public-width']).to.eql(width);
                     expect(res.headers['x-amz-meta-public-height']).to.eql(height);

@@ -418,7 +418,6 @@ func (r *RequestProcessor) processImage(obj *object.FileObject, parent *response
 
 	resCpy, err := res.Copy()
 	if err == nil {
-		monitoring.Report().Inc("cache_ratio;status:set")
 		go func(objS object.FileObject, resS *response.Response) {
 			storage.Set(&objS, resS.Headers, resS.ContentLength, resS.Stream())
 			resS.Close()

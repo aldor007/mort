@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"github.com/aldor007/mort/pkg/monitoring"
 	"github.com/aldor007/mort/pkg/object"
 	"github.com/aldor007/mort/pkg/response"
 	redisCache "github.com/go-redis/cache"
@@ -25,11 +26,12 @@ type RedisCache struct {
 	client *redisCache.Codec
 }
 
-func NewRedis(redisAddress []string) *RedisCache {
+func NewRedis(redisAddress []string, clientConfig map[string]string) *RedisCache {
+	ring := goRedis.NewRing(&goRedis.RingOptions{
+		Addrs: parseAddress(redisAddress),
+	})
 	cache := redisCache.Codec{
-		Redis: goRedis.NewRing(&goRedis.RingOptions{
-			Addrs: parseAddress(redisAddress),
-		}),
+		Redis: ring,
 
 		Marshal: func(v interface{}) ([]byte, error) {
 			return msgpack.Marshal(v)
@@ -39,11 +41,18 @@ func NewRedis(redisAddress []string) *RedisCache {
 		},
 	}
 	cache.UseLocalCache(10, time.Second*60)
+	if clientConfig != nil {
+		for key, value := range clientConfig {
+			ring.ConfigSet(key, value)
+		}
+	}
 
 	return &RedisCache{&cache}
 }
 
 func (c *RedisCache) Set(obj *object.FileObject, res *response.Response) error {
+	monitoring.Report().Inc("cache_ratio;status:set")
+
 	item := redisCache.Item{
 		Key:        obj.GetResponseCacheKey(),
 		Object:     res,
@@ -55,6 +64,12 @@ func (c *RedisCache) Set(obj *object.FileObject, res *response.Response) error {
 func (c *RedisCache) Get(obj *object.FileObject) (*response.Response, error) {
 	var res response.Response
 	err := c.client.Get(obj.GetResponseCacheKey(), &res)
+	if err != nil {
+		monitoring.Report().Inc("cache_ratio;status:miss")
+	} else {
+		monitoring.Report().Inc("cache_ratio;status:hit")
+	}
+
 	return &res, err
 }
 

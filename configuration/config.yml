@@ -5,7 +5,7 @@ server:
       address:
         - "localhost:6379"
       maxCacheItemSizeMB: 50
-      clentContg:
+      clientConfig:
 
   listens:
     - ":8080"
