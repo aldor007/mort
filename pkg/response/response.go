@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/aldor007/mort/pkg/helpers"
+	"github.com/aldor007/mort/pkg/monitoring"
 	"github.com/aldor007/mort/pkg/object"
 	"github.com/djherbis/stream"
 	"github.com/pquerna/cachecontrol/cacheobject"
@@ -138,9 +139,15 @@ func (r *Response) CopyBody() ([]byte, error) {
 			return nil, err
 		}
 
-		r.reader.Close()
+		// if we have reader that allow rewind just rewind instead of creat new one
+		if r.bodySeeker != nil {
+			r.bodySeeker.Seek(0,0)
+		} else {
+			r.reader.Close()
+			r.reader = ioutil.NopCloser(bytes.NewReader(buf))
+		}
+
 		r.body = buf
-		r.reader = ioutil.NopCloser(bytes.NewReader(buf))
 	}
 
 	return buf, nil
@@ -212,6 +219,7 @@ func (r *Response) Send(w http.ResponseWriter) error {
 	if r.ContentLength != 0 {
 		resStream = r.Stream()
 		if resStream == nil {
+			monitoring.Log().Error("Response send resStream = nil")
 			r.StatusCode = 500
 		}
 	}

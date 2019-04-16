@@ -20,6 +20,12 @@ type Preset struct {
 			Mode    string `yaml:"mode"`
 			Embed   bool   `yaml:"embed"`
 		} `yaml:"crop,omitempty"`
+		Extract *struct {
+			Width   int    `yaml:"width"`
+			Height  int    `yaml:"height"`
+			Top   int    `yaml:"top"`
+			Left int    `yaml:"left"`
+		} `yaml:"extract,omitempty"`
 		ResizeCropAuto *struct {
 			Width  int `yaml:"width"`
 			Height int `yaml:"height"`

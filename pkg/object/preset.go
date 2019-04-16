@@ -71,11 +71,6 @@ func decodePreset(_ *url.URL, bucketConfig config.Bucket, obj *FileObject) (stri
 		parent = "/" + parent
 	}
 
-	//if bucketConfig.Transform.ResultKey == "hash" {
-	//	obj.Key = hashKey(obj.Transforms.Hash(), subMatchMap["parent"])
-	//	obj.allowChangeKey = false
-	//}
-
 	return parent, err
 }
 
@@ -94,6 +89,13 @@ func presetToTransform(preset config.Preset) (transforms.Transforms, error) {
 
 	if filters.Crop != nil {
 		err := trans.Crop(filters.Crop.Width, filters.Crop.Height, filters.Crop.Gravity, filters.Crop.Mode == "outbound", filters.Crop.Embed)
+		if err != nil {
+			return trans, err
+		}
+	}
+
+	if filters.Extract != nil {
+		err := trans.Extract(filters.Extract.Top, filters.Extract.Left, filters.Extract.Width, filters.Extract.Height)
 		if err != nil {
 			return trans, err
 		}

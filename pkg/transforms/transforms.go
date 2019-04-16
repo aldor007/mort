@@ -85,6 +85,8 @@ type Transforms struct {
 	quality        int
 	compression    int
 	zoom           int
+	top            int
+	left           int
 	crop           bool
 	enlarge        bool
 	embed          bool
@@ -131,6 +133,24 @@ func (t *Transforms) Resize(width, height int, enlarge bool) error {
 		t.transHash.write(12311)
 	}
 
+	t.NotEmpty = true
+	return nil
+}
+
+
+// Extract area from image with given properties
+func (t  *Transforms) Extract(top, left, width, height int) error {
+	t.top =  top
+	t.left = left
+	t.areaWidth = width
+	t.areaHeight = height
+
+
+	if top == 0 && left == 0 {
+		t.top = -1
+	}
+
+	t.transHash.write(1611, uint64(t.width)*3, uint64(t.height)*3, uint64(top)*6, uint64(left))
 	t.NotEmpty = true
 	return nil
 }
@@ -311,6 +331,10 @@ func (t *Transforms) Merge(other Transforms) error {
 
 	t.autoCropWidth = other.autoCropWidth
 	t.autoCropHeight = other.autoCropHeight
+	t.areaHeight = other.areaHeight
+	t.areaWidth = other.areaWidth
+	t.top = other.top
+	t.left = other.left
 
 	if other.gravity != 0 {
 		t.gravity = other.gravity
@@ -424,6 +448,10 @@ func (t *Transforms) BimgOptions(imageInfo ImageInfo) ([]bimg.Options, error) {
 	b := bimg.Options{
 		Width:         t.width,
 		Height:        t.height,
+		Top:           t.top,
+		Left:          t.left,
+		AreaHeight:    t.areaHeight,
+		AreaWidth:     t.areaWidth,
 		Enlarge:       t.enlarge,
 		Crop:          t.crop,
 		Embed:         t.embed,

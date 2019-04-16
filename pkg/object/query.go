@@ -106,6 +106,17 @@ func parseOperation(query url.Values) (transforms.Transforms, error) {
 					if err != nil {
 						return trans, err
 					}
+				case "extract":
+					var w, h, t, l int
+					w, _ = queryToInt(query, "areaWith")
+					h, _ = queryToInt(query, "areaHeight")
+					t, _ = queryToInt(query, "top")
+					l, _ = queryToInt(query, "left")
+
+					err = trans.Extract(t, l, w, h)
+					if err != nil {
+						return trans, err
+					}
 				case "watermark":
 					var opacity float64
 					opacity, err = strconv.ParseFloat(query.Get("opacity"), 32)

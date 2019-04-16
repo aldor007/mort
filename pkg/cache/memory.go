@@ -19,6 +19,7 @@ func NewMemoryCache(maxSize int64) *MemoryCache {
 }
 
 func (c *MemoryCache) Set(obj *object.FileObject, res *response.Response) error {
+	monitoring.Report().Inc("cache_ratio;status:set")
 	c.cache.Set(obj.GetResponseCacheKey(), res, time.Second*time.Duration(res.GetTTL()))
 
 	return nil
@@ -36,6 +37,7 @@ func (c *MemoryCache) Get(obj *object.FileObject) (*response.Response, error) {
 		}
 	}
 
+	monitoring.Report().Inc("cache_ratio;status:miss")
 	return nil, errors.New("not found")
 }
 
