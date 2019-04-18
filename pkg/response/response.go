@@ -141,7 +141,7 @@ func (r *Response) CopyBody() ([]byte, error) {
 
 		// if we have reader that allow rewind just rewind instead of creat new one
 		if r.bodySeeker != nil {
-			r.bodySeeker.Seek(0,0)
+			r.bodySeeker.Seek(0, 0)
 		} else {
 			r.reader.Close()
 			r.reader = ioutil.NopCloser(bytes.NewReader(buf))

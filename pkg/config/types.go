@@ -21,10 +21,10 @@ type Preset struct {
 			Embed   bool   `yaml:"embed"`
 		} `yaml:"crop,omitempty"`
 		Extract *struct {
-			Width   int    `yaml:"width"`
-			Height  int    `yaml:"height"`
-			Top   int    `yaml:"top"`
-			Left int    `yaml:"left"`
+			Width  int `yaml:"width"`
+			Height int `yaml:"height"`
+			Top    int `yaml:"top"`
+			Left   int `yaml:"left"`
 		} `yaml:"extract,omitempty"`
 		ResizeCropAuto *struct {
 			Width  int `yaml:"width"`
@@ -117,10 +117,10 @@ type HeaderYaml struct {
 
 // CacheCfg configure type of cache
 type CacheCfg struct {
-	Type             string   `yaml:"type"`
-	Address          []string `yaml:"address"`
-	MaxCacheItemSize int64    `yaml:"maxCacheItemSizeMB"`
-	CacheSize        int64    `yaml:"cacheSize"`
+	Type             string            `yaml:"type"`
+	Address          []string          `yaml:"address"`
+	MaxCacheItemSize int64             `yaml:"maxCacheItemSizeMB"`
+	CacheSize        int64             `yaml:"cacheSize"`
 	ClientConfig     map[string]string `yaml:"clientConfig"`
 }
 

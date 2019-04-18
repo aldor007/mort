@@ -137,14 +137,12 @@ func (t *Transforms) Resize(width, height int, enlarge bool) error {
 	return nil
 }
 
-
 // Extract area from image with given properties
-func (t  *Transforms) Extract(top, left, width, height int) error {
-	t.top =  top
+func (t *Transforms) Extract(top, left, width, height int) error {
+	t.top = top
 	t.left = left
 	t.areaWidth = width
 	t.areaHeight = height
-
 
 	if top == 0 && left == 0 {
 		t.top = -1
