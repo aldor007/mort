@@ -351,7 +351,7 @@ func TestTransforms_Merge_Watermark(t *testing.T) {
 
 func TestTransforms_Extract(t *testing.T) {
 	trans := Transforms{}
-	trans.Extract(3, 1, 100, 200 )
+	trans.Extract(3, 1, 100, 200)
 
 	optsArr, err := trans.BimgOptions(ImageInfo{})
 	assert.Nil(t, err)
