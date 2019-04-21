@@ -367,3 +367,16 @@ func TestTransforms_Extract(t *testing.T) {
 	hashStr := strconv.FormatUint(uint64(trans.Hash().Sum64()), 16)
 	assert.Equal(t, "76e63c06a9aacad3", hashStr)
 }
+
+func TestTransforms_ResizeCropAuto(t *testing.T) {
+	trans := New()
+	trans.ResizeCropAuto(210, 200)
+
+	optsArr, err := trans.BimgOptions(ImageInfo{})
+	assert.Nil(t, err)
+	assert.Equal(t, len(optsArr), 3)
+	assert.True(t, trans.NotEmpty)
+
+	hashStr := strconv.FormatUint(uint64(trans.Hash().Sum64()), 16)
+	assert.Equal(t, "a9476be4baa3fb94", hashStr)
+}

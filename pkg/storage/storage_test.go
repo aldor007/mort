@@ -3,16 +3,15 @@ package storage
 import (
 	"bytes"
 	"fmt"
+	"github.com/aldor007/mort/pkg/config"
+	"github.com/aldor007/mort/pkg/object"
+	"github.com/aldor007/mort/pkg/response"
+	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
 	"testing"
-
-	"github.com/aldor007/mort/pkg/config"
-	"github.com/aldor007/mort/pkg/object"
-	"github.com/aldor007/mort/pkg/response"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestMain(m *testing.M) {

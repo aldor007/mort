@@ -1,6 +1,7 @@
 package object
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -427,7 +428,7 @@ func TestNewFileUnknownPreset(t *testing.T) {
 func TestObjectType(t *testing.T) {
 	mortConfig := &config.Config{}
 	mortConfig.Load("testdata/bucket-transform-query-parent-storage.yml")
-	obj, err := NewFileObject(pathToURL("/bucket/parent.jpg?width=100&operation=watermark&opacity=0.5&minAmpl=0.5&image=http://www&position=top-left"), mortConfig)
+	obj, err := NewFileObject(pathToURL("/bucket/parent.jpg?width=100&operation=extract&top=100&left=1&width=12&height=11"), mortConfig)
 	assert.Nil(t, err)
 
 	assert.Equal(t, obj.Type(), "transform")
@@ -437,12 +438,35 @@ func TestObjectType(t *testing.T) {
 func TestObjectCacheKeyQuery(t *testing.T) {
 	mortConfig := &config.Config{}
 	mortConfig.Load("testdata/bucket-transform-query-parent-storage.yml")
-	obj, err := NewFileObject(pathToURL("/bucket/parent.jpg?width=100&operation=watermark&opacity=0.5&minAmpl=0.5&image=http://www&position=top-left"), mortConfig)
+	obj, err := NewFileObject(pathToURL("/bucket/parent.jpg?width=100&operation=resizeCropAuto&width=100&height=100"), mortConfig)
 	assert.Nil(t, err)
 
-	assert.Equal(t, obj.GetResponseCacheKey(), "/parent.jpg/90e8c676de60865efa843590826a08e1")
+	assert.Equal(t, obj.GetResponseCacheKey(), "/parent.jpg/179e44cbdd0d290829b89286562fa8b6")
 }
 
+func TestFileObject_FillWithRequest(t *testing.T) {
+	mortConfig := &config.Config{}
+	mortConfig.Load("testdata/bucket-transform-query-parent-storage.yml")
+	obj, err := NewFileObjectFromPath("/bucket/parent.jpg?width=100&operation=resizeCropAuto&width=100&height=100", mortConfig)
+	assert.Nil(t, err)
+
+	req, _ := http.NewRequest("GET", "http://mort", nil)
+	req.Header.Set("Range", "bytes=1-199")
+	obj.FillWithRequest(req, req.Context())
+
+	assert.Equal(t, obj.Range, "bytes=1-199")
+}
+
+func TestFileObject_ErrorObject(t *testing.T) {
+	mortConfig := &config.Config{}
+	mortConfig.Load("testdata/bucket-transform-query-parent-storage.yml")
+	obj, err := NewFileObjectFromPath("/bucket/parent.jpg?width=100&operation=resizeCropAuto&width=100&height=100", mortConfig)
+	assert.Nil(t, err)
+	erroredObject, err := NewFileErrorObject("/parent", obj)
+	assert.Nil(t, err)
+
+	assert.Equal(t, erroredObject.GetResponseCacheKey(), "/parenta692a0f768855173")
+}
 func TestObjectCacheKeyPreset(t *testing.T) {
 	mortConfig := config.GetInstance()
 	mortConfig.Load("testdata/bucket-transform-hash.yml")

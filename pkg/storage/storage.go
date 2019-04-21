@@ -6,8 +6,7 @@ import (
 	httpStorage "github.com/aldor007/stow/http"
 	fileStorage "github.com/aldor007/stow/local"
 	metaStorage "github.com/aldor007/stow/local-meta"
-	// import blank to register noop adapter in stow.Register
-	"bytes"
+
 	"encoding/xml"
 	"fmt"
 	"github.com/aldor007/mort/pkg/monitoring"
@@ -21,19 +20,12 @@ import (
 	"mime"
 	"net/http"
 	"path"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
 )
 
 const notFound = "{\"error\":\"item not found\"}"
-
-var bufPool = sync.Pool{
-	New: func() interface{} {
-		return &bytes.Buffer{}
-	},
-}
 
 // storageClient struct that contain location and container
 type storageClient struct {
@@ -550,17 +542,6 @@ func parseMetadata(obj *object.FileObject, metadata map[string]interface{}, res 
 func inc(obj *object.FileObject, method string) {
 	monitoring.Report().Inc(fmt.Sprintf("storage_request;method:%s,storage:%s,bucket:%s,object_type:%s",
 		method, obj.Storage.Kind, obj.Storage.Bucket, obj.Type()))
-}
-
-func createBytesHeader(bytesRage string, size int64) string {
-	buf := bufPool.Get().(*bytes.Buffer)
-	defer bufPool.Put(buf)
-	buf.Reset()
-	buf.WriteString(strings.Replace(bytesRage, "=", "", 1))
-	buf.WriteByte('/')
-	buf.WriteString(strconv.FormatInt(size, 10))
-	return buf.String()
-
 }
 
 func isDir(item stow.Item) bool {

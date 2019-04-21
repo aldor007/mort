@@ -7,7 +7,6 @@ import (
 
 	"gopkg.in/h2non/bimg.v1"
 
-	"bytes"
 	"crypto/md5"
 	"encoding/hex"
 	"github.com/aldor007/mort/pkg/monitoring"
@@ -15,15 +14,7 @@ import (
 	"github.com/aldor007/mort/pkg/response"
 	"github.com/aldor007/mort/pkg/transforms"
 	"go.uber.org/zap"
-	"sync"
 )
-
-// bufPool for string concatenations
-var bufPool = sync.Pool{
-	New: func() interface{} {
-		return &bytes.Buffer{}
-	},
-}
 
 // ImageEngine is main struct that is responding for image processing
 type ImageEngine struct {
