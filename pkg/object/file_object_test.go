@@ -379,6 +379,7 @@ func TestNewFileObjectPresetQueryWatermark(t *testing.T) {
 	parent := obj.Parent
 
 	assert.Equal(t, "/parent.jpg", parent.Key, "invalid parent key")
+	assert.Equal(t, "/parent.jpg/90e8c676de60865efa843590826a08e1", obj.Key, "invalid object key")
 
 	_, err = obj.Transforms.BimgOptions(imageInfo)
 

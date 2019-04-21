@@ -24,6 +24,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"fmt"
 )
 
 const notFound = "{\"error\":\"item not found\"}"
@@ -62,6 +63,7 @@ var storageCacheLock = sync.RWMutex{}
 
 // Get retrieve obj from given storage and returns its wrapped in response
 func Get(obj *object.FileObject) *response.Response {
+	inc(obj, "get")
 	metric := "storage_time;method:get,storage:" + obj.Storage.Kind
 	t := monitoring.Report().Timer(metric)
 	defer t.Done()
@@ -114,6 +116,7 @@ func Get(obj *object.FileObject) *response.Response {
 
 // Head retrieve obj from given storage and returns its wrapped in response (but only headers, content of object is omitted)
 func Head(obj *object.FileObject) *response.Response {
+	inc(obj, "head")
 	metric := "storage_time;method:head,storage:" + obj.Storage.Kind
 	t := monitoring.Report().Timer(metric)
 	defer t.Done()
@@ -142,6 +145,7 @@ func Head(obj *object.FileObject) *response.Response {
 
 // Set create object on storage wit given body and headers
 func Set(obj *object.FileObject, metaHeaders http.Header, contentLen int64, body io.Reader) *response.Response {
+	inc(obj, "set")
 	metric := "storage_time;method:set,storage:" + obj.Storage.Kind
 	t := monitoring.Report().Timer(metric)
 	defer t.Done()
@@ -183,6 +187,7 @@ func Set(obj *object.FileObject, metaHeaders http.Header, contentLen int64, body
 
 // Delete remove object from given storage
 func Delete(obj *object.FileObject) *response.Response {
+	inc(obj, "delete")
 	metric := "storage_time;method:delete,storage:" + obj.Storage.Kind
 	t := monitoring.Report().Timer(metric)
 	defer t.Done()
@@ -540,6 +545,11 @@ func parseMetadata(obj *object.FileObject, metadata map[string]interface{}, res 
 		}
 	}
 
+}
+
+func inc(obj *object.FileObject, method string) {
+	monitoring.Report().Inc(fmt.Sprintf("storage_request;method:%s,storage:%s,bucket:%s,object_type:%s",
+		method, obj.Storage.Kind, obj.Storage.Bucket, obj.Type()))
 }
 
 func createBytesHeader(bytesRage string, size int64) string {

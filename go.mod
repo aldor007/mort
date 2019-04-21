@@ -3,42 +3,40 @@ module github.com/aldor007/mort
 require (
 	github.com/aldor007/go-aws-auth v0.0.0-20180623204207-00898dfb9272
 	github.com/aldor007/stow v0.0.0-20190109171535-d59ae5fea5cf
-	github.com/aws/aws-sdk-go v1.16.14
-	github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973
-	github.com/cheekybits/is v0.0.0-20150225183255-68e9c0620927
-	github.com/davecgh/go-spew v1.1.1
+	github.com/aws/aws-sdk-go v1.16.14 // indirect
+	github.com/cheekybits/is v0.0.0-20150225183255-68e9c0620927 // indirect
 	github.com/djherbis/stream v1.2.0
 	github.com/go-chi/chi v3.3.3+incompatible
 	github.com/go-redis/cache v6.3.5+incompatible
 	github.com/go-redis/redis v6.15.2+incompatible
-	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
-	github.com/golang/protobuf v1.2.0
+	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b // indirect
 	github.com/google/brotli v1.0.7
-	github.com/google/readahead v0.0.0-20161222183148-eaceba169032
-	github.com/graymeta/stow v0.0.0-20181228161447-b469cfb112f8
-	github.com/jmespath/go-jmespath v0.0.0-20180206201540-c2b33e8439af
+	github.com/google/readahead v0.0.0-20161222183148-eaceba169032 // indirect
 	github.com/karlseguin/ccache v2.0.2+incompatible
-	github.com/kurin/blazer v0.5.1
-	github.com/matttproud/golang_protobuf_extensions v1.0.1
+	github.com/karlseguin/expect v1.0.1 // indirect
+	github.com/nbio/st v0.0.0-20140626010706-e9e8d9816f32 // indirect
+	github.com/onsi/ginkgo v1.8.0 // indirect
+	github.com/onsi/gomega v1.5.0 // indirect
 	github.com/pkg/errors v0.8.1
-	github.com/pmezard/go-difflib v1.0.0
 	github.com/pquerna/cachecontrol v0.0.0-20180517163645-1555304b9b35
-	github.com/pquerna/ffjson v0.0.0-20181028064349-e517b90714f7
+	github.com/pquerna/ffjson v0.0.0-20181028064349-e517b90714f7 // indirect
 	github.com/prometheus/client_golang v0.9.2
 	github.com/prometheus/client_model v0.0.0-20180712105110-5c3871d89910
-	github.com/prometheus/common v0.0.0-20190107103113-2998b132700a
-	github.com/prometheus/procfs v0.0.0-20190104112138-b1a0a9a36d74
+	github.com/prometheus/common v0.0.0-20190107103113-2998b132700a // indirect
+	github.com/prometheus/procfs v0.0.0-20190104112138-b1a0a9a36d74 // indirect
+	github.com/smartystreets/goconvey v0.0.0-20190330032615-68dc04aab96a // indirect
 	github.com/spaolacci/murmur3 v0.0.0-20170819071325-9f5d223c6079
 	github.com/stretchr/testify v1.3.0
 	github.com/vmihailenco/msgpack v4.0.1+incompatible
-	go.uber.org/atomic v1.2.0
-	go.uber.org/multierr v1.1.0
+	github.com/wsxiaoys/terminal v0.0.0-20160513160801-0940f3fc43a0 // indirect
+	go.uber.org/atomic v1.2.0 // indirect
+	go.uber.org/multierr v1.1.0 // indirect
 	go.uber.org/zap v1.9.1
-	golang.org/x/net v0.0.0-20190107155100-1a61f4433d85
-	google.golang.org/appengine v1.4.0
+	golang.org/x/net v0.0.0-20190311183353-d8887717615a
+	google.golang.org/appengine v1.4.0 // indirect
 	gopkg.in/h2non/bimg.v1 v1.0.19
 	gopkg.in/h2non/gock.v1 v1.0.12
-	gopkg.in/kothar/brotli-go.v0 v0.0.0-20170728081549-771231d473d6
-	gopkg.in/kothar/go-backblaze.v0 v0.0.0-20180916190456-9ac0cf0dab1a
+	gopkg.in/karlseguin/expect.v1 v1.0.1 // indirect
+	gopkg.in/kothar/go-backblaze.v0 v0.0.0-20180916190456-9ac0cf0dab1a // indirect
 	gopkg.in/yaml.v2 v2.2.2
 )

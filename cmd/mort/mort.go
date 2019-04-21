@@ -136,6 +136,13 @@ func configureMonitoring(mortConfig *config.Config) {
 			[]string{"method", "storage"},
 		))
 
+		p.RegisterCounterVec("storage_request", prometheus.NewCounterVec(prometheus.CounterOpts{
+			Name: "mort_storage_request",
+			Help: "mort requests storage",
+		},
+			[]string{"method", "bucket", "storage", "object_type"},
+		))
+
 		p.RegisterCounter("collapsed_count", prometheus.NewCounter(prometheus.CounterOpts{
 			Name: "mort_request_collapsed_count",
 			Help: "mort count of collapsed requests",

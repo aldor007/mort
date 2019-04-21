@@ -2,8 +2,8 @@ FROM ubuntu:18.04 as builder
 
 # ENV LIBVIPS_VERSION 8.7.3
 ENV LIBVIPS_VERSION 8.6.2
-ENV DEP_VERSION v0.5.0
-ENV GOLANG_VERSION 1.11
+ENV DEP_VERSION v0.5.1
+ENV GOLANG_VERSION 1.12.1
 
 # Installs libvips + required libraries
 RUN \
@@ -39,16 +39,16 @@ RUN curl -fsSL --insecure "$GOLANG_DOWNLOAD_URL" -o golang.tar.gz \
   && tar -C /usr/local -xzf golang.tar.gz \
   && rm golang.tar.gz
 
-ENV GOPATH /go
+# ENV GOPATH /go
 ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
 # ENV GOROOT /go:$GOROOT
 
 RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH"
 WORKDIR $GOPATH
-RUN curl -fsSL -o /usr/local/bin/dep https://github.com/golang/dep/releases/download/$DEP_VERSION/dep-linux-amd64 && chmod +x /usr/local/bin/dep
+# RUN curl -fsSL -o /usr/local/bin/dep https://github.com/golang/dep/releases/download/$DEP_VERSION/dep-linux-amd64 && chmod +x /usr/local/bin/dep
 ADD . /go/src/github.com/aldor007/mort
 
-RUN cd /go/src/github.com/aldor007/mort &&  dep ensure -vendor-only
+# RUN cd /go/src/github.com/aldor007/mort &&  dep ensure -vendor-only
 RUN cd /go/src/github.com/aldor007/mort; go build -o /go/mort cmd/mort/mort.go;
 
 FROM ubuntu:18.04
