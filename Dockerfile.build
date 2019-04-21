@@ -1,11 +1,11 @@
 # Start from a Debian image with the latest version of Go installed
-# and a workspace (GOPATH) configured at /go.
-FROM golang:1.9.2-stretch
+# and a workspace (WORKDIR) configured at /go.
+FROM golang:1.12.4-stretch
 
 ARG GITHUB_TOKEN=""
 
 ENV LIBVIPS_VERSION 8.6.2
-ENV DEP_VERSION v0.4.1
+ENV DEP_VERSION v0.5.1
 # Installs libvips + required libraries
 RUN \
   # Install dependencies
@@ -18,7 +18,7 @@ RUN \
   libgsf-1-dev fftw3-dev liborc-0.4-dev librsvg2-dev && \
   # Build libvips
   cd /tmp && \
-  curl -OL https://github.com/jcupitt/libvips/releases/download/v${LIBVIPS_VERSION}/vips-${LIBVIPS_VERSION}.tar.gz && \
+  curl -OL https://github.com/libvips/libvips/releases/download/v${LIBVIPS_VERSION}/vips-${LIBVIPS_VERSION}.tar.gz && \
   tar zvxf vips-${LIBVIPS_VERSION}.tar.gz && \
   cd /tmp/vips-${LIBVIPS_VERSION} && \
   ./configure --enable-debug=no --without-python $1 && \
@@ -41,15 +41,14 @@ RUN apt-get update && apt-get install -y \
 
 RUN gem install --no-ri --no-rdoc fpm
 
-ENV GOPATH /go
-ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
+ENV WORKDIR /mort
+ENV PATH $WORKDIR/bin:/usr/local/go/bin:$PATH
 
-RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH"
-WORKDIR $GOPATH
-RUN curl -fsSL -o /usr/local/bin/dep https://github.com/golang/dep/releases/download/$DEP_VERSION/dep-linux-amd64 && chmod +x /usr/local/bin/dep
-ADD . /go/src/github.com/aldor007/mort
+RUN mkdir -p "$WORKDIR/src" "$WORKDIR/bin" && chmod -R 777 "$WORKDIR"
+WORKDIR $WORKDIR
+ADD . $WORKDIR
 
-RUN cd /go/src/github.com/aldor007/mort; dep ensure -vendor-only
+RUN cd $WORKDIR; go mod vendor
 # RUN build
-RUN cd /go/src/github.com/aldor007/mort; GITHUB_TOKEN=${GITHUB_TOKEN} curl -sL http://git.io/goreleaser | bash
+RUN cd $WORKDIR; GITHUB_TOKEN=${GITHUB_TOKEN} curl -sL http://git.io/goreleaser | bash
 

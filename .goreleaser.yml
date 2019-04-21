@@ -25,18 +25,18 @@ archive:
   name_template: "{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
 checksum:
   name_template: "{{ .ProjectName }}_{{ .Version }}_checksums.txt"
-fpm:
-  bindir: /usr/local/bin
-  dependencies:
-    - libvips-dev
-  description: "Storage and image processing server"
-  formats:
-    - deb
-  license: MIT
-  maintainer: "Marcin Kaciuba <marcin.kaciuba@gmail.com>"
-  files:
-    "etc/mort.service": "/lib/systemd/system/mort.service"
-    "configuration/config.yml": "/etc/mort/mort.yml"
+#fpm:
+#  bindir: /usr/local/bin
+#  dependencies:
+#    - libvips-dev
+#  description: "Storage and image processing server"
+#  formats:
+#    - deb
+#  license: MIT
+#  maintainer: "Marcin Kaciuba <marcin.kaciuba@gmail.com>"
+#  files:
+#    "etc/mort.service": "/lib/systemd/system/mort.service"
+#    "configuration/config.yml": "/etc/mort/mort.yml"
 release:
   github:
     name: mort
