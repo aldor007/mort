@@ -35,10 +35,12 @@ func TestImageEngine_Process(t *testing.T) {
 	image := response.New(200, f)
 	mortConfig := config.Config{}
 	mortConfig.Load("testdata/config.yml")
-	obj, err := object.NewFileObjectFromPath("/local/small/parent.jpg", &mortConfig)
+	obj, err := object.NewFileObjectFromPath("/local/parent.jpg?width=100&height=70", &mortConfig)
 
 	assert.Nil(t, err)
 	assert.NotNil(t, obj)
+	
+	obj.Transforms.Resize(100, 70, false)
 
 	e := NewImageEngine(image)
 	res, err := e.Process(obj, []transforms.Transforms{obj.Transforms})
@@ -46,6 +48,6 @@ func TestImageEngine_Process(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, res.StatusCode, 200)
 	assert.Equal(t, res.Headers.Get("content-type"), "image/jpeg")
-	assert.Equal(t, res.Headers.Get("etag"), "3ddbe830b458045b041d7653fc42970e")
-	assert.Equal(t, res.Headers.Get("x-amz-meta-public-width"), "300")
+	assert.Equal(t, res.Headers.Get("x-amz-meta-public-width"), "100")
+	assert.Equal(t, res.Headers.Get("x-amz-meta-public-height"), "70")
 }
