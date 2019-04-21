@@ -424,6 +424,39 @@ func TestNewFileUnknownPreset(t *testing.T) {
 	assert.Nil(t, err, "Unexpected to have error when parsing path")
 }
 
+func TestObjectType(t *testing.T) {
+	mortConfig := &config.Config{}
+	mortConfig.Load("testdata/bucket-transform-query-parent-storage.yml")
+	obj, err := NewFileObject(pathToURL("/bucket/parent.jpg?width=100&operation=watermark&opacity=0.5&minAmpl=0.5&image=http://www&position=top-left"), mortConfig)
+	assert.Nil(t, err)
+
+	assert.Equal(t, obj.Type(), "transform")
+	assert.Equal(t, obj.Parent.Type(), "parent")
+}
+
+func TestObjectCacheKeyQuery(t *testing.T) {
+	mortConfig := &config.Config{}
+	mortConfig.Load("testdata/bucket-transform-query-parent-storage.yml")
+	obj, err := NewFileObject(pathToURL("/bucket/parent.jpg?width=100&operation=watermark&opacity=0.5&minAmpl=0.5&image=http://www&position=top-left"), mortConfig)
+	assert.Nil(t, err)
+
+	assert.Equal(t, obj.GetResponseCacheKey(), "/parent.jpg/90e8c676de60865efa843590826a08e1")
+}
+
+func TestObjectCacheKeyPreset(t *testing.T) {
+	mortConfig := config.GetInstance()
+	mortConfig.Load("testdata/bucket-transform-hash.yml")
+	obj, err := NewFileObject(pathToURL("/bucket/width/bucket/height/bucket/parent.jpg"), mortConfig)
+
+	assert.Nil(t, err, "Unexpected to have error when parsing path")
+
+	assert.Equal(t, "/6ca/hei/height-bucket-parent.jpg-6ca0dabe9909875a", obj.GetResponseCacheKey())
+
+	obj.Range = "bytes=1-10"
+
+	assert.Equal(t, "/6ca/hei/height-bucket-parent.jpg-6ca0dabe9909875abytes=1-10", obj.GetResponseCacheKey())
+}
+
 func BenchmarkNewFileObject(b *testing.B) {
 
 	benchmarks := []struct {
