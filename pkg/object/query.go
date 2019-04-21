@@ -106,6 +106,15 @@ func parseOperation(query url.Values) (transforms.Transforms, error) {
 					if err != nil {
 						return trans, err
 					}
+				case "resizeCropAuto":
+					var w, h int
+					w, _ = queryToInt(query, "width")
+					h, _ = queryToInt(query, "height")
+
+					err = trans.ResizeCropAuto(w, h)
+					if err != nil {
+						return trans, err
+					}
 				case "extract":
 					var w, h, t, l int
 					w, _ = queryToInt(query, "areaWith")

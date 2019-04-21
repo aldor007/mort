@@ -170,7 +170,7 @@ func (c *Config) validateStorage(bucketName string, storages StorageTypes) error
 	return err
 }
 
-func (c *Config) validateTransform(bucketName string, bucket Bucket) error {
+func (c *Config) validateTransform(bucketName string, bucket *Bucket) error {
 	transform := bucket.Transform
 	var err error
 	errorMsgPrefix := fmt.Sprintf("%s has invalid transform config", bucketName)
@@ -205,6 +205,10 @@ func (c *Config) validateTransform(bucketName string, bucket Bucket) error {
 		if strings.Index(transform.Path, "(?P<parent>") == -1 {
 			err = configInvalidError(fmt.Sprintf("%s invalid transform regexp it should have capturing group for parent `(?P<parent>``", errorMsgPrefix))
 		}
+	}
+
+	if transform.ResultKey == "" && (transform.Kind == "query" || transform.Kind == "presets-query") {
+		bucket.Transform.ResultKey = "hashParent"
 	}
 
 	return err
@@ -251,7 +255,7 @@ func (c *Config) validateServer() error {
 	}
 
 	if c.Server.Cache.MaxCacheItemSize == 0 {
-		c.Server.Cache.MaxCacheItemSize = 50 * 2 << 20
+		c.Server.Cache.MaxCacheItemSize = 5 * 2 << 20
 	} else {
 		c.Server.Cache.MaxCacheItemSize = c.Server.Cache.MaxCacheItemSize * 2 << 20
 	}
@@ -281,7 +285,7 @@ func (c *Config) validate() error {
 		}
 
 		if bucket.Transform != nil {
-			err = c.validateTransform(name, bucket)
+			err = c.validateTransform(name, &bucket)
 			if err != nil {
 				return err
 			}

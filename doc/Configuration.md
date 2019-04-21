@@ -60,7 +60,13 @@ Server section describe configuration for HTTP server and some runtime variables
 server:
     listen: "0.0.0.0:8080" # default traffic listener
     monitoring: "" # default no monitoring ( or prometheus)
-    cacheSize: 10 # default size of cache used for new images
+    cache: 
+      type: "memory" # default or redis
+      maxCacheItemSizeMB: 50 # max item size to cache default 5 MB
+      # config for redis
+      address:
+        - "localhost:6379"
+      clientConfig: # change redis instance config 
     requestTimeout: 70 # default request timeout in seconds
     internalListen: "0.0.0.0:8081" # default listener for debug /debug and metrics /metrics
     plugins: # list of additional plugins

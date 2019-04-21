@@ -88,6 +88,15 @@ func (o *FileObject) HasTransform() bool {
 	return o.Transforms.NotEmpty == true
 }
 
+//  Type returns type of object "parent" or "transform"
+func (o* FileObject) Type() string {
+	if o.HasTransform(){
+		return "transform"
+	}
+
+	return "parent"
+}
+
 // UpdateKey add string to ky
 func (o *FileObject) UpdateKey(str string) {
 	o.key = o.key + str

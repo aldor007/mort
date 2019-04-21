@@ -88,6 +88,12 @@ buckets:
                             width: 756
                             height: 396
                             mode: outbound
+                extract:
+                    quality: 75
+                    filters:
+                        extract:
+                            width: 700
+                            height: 496
                 blur:
                     quality: 75
                     filters:

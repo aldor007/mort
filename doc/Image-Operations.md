@@ -19,12 +19,18 @@ Table of contents
   * [Crop](#crop)
     + [Preset](#preset-4)
     + [Query string](#query-string-4)
-  * [Watermark](#watermark)
+  * [Extract](#extract)
     + [Preset](#preset-5)
     + [Query string](#query-string-5)
-  * [Image format](#image-format)
+  * [ResizeCropAuto](#resizeCropAuto)
     + [Preset](#preset-6)
     + [Query string](#query-string-6)
+  * [Watermark](#watermark)
+    + [Preset](#preset-7)
+    + [Query string](#query-string-7)
+  * [Image format](#image-format)
+    + [Preset](#preset-8)
+    + [Query string](#query-string-8)
 
 ## Originals
 
@@ -176,12 +182,62 @@ Position can be one of:
 
 </br>
 
-<a href="https://mort.mkaciuba.com/demo/img.jpg?operation=crop&width=200&height=200">
+
+## Extract 
+
+Extract - crop given area from the image.
+Parameters:
+* top  - point on x axis 
+* left - point on y axis
+* width - width of the cropped area.
+* height - height of the cropped area.
+
+### Preset 
+
+<a href="https://mort.mkaciuba.com/demo/extract/img.jpg">
 <figure>
-<img src="https://mort.mkaciuba.com/demo/img.jpg?opetation=crop&width=200&height=200&gravity=north">
+<img src="https://mort.mkaciuba.com/demo/extract/img.jpg">
+<figcaption><br/>crop image with width 500 </figcaption>
+</figure>
+</a>
+
+### Query string
+
+<a href="https://mort.mkaciuba.com/demo/img.jpg?operation=extract&width=200&height=200&top=22&left=2">
+<figure>
+<img src="https://mort.mkaciuba.com/demo/img.jpg?opetation=extract&width=200&height=200&top=22&left=2">
 <figcaption><br/>crop image with width 200 and height 200 </figcaption>
 </figure>
 </a>
+
+</br>
+
+## ResizeCropAuto 
+
+resize and crop given area from the image. Do it using proportion (center of image is used)
+Parameters:
+* width - width of the cropped area.
+* height - height of the cropped area.
+
+### Preset 
+
+<a href="https://mort.mkaciuba.com/demo/autocrop/img.jpg">
+<figure>
+<img src="https://mort.mkaciuba.com/demo/autocrop/img.jpg">
+<figcaption><br/>crop image with width 555 </figcaption>
+</figure>
+</a>
+
+### Query string
+
+<a href="https://mort.mkaciuba.com/demo/img.jpg?operation=resizeCropAuto&width=200&height=200">
+<figure>
+<img src="https://mort.mkaciuba.com/demo/img.jpg?opetation=resizeCropAuto&width=200&height=200">
+<figcaption><br/>crop image with width 200 and height 200 </figcaption>
+</figure>
+</a>
+
+</br>
 
 ## Watermark
 
