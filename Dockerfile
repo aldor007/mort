@@ -39,12 +39,12 @@ RUN curl -fsSL --insecure "$GOLANG_DOWNLOAD_URL" -o golang.tar.gz \
   && tar -C /usr/local -xzf golang.tar.gz \
   && rm golang.tar.gz
 
-# ENV GOPATH /go
-ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
+ENV WORKDIR /go
+ENV PATH $WORKDIR/bin:/usr/local/go/bin:$PATH
 # ENV GOROOT /go:$GOROOT
 
-RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH"
-WORKDIR $GOPATH
+RUN mkdir -p "$WORKDIR/src" "$WORKDIR/bin" && chmod -R 777 "$WORKDIR"
+WORKDIR $WORKDIR
 # RUN curl -fsSL -o /usr/local/bin/dep https://github.com/golang/dep/releases/download/$DEP_VERSION/dep-linux-amd64 && chmod +x /usr/local/bin/dep
 ADD . /go/src/github.com/aldor007/mort
 
