@@ -4,10 +4,10 @@ sudo: required
 dist: bionic
 
 go:
-  - '1.10'
+  - '1.12'
 
 env:
-  - LIBVIPS=8.7.2
+  - LIBVIPS=8.7.4
 
 addons:
   apt:

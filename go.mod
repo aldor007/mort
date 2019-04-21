@@ -2,7 +2,7 @@ module github.com/aldor007/mort
 
 require (
 	github.com/aldor007/go-aws-auth v0.0.0-20180623204207-00898dfb9272
-	github.com/aldor007/stow v0.0.0-20190109171535-d59ae5fea5cf
+	github.com/aldor007/stow v0.0.0-20190126113302-1335bc2f8d38
 	github.com/aws/aws-sdk-go v1.16.14 // indirect
 	github.com/cheekybits/is v0.0.0-20150225183255-68e9c0620927 // indirect
 	github.com/djherbis/stream v1.2.0

@@ -1,7 +1,7 @@
 github.com/aldor007/go-aws-auth v0.0.0-20180623204207-00898dfb9272 h1:TuxcUGZxsHKCW50twhDbGdRtuMXmMDCmOssevV0ZoOA=
 github.com/aldor007/go-aws-auth v0.0.0-20180623204207-00898dfb9272/go.mod h1:gm7JFOl7Sp8r+lJqHXOkL0HyUFR05QXueqxVufqfkTg=
-github.com/aldor007/stow v0.0.0-20190109171535-d59ae5fea5cf h1:wBAGFp3s42TlQe1mZIRlbIQaUz5y4TqpX/Stb0NoRLI=
-github.com/aldor007/stow v0.0.0-20190109171535-d59ae5fea5cf/go.mod h1:TUBrYvdpmfMQKeKUIZeveJE/Y5VufnvvtDE/kxJ9X3U=
+github.com/aldor007/stow v0.0.0-20190126113302-1335bc2f8d38 h1:ao+3XmclfZDL6RRJ3ZYKHtfpykrqqngR7G3BgYXzbWQ=
+github.com/aldor007/stow v0.0.0-20190126113302-1335bc2f8d38/go.mod h1:TUBrYvdpmfMQKeKUIZeveJE/Y5VufnvvtDE/kxJ9X3U=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
 github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf/go.mod h1:ybxpYRFXyAe+OPACYpWeL0wqObRcbAqCMya13uyzqw0=
 github.com/aws/aws-sdk-go v1.16.14 h1:v/Jc1ryxAa6F9uPwXl2RSuFsGC4Iai8PEiSDP/cprHc=
