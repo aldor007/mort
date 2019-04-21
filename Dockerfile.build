@@ -7,6 +7,8 @@ ARG GITHUB_TOKEN=""
 ENV LIBVIPS_VERSION 8.6.2
 ENV DEP_VERSION v0.5.1
 # Installs libvips + required libraries
+RUN printf "deb http://httpredir.debian.org/debian stretch-backports main non-free\ndeb-src http://httpredir.debian.org/debian stretch-backports main non-free" > /etc/apt/sources.list.d/backports.list
+
 RUN \
   # Install dependencies
   apt-get update && \
@@ -15,7 +17,7 @@ RUN \
   gobject-introspection gtk-doc-tools libglib2.0-dev libjpeg-dev libpng-dev \
   libwebp-dev libtiff5-dev libgif-dev libexif-dev libxml2-dev libpoppler-glib-dev \
   swig libmagickwand-dev libpango1.0-dev libmatio-dev libopenslide-dev libcfitsio-dev \
-  libgsf-1-dev fftw3-dev liborc-0.4-dev librsvg2-dev && \
+  libgsf-1-dev fftw3-dev liborc-0.4-dev librsvg2-dev libbrotli-dev && \
   # Build libvips
   cd /tmp && \
   curl -OL https://github.com/libvips/libvips/releases/download/v${LIBVIPS_VERSION}/vips-${LIBVIPS_VERSION}.tar.gz && \
