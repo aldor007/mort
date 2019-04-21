@@ -9,6 +9,7 @@ import (
 	// import blank to register noop adapter in stow.Register
 	"bytes"
 	"encoding/xml"
+	"fmt"
 	"github.com/aldor007/mort/pkg/monitoring"
 	"github.com/aldor007/mort/pkg/object"
 	"github.com/aldor007/mort/pkg/response"
@@ -24,7 +25,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"fmt"
 )
 
 const notFound = "{\"error\":\"item not found\"}"

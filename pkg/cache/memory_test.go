@@ -1,10 +1,10 @@
 package cache
 
 import (
-	"testing"
 	"github.com/aldor007/mort/pkg/object"
 	"github.com/aldor007/mort/pkg/response"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestMemoryCache_Set(t *testing.T) {

@@ -89,8 +89,8 @@ func (o *FileObject) HasTransform() bool {
 }
 
 //  Type returns type of object "parent" or "transform"
-func (o* FileObject) Type() string {
-	if o.HasTransform(){
+func (o *FileObject) Type() string {
+	if o.HasTransform() {
 		return "transform"
 	}
 
