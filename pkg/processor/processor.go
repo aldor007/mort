@@ -166,7 +166,7 @@ func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *r
 			res = updateHeaders(obj, r.handleGET(req, obj))
 		}
 
-		if res.IsCachable() && res.ContentLength != -1 && res.ContentLength < r.serverConfig.Cache.MaxCacheItemSize {
+		if res.IsCacheable() && res.ContentLength != -1 && res.ContentLength < r.serverConfig.Cache.MaxCacheItemSize {
 			resCpy, err := res.Copy()
 			if err == nil {
 				go func() {

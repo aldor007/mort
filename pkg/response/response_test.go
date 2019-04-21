@@ -8,6 +8,7 @@ import (
 	"github.com/aldor007/mort/pkg/object"
 	"github.com/aldor007/mort/pkg/transforms"
 	"github.com/stretchr/testify/assert"
+	"github.com/vmihailenco/msgpack"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -217,6 +218,41 @@ func TestIsRangeOrCond(t *testing.T) {
 
 	req, _ = http.NewRequest("GET", "http://url", nil)
 	assert.False(t, helpers.IsRangeOrCondition(req))
+}
+
+func TestResponse_IsCachable(t *testing.T) {
+	res := NewNoContent(200)
+
+	assert.False(t, res.IsCacheable())
+
+	res.Headers.Set("cache-control", "public, max-age=600")
+
+	assert.True(t, res.IsCacheable())
+	assert.Equal(t, res.GetTTL(), 600)
+}
+
+func TestResponse_DecodeMsgpack(t *testing.T) {
+	res := NewString(400, "testuje")
+	res.Headers.Set("etag", "md5")
+	res.Headers.Set("cache-control", "private")
+	res.ReadBody()
+	buf, err := msgpack.Marshal(res)
+
+	assert.Nil(t, err)
+
+	var resMsg Response
+	err = msgpack.Unmarshal(buf, &resMsg)
+
+	assert.Nil(t, err)
+
+	b, err := resMsg.ReadBody()
+	assert.Nil(t, err)
+
+	assert.Equal(t, resMsg.StatusCode, 400)
+	assert.Equal(t, resMsg.Headers.Get("etag"), "md5")
+	assert.Equal(t, resMsg.GetTTL(), -1)
+	assert.Equal(t, string(b), "testuje")
+
 }
 
 func BenchmarkNewBuf(b *testing.B) {

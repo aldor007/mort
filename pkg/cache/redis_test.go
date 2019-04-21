@@ -10,10 +10,12 @@ import (
 )
 
 type mockValue struct {
-	value interface{}
+	value      interface{}
 	expiration time.Duration
 }
-var  internal map[string]mockValue
+
+var internal map[string]mockValue
+
 type redisMock struct {
 }
 
@@ -56,9 +58,8 @@ func TestRedisCache_Get_and_Set(t *testing.T) {
 	assert.Equal(t, res2.StatusCode, 300)
 	assert.Equal(t, res2.GetTTL(), 60)
 
-
 	internalItem := internal[obj.GetResponseCacheKey()]
-	assert.Equal(t, internalItem.expiration, time.Second * time.Duration(res.GetTTL()))
+	assert.Equal(t, internalItem.expiration, time.Second*time.Duration(res.GetTTL()))
 
 	r.Delete(obj)
 	_, err = r.Get(obj)

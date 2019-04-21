@@ -57,6 +57,7 @@ func New(statusCode int, body io.ReadCloser) *Response {
 		res.ContentLength = -1
 	}
 	res.Headers = make(http.Header)
+
 	return &res
 }
 
@@ -277,7 +278,7 @@ func (r *Response) CopyHeadersFrom(src *Response) {
 	r.errorValue = src.errorValue
 }
 
-func (r *Response) IsCachable() bool {
+func (r *Response) IsCacheable() bool {
 	r.parseCacheHeaders()
 	return r.StatusCode > 199 && r.StatusCode < 299 && r.cachable
 }
