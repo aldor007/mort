@@ -1,3 +1,8 @@
+* 0.13.0
+     * Feature: Redis response cache
+     * Feature: Extract transform
+     * Feature: ResizeCropAuto transform
+     * Feature: handle b2 storage
 * 0.12.0    
     * Feature: Add new monitoring metrics (time of image generation and count of it)
     * Feature: Do error placeholder in background (returns it faster to user)
