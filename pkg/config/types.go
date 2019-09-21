@@ -106,6 +106,7 @@ type Bucket struct {
 	Transform *Transform   `yaml:"transform,omitempty"`
 	Storages  StorageTypes `yaml:"storages"`
 	Keys      []S3Key      `yaml:"keys"`
+	Headers map[string]string `yaml:"headers"`
 	Name      string
 }
 

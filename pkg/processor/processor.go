@@ -431,12 +431,25 @@ func (r *RequestProcessor) processImage(obj *object.FileObject, parent *response
 func updateHeaders(obj *object.FileObject, res *response.Response) *response.Response {
 	ctx := obj.Ctx
 
-	headers := config.GetInstance().Headers
+	mortConfig := config.GetInstance()
+	headers := mortConfig.Headers
+	bucket, ok := mortConfig.Buckets[obj.Bucket]
+
+	if ok {
+		for h, v := range bucket.Headers {
+			if res.Headers.Get(h) != "" {
+				res.Set(h, v)
+			}
+		}
+	}
+
 	for _, headerPred := range headers {
 		for _, status := range headerPred.StatusCodes {
 			if status == res.StatusCode {
 				for h, v := range headerPred.Values {
-					res.Set(h, v)
+					if res.Headers.Get(h) != "" {
+						res.Set(h, v)
+					}
 				}
 				return res
 			}

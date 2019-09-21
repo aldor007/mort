@@ -1,3 +1,5 @@
+* 0.14.0
+     * Feature: Allow to define headers per bucket
 * 0.13.0
      * Feature: Redis response cache
      * Feature: Extract transform
