@@ -110,7 +110,7 @@ func (o *FileObject) FillWithRequest(req *http.Request, ctx context.Context) {
 }
 
 func (o *FileObject) GetResponseCacheKey() string {
-	return o.Key + o.Range
+	return o.Bucket + o.Key + o.Range
 }
 
 // LogData log data for given object

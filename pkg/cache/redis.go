@@ -72,7 +72,9 @@ func (c *RedisCache) Get(obj *object.FileObject) (*response.Response, error) {
 		monitoring.Report().Inc("cache_ratio;status:miss")
 	} else {
 		monitoring.Report().Inc("cache_ratio;status:hit")
-		res.Set("x-mort-cache", "hit")
+		if res.Headers != nil {
+			res.Set("x-mort-cache", "hit")
+		}
 	}
 
 	return &res, err

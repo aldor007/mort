@@ -181,8 +181,10 @@ func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *r
 
 		return res
 	case "PUT":
+		go r.responseCache.Delete(obj)
 		return handlePUT(req, obj)
 	case "DELETE":
+		go r.responseCache.Delete(obj)
 		return storage.Delete(obj)
 
 	default:

@@ -441,7 +441,7 @@ func TestObjectCacheKeyQuery(t *testing.T) {
 	obj, err := NewFileObject(pathToURL("/bucket/parent.jpg?width=100&operation=resizeCropAuto&width=100&height=100"), mortConfig)
 	assert.Nil(t, err)
 
-	assert.Equal(t, obj.GetResponseCacheKey(), "/parent.jpg/179e44cbdd0d290829b89286562fa8b6")
+	assert.Equal(t, obj.GetResponseCacheKey(), "bucket/parent.jpg/179e44cbdd0d290829b89286562fa8b6")
 }
 
 func TestFileObject_FillWithRequest(t *testing.T) {
@@ -465,7 +465,7 @@ func TestFileObject_ErrorObject(t *testing.T) {
 	erroredObject, err := NewFileErrorObject("/parent", obj)
 	assert.Nil(t, err)
 
-	assert.Equal(t, erroredObject.GetResponseCacheKey(), "/parenta692a0f768855173")
+	assert.Equal(t, erroredObject.GetResponseCacheKey(), "bucket/parenta692a0f768855173")
 }
 func TestObjectCacheKeyPreset(t *testing.T) {
 	mortConfig := config.GetInstance()
@@ -474,11 +474,11 @@ func TestObjectCacheKeyPreset(t *testing.T) {
 
 	assert.Nil(t, err, "Unexpected to have error when parsing path")
 
-	assert.Equal(t, "/6ca/hei/height-bucket-parent.jpg-6ca0dabe9909875a", obj.GetResponseCacheKey())
+	assert.Equal(t, "bucket/6ca/hei/height-bucket-parent.jpg-6ca0dabe9909875a", obj.GetResponseCacheKey())
 
 	obj.Range = "bytes=1-10"
 
-	assert.Equal(t, "/6ca/hei/height-bucket-parent.jpg-6ca0dabe9909875abytes=1-10", obj.GetResponseCacheKey())
+	assert.Equal(t, "bucket/6ca/hei/height-bucket-parent.jpg-6ca0dabe9909875abytes=1-10", obj.GetResponseCacheKey())
 }
 
 func BenchmarkNewFileObject(b *testing.B) {
