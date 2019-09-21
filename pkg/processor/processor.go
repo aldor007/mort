@@ -437,7 +437,7 @@ func updateHeaders(obj *object.FileObject, res *response.Response) *response.Res
 
 	if ok {
 		for h, v := range bucket.Headers {
-			if res.Headers.Get(h) != "" {
+			if res.Headers.Get(h) == "" {
 				res.Set(h, v)
 			}
 		}
@@ -447,7 +447,7 @@ func updateHeaders(obj *object.FileObject, res *response.Response) *response.Res
 		for _, status := range headerPred.StatusCodes {
 			if status == res.StatusCode {
 				for h, v := range headerPred.Values {
-					if res.Headers.Get(h) != "" {
+					if res.Headers.Get(h) == "" {
 						res.Set(h, v)
 					}
 				}

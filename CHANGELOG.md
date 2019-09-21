@@ -1,3 +1,5 @@
+* 0.14.1
+     * Bugfix: Fix copying headers from object for S3 
 * 0.14.0
      * Feature: Allow to define headers per bucket
 * 0.13.0

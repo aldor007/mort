@@ -37,6 +37,7 @@ func (c *MemoryCache) Get(obj *object.FileObject) (*response.Response, error) {
 		res := cacheValue.Value().(*response.Response)
 		resCp, err := res.Copy()
 		if err == nil {
+			resCp.Set("x-mort-cache", "hit")
 			return resCp, nil
 		}
 	}

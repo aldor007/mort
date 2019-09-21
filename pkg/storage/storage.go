@@ -527,7 +527,7 @@ func parseMetadata(obj *object.FileObject, metadata map[string]interface{}, res 
 	case "s3":
 		for k, v := range metadata {
 			switch k {
-			case "cache-control", "content-type":
+			case "cache-control", "content-type", "content-encoding", "content-language", "content-disposition":
 				res.Set(k, v.(string))
 			default:
 				res.Set(strings.Join([]string{"x-amz-meta", k}, "-"), v.(string))
