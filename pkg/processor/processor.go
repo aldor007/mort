@@ -449,7 +449,9 @@ func updateHeaders(obj *object.FileObject, res *response.Response) *response.Res
 		for _, status := range headerPred.StatusCodes {
 			if status == res.StatusCode {
 				for h, v := range headerPred.Values {
-					if res.Headers.Get(h) == "" {
+					if headerPred.Override {
+						res.Set(h, v)
+					} else if res.Headers.Get(h) == "" {
 						res.Set(h, v)
 					}
 				}

@@ -113,6 +113,7 @@ type Bucket struct {
 // HeaderYaml allow you to override response headers
 type HeaderYaml struct {
 	StatusCodes []int             `yaml:"statusCodes"`
+	Override     bool `yaml:"override`
 	Values      map[string]string `yaml:"values"`
 }
 
