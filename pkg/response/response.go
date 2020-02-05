@@ -7,9 +7,11 @@ import (
 	"github.com/aldor007/mort/pkg/helpers"
 	"github.com/aldor007/mort/pkg/monitoring"
 	"github.com/aldor007/mort/pkg/object"
+	"github.com/aldor007/mort/pkg/transforms"
 	"github.com/djherbis/stream"
 	"github.com/pquerna/cachecontrol/cacheobject"
 	"github.com/vmihailenco/msgpack"
+	"go.uber.org/zap"
 
 	"io"
 	"io/ioutil"
@@ -43,6 +45,7 @@ type Response struct {
 	transformer bodyTransformFnc // function that can transform body writner
 	cachable    bool             // flag indicating if response can be cached
 	ttl         int              // time to live in cache
+	trans       []transforms.Transforms
 }
 
 // New create response object with io.ReadCloser
@@ -184,6 +187,12 @@ func (r *Response) SetDebug(obj *object.FileObject) *Response {
 
 		if obj.HasTransform() {
 			r.Headers.Set("x-mort-transform", "true")
+			buf, err := json.Marshal(r.trans)
+			if err == nil {
+				r.Headers.Set("x-mort-transform-json", string(buf))
+			} else {
+				monitoring.Log().Warn("Response/SetDebug unable to marshal trans", zap.Error(err))
+			}
 		}
 
 		if obj.HasParent() {
@@ -197,6 +206,10 @@ func (r *Response) SetDebug(obj *object.FileObject) *Response {
 
 	r.debug = false
 	return r
+}
+
+func (r *Response) SetTransforms(trans []transforms.Transforms) {
+	r.trans = trans
 }
 
 // HasError check if response contains error
@@ -219,10 +232,6 @@ func (r *Response) Send(w http.ResponseWriter) error {
 	var resStream io.Reader
 	if r.ContentLength != 0 {
 		resStream = r.Stream()
-		if resStream == nil {
-			monitoring.Log().Error("Response send resStream = nil")
-			r.StatusCode = 500
-		}
 	}
 
 	w.WriteHeader(r.StatusCode)
@@ -324,9 +333,13 @@ func (r *Response) Copy() (*Response, error) {
 		c.Headers[k] = v
 	}
 
+	c.trans = make([]transforms.Transforms, len(r.trans))
+	copy(c.trans, r.trans)
+
 	if r.body != nil {
 		c.ContentLength = int64(len(r.body))
-		c.body = r.body
+		c.body = make([]byte, c.ContentLength)
+		copy(c.body, r.body)
 		c.bodySeeker = bytes.NewReader(c.body)
 		c.reader = ioutil.NopCloser(c.bodySeeker)
 	} else if r.reader != nil {

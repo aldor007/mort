@@ -45,12 +45,14 @@ func (c *ImageEngine) Process(obj *object.FileObject, trans []transforms.Transfo
 
 		optsArr, err := tran.BimgOptions(transforms.NewImageInfo(meta, bimg.DetermineImageTypeName(buf)))
 		if err != nil {
+			monitoring.Log().Warn("ImageEngine unable to create opts array age", obj.LogData(zap.Any("transforms", trans), zap.Any("currentTrans", tran), zap.Error(err))...)
 			return response.NewError(500, err), err
 		}
 		optsLen := len(optsArr)
 		for i, opts := range optsArr {
 			buf, err = image.Process(opts)
 			if err != nil {
+				monitoring.Log().Warn("ImageEngine unable to process image", obj.LogData(zap.Any("optsArr", optsArr), zap.Any("opts", opts), zap.Error(err))...)
 				return response.NewError(500, err), err
 			}
 

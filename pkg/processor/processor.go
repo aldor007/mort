@@ -413,8 +413,11 @@ func (r *RequestProcessor) processImage(obj *object.FileObject, parent *response
 	eng := engine.NewImageEngine(parent)
 	res, err := eng.Process(obj, mergedTrans)
 	if err != nil {
-		return response.NewError(400, err)
+		errRes := response.NewError(400, err)
+		errRes.SetTransforms(mergedTrans)
+		return errRes
 	}
+	res.SetTransforms(mergedTrans)
 
 	resCpy, err := res.Copy()
 	if err == nil {

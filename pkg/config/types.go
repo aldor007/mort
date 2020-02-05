@@ -103,17 +103,17 @@ type S3Key struct {
 
 // Bucket describe single bucket entry in config
 type Bucket struct {
-	Transform *Transform   `yaml:"transform,omitempty"`
-	Storages  StorageTypes `yaml:"storages"`
-	Keys      []S3Key      `yaml:"keys"`
-	Headers map[string]string `yaml:"headers"`
+	Transform *Transform        `yaml:"transform,omitempty"`
+	Storages  StorageTypes      `yaml:"storages"`
+	Keys      []S3Key           `yaml:"keys"`
+	Headers   map[string]string `yaml:"headers"`
 	Name      string
 }
 
 // HeaderYaml allow you to override response headers
 type HeaderYaml struct {
 	StatusCodes []int             `yaml:"statusCodes"`
-	Override     bool `yaml:"override`
+	Override    bool              `yaml:"override`
 	Values      map[string]string `yaml:"values"`
 }
 

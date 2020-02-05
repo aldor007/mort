@@ -382,6 +382,12 @@ func Merge(transformsTab []Transforms) []Transforms {
 		transformsTab[i], transformsTab[j] = transformsTab[j], transformsTab[i]
 	}
 
+	for i := 0; i < transLen; i++ {
+		if transformsTab[i].NoMerge {
+			return transformsTab
+		}
+	}
+
 	result := make([]Transforms, 1)
 	baseTrans := transformsTab[0]
 	result[0] = baseTrans
@@ -512,8 +518,17 @@ func (t *Transforms) BimgOptions(imageInfo ImageInfo) ([]bimg.Options, error) {
 	if t.autoCropHeight != 0 || t.autoCropWidth != 0 {
 		bAutoCrop := bimg.Options{}
 		bAutoCrop.Left, bAutoCrop.Top, bAutoCrop.AreaWidth, bAutoCrop.AreaHeight = t.calculateAutoCrop(imageInfo)
-		opts = append(opts, bAutoCrop)
-		opts = append(opts, bimg.Options{Width: t.autoCropWidth, Height: t.autoCropHeight, Crop: true, Gravity: bimg.GravityCentre})
+		if t.width != 0 || t.height != 0 {
+			if t.width > t.areaWidth || t.height > t.areaHeight {
+				opts = append(opts, bAutoCrop, bimg.Options{Width: t.autoCropWidth, Height: t.autoCropHeight, Crop: true, Gravity: bimg.GravityCentre})
+			} else {
+
+				opts = append([]bimg.Options{bAutoCrop, bimg.Options{Width: t.autoCropWidth, Height: t.autoCropHeight, Crop: true, Gravity: bimg.GravityCentre}}, opts...)
+			}
+
+		} else {
+			opts = append(opts, bAutoCrop, bimg.Options{Width: t.autoCropWidth, Height: t.autoCropHeight, Crop: true, Gravity: bimg.GravityCentre})
+		}
 	}
 
 	return opts, nil
