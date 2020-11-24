@@ -97,7 +97,6 @@ func (r *RequestProcessor) Process(req *http.Request, obj *object.FileObject) *r
 func (r *RequestProcessor) processChan(ctx context.Context) {
 	msg := <-r.queue
 	res := r.process(msg.request, msg.obj)
-
 	select {
 	case <-msg.cancel:
 		return
@@ -134,8 +133,11 @@ func (r *RequestProcessor) replyWithError(obj *object.FileObject, sc int, err er
 			transformsTab := []transforms.Transforms{obj.Transforms}
 
 			eng := engine.NewImageEngine(parent)
-			res, _ := eng.Process(obj, transformsTab)
-			r.responseCache.Set(errorObject, updateHeaders(errorObject, res))
+			res, err := eng.Process(obj, transformsTab)
+			if err == nil {
+				res.StatusCode = sc
+				r.responseCache.Set(errorObject, updateHeaders(errorObject, res))
+			}
 		} else {
 			lockData.Cancel <- true
 
