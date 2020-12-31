@@ -4,7 +4,7 @@ FROM ubuntu:18.04 as builder
 ENV LIBVIPS_VERSION 8.6.2
 ENV DEP_VERSION v0.5.1
 ENV GOLANG_VERSION 1.12.1
-ARG TARGETPLATFORM amd64
+ARG TARGETARCH amd64
 
 # Installs libvips + required libraries
 RUN \
@@ -34,7 +34,7 @@ RUN apt-get update && apt-get install -y \
     --no-install-recommends \
   && rm -rf /var/lib/apt/lists/*
 
-ENV GOLANG_DOWNLOAD_URL https://golang.org/dl/go$GOLANG_VERSION.${TARGETPLATFORM/\//-}.tar.gz
+ENV GOLANG_DOWNLOAD_URL https://golang.org/dl/go$GOLANG_VERSION.linux-$TARGETARCH.tar.gz
 
 RUN curl -fsSL --insecure "$GOLANG_DOWNLOAD_URL" -o golang.tar.gz \
   && tar -C /usr/local -xzf golang.tar.gz \
