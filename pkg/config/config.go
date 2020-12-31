@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"os"
 
 	"github.com/aldor007/mort/pkg/helpers"
 	"github.com/aldor007/mort/pkg/monitoring"
@@ -69,6 +70,7 @@ func (c *Config) LoadFromString(data string) error {
 }
 
 func (c *Config) load(data []byte) error {
+	data = []byte(os.ExpandEnv(string(data)))
 	errYaml := yaml.Unmarshal(data, c)
 	if errYaml != nil {
 		panic(errYaml)

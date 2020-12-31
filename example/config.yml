@@ -1,7 +1,6 @@
 server:
   listens:
     - ":8080"
-    - "unix:/var/run//mort.sock"
   monitoring: "prometheus"
   plugins:
     webp: ~
