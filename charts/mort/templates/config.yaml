@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "mort.fullname" . }}-config
+  labels:
+    {{- include "mort.labels" . | nindent 4 }}
+data:
+    config.yaml: |-
+    {{- (.Files.Get "files/config.yaml") | toYaml | nindent 6 }}

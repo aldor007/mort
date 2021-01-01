@@ -1,0 +1,117 @@
+server:
+  listens:
+    - ":8080"
+  monitoring: "prometheus"
+  plugins:
+    webp: ~
+    compress:
+      gzip:
+        types:
+          - text/plain
+          - text/css
+          - application/json
+          - application/javascript
+          - text/xml
+          - application/xml
+          - application/xml+rss
+          - text/javascript
+          - text/html;
+        level: 4
+      brotli:
+        types:
+          - text/plain
+          - text/css
+          - application/json
+          - application/javascript
+          - text/xml
+          - application/xml
+          - application/xml+rss
+          - text/javascript
+          - text/html;
+        level: 4
+
+headers:
+  - statusCodes: [200]
+    values:
+      "cache-control": "max-age=84000, public"
+  - statusCodes: [404, 400]
+    values:
+      "cache-control": "max-age=60, public"
+  - statusCodes: [500, 503]
+    values:
+      "cache-control": "max-age=10, public"
+
+buckets:
+    media:
+        keys:
+          - accessKey: "$MEDIA_ACCESS_KEY"
+            secretAccessKey: "sec"
+        transform:
+            path: "\\/(?P<presetName>[a-z0-9_]+)\\/(?P<parent>.*)"
+            kind: "presets"
+            parentBucket: "media"
+            resultKey: "hash"
+            presets:
+                small:
+                    quality: 75
+                    filters:
+                        thumbnail:
+                            width: 150
+                blur:
+                    quality: 80
+                    filters:
+                        thumbnail:
+                          width: 700
+                        blur:
+                          sigma: 5.0
+                webp:
+                    quality: 100
+                    format: webp
+                    filters:
+                        thumbnail:
+                          width: 1000
+                watermark:
+                    quality: 100
+                    filters:
+                        thumbnail:
+                            width: 1300
+                        watermark:
+                            image: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Imgur_logo.svg/150px-Imgur_logo.svg.png"
+                            position: "center-center"
+                            opacity: 0.5
+        storages:
+            basic:
+                kind: "http"
+                url: "https://i.imgur.com/<item>"
+                headers:
+                  "x--key": "sec"
+            transform:
+                kind: "local-meta"
+                rootPath: "/data/buckets"
+                pathPrefix: "transforms"
+
+    query:
+        keys:
+          - accessKey: "acc"
+            secretAccessKey: "sec"
+        transform:
+            kind: "query"
+            resultKey: "hash"
+        storages:
+            basic:
+                kind: "http"
+                url: "https://i.imgur.com/<item>"
+                headers:
+                  "x--key": "sec"
+            transform:
+                kind: "local-meta"
+                rootPath: "/data/buckets/"
+                pathPrefix: "transforms"
+    local:
+        keys:
+          - accessKey: "acc"
+            secretAccessKey: "sec"
+        storages:
+            basic:
+                kind: "local-meta"
+                rootPath: "/data/buckets/"
