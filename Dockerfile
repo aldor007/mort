@@ -14,7 +14,7 @@ RUN apt-get update && \
     gobject-introspection gtk-doc-tools libglib2.0-dev libjpeg-turbo8-dev libpng-dev \
     libwebp-dev libtiff5-dev libgif-dev libexif-dev libxml2-dev libpoppler-glib-dev \
     swig libmagickwand-dev libpango1.0-dev libmatio-dev libopenslide-dev libcfitsio-dev \
-    libgsf-1-dev fftw3-dev liborc-0.4-dev librsvg2-dev libimagequant-dev libaom-dev && \
+    libgsf-1-dev fftw3-dev liborc-0.4-dev librsvg2-dev libimagequant-dev libaom-dev libbrotli-dev  && \
     cd /tmp && \
     curl -OL https://github.com/libvips/libvips/releases/download/v${LIBVIPS_VERSION}/vips-${LIBVIPS_VERSION}.tar.gz && \
     tar zvxf vips-${LIBVIPS_VERSION}.tar.gz && \
@@ -59,7 +59,7 @@ RUN apt-get update && \
     libglib2.0-0 libjpeg-turbo8 libpng16-16 libopenexr24 \
     libwebp6 libwebpmux3 libwebpdemux2 libtiff5 libgif7 libexif12 libxml2 libpoppler-glib8 \
     libmagickwand-6.q16-6 libpango1.0-0 libmatio-dev libopenslide0 \
-    libgsf-1-114 fftw3 liborc-0.4-0 librsvg2-2 libcfitsio8 libimagequant0 libheif1 && \
+    libgsf-1-114 fftw3 liborc-0.4-0 librsvg2-2 libcfitsio8 libimagequant0 libheif1  libbrotli-dev && \
     apt-get autoremove -y && \
     apt-get autoclean && \
     apt-get clean && \
