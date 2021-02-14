@@ -23,8 +23,7 @@ format:
 tests: unit integrations
 
 docker-push:
-	docker build -t aldor007/mort -f Dockerfile . -t aldor007/mort:latest; docker push aldor007/mort:latest
-
+	docker buildx build --platform linux/amd64,linux/arm64 -t aldor007/mort -f Dockerfile . -t aldor007/mort:latest --push; docker push aldor007/mort:latest
 run-server:
 	mkdir -p /tmp/mort
 	go run cmd/mort/mort.go -config configuration/config.yml

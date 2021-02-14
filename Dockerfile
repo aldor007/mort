@@ -56,7 +56,7 @@ FROM ubuntu:20.04
 
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
-    libglib2.0-0 libjpeg-turbo8 libpng16-16 libopenexr24 \
+    libglib2.0-0 libjpeg-turbo8 libpng16-16 libopenexr24  ca-certificates  \
     libwebp6 libwebpmux3 libwebpdemux2 libtiff5 libgif7 libexif12 libxml2 libpoppler-glib8 \
     libmagickwand-6.q16-6 libpango1.0-0 libmatio-dev libopenslide0 \
     libgsf-1-114 fftw3 liborc-0.4-0 librsvg2-2 libcfitsio8 libimagequant0 libheif1  libbrotli-dev && \
