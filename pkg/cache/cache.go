@@ -18,6 +18,8 @@ func Create(cacheCfg config.CacheCfg) ResponseCache {
 	switch cacheCfg.Type {
 	case "redis":
 		return NewRedis(cacheCfg.Address, cacheCfg.ClientConfig)
+	case "redis-cluster":
+		return NewRedisCluster(cacheCfg.Address, cacheCfg.ClientConfig)
 	default:
 		return NewMemoryCache(cacheCfg.CacheSize)
 	}
