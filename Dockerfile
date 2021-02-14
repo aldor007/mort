@@ -7,8 +7,7 @@ ENV GOLANG_VERSION 1.15.8
 ARG TARGETARCH amd64
 
 # Installs libvips + required libraries
-RUN \
-    apt-get update && \
+RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y \
     ca-certificates \
     automake build-essential curl \
@@ -55,9 +54,7 @@ RUN cd /go/src/github.com/aldor007/mort; go build -o /go/mort cmd/mort/mort.go;
 
 FROM ubuntu:20.04
 
-RUN \
-    # Install runtime dependencies
-    apt-get update && \
+RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
     libglib2.0-0 libjpeg-turbo8 libpng16-16 libopenexr24 \
     libwebp6 libwebpmux3 libwebpdemux2 libtiff5 libgif7 libexif12 libxml2 libpoppler-glib8 \
