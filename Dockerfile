@@ -1,4 +1,4 @@
-FROM ubuntu:18.04 as builder
+FROM ubuntu:20.04 as builder
 
 # ENV LIBVIPS_VERSION 8.7.3
 ENV LIBVIPS_VERSION 8.10.2
@@ -10,11 +10,12 @@ ARG TARGETARCH amd64
 RUN \
     apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    ca-certificates \
     automake build-essential curl \
     gobject-introspection gtk-doc-tools libglib2.0-dev libjpeg-turbo8-dev libpng-dev \
     libwebp-dev libtiff5-dev libgif-dev libexif-dev libxml2-dev libpoppler-glib-dev \
     swig libmagickwand-dev libpango1.0-dev libmatio-dev libopenslide-dev libcfitsio-dev \
-    libgsf-1-dev fftw3-dev liborc-0.4-dev librsvg2-dev swig libbrotli-dev && \
+    libgsf-1-dev fftw3-dev liborc-0.4-dev librsvg2-dev libimagequant-dev libaom-dev && \
     cd /tmp && \
     curl -OL https://github.com/libvips/libvips/releases/download/v${LIBVIPS_VERSION}/vips-${LIBVIPS_VERSION}.tar.gz && \
     tar zvxf vips-${LIBVIPS_VERSION}.tar.gz && \
@@ -52,19 +53,16 @@ ADD . /go/src/github.com/aldor007/mort
 # RUN cd /go/src/github.com/aldor007/mort &&  dep ensure -vendor-only
 RUN cd /go/src/github.com/aldor007/mort; go build -o /go/mort cmd/mort/mort.go;
 
-FROM ubuntu:18.04
+FROM ubuntu:20.04
 
 RUN \
     # Install runtime dependencies
     apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
-    libglib2.0-0 libjpeg-turbo8 libpng16-16 libopenexr22 \
-    libwebp6 libtiff5 libgif7 libexif12 libxml2 libpoppler-glib8 \
-    libmagickwand-6.q16hdri-3 libmagickcore-6.q16-3-extra  libmagickcore-6.q16hdri-3 \
-    libpango1.0-0 libmatio4 libopenslide0 libwebpmux3 \
-    libgsf-1-114 fftw3  liborc-0.4 librsvg2-2 libcfitsio-bin libbrotli1 && \
-    apt-get install -y ca-certificates && \
-    # Clean up
+    libglib2.0-0 libjpeg-turbo8 libpng16-16 libopenexr24 \
+    libwebp6 libwebpmux3 libwebpdemux2 libtiff5 libgif7 libexif12 libxml2 libpoppler-glib8 \
+    libmagickwand-6.q16-6 libpango1.0-0 libmatio-dev libopenslide0 \
+    libgsf-1-114 fftw3 liborc-0.4-0 librsvg2-2 libcfitsio8 libimagequant0 libheif1 && \
     apt-get autoremove -y && \
     apt-get autoclean && \
     apt-get clean && \
