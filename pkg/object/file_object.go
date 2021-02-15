@@ -113,6 +113,25 @@ func (o *FileObject) GetResponseCacheKey() string {
 	return o.Bucket + o.Key + o.Range
 }
 
+func (o *FileObject) Copy() *FileObject{
+	copy := FileObject{
+		Uri:            o.Uri,
+		Bucket:         o.Bucket,
+		Key:            o.Key,
+		key:            o.key,
+		Transforms:     o.Transforms,
+		Storage:        o.Storage,
+		Parent:         o.Parent,
+		CheckParent:    o.CheckParent,
+		allowChangeKey: o.allowChangeKey,
+		Debug:          o.Debug,
+		Ctx:            context.Background(),
+		Range:          o.Range,
+	}
+
+	return &copy
+}
+
 // LogData log data for given object
 func (obj *FileObject) LogData(fields ...zapcore.Field) []zapcore.Field {
 	result := []zapcore.Field{zap.String("obj.path", obj.Uri.Path), zap.String("obj.Key", obj.Key), zap.String("obj.Bucket", obj.Bucket), zap.String("obj.Storage", obj.Storage.Kind),

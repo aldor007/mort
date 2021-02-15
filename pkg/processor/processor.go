@@ -170,10 +170,11 @@ func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *r
 
 		if res.IsCacheable() && res.ContentLength != -1 && res.ContentLength < r.serverConfig.Cache.MaxCacheItemSize {
 			resCpy, err := res.Copy()
+			objCpy := obj.Copy()
 			if err == nil {
 				go func() {
 					resCpy.ReadBody()
-					err = r.responseCache.Set(obj, resCpy)
+					err = r.responseCache.Set(objCpy, resCpy)
 					if err != nil {
 						monitoring.Log().Error("response cache error set", obj.LogData(zap.Error(err))...)
 					}
