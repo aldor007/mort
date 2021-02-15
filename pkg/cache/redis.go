@@ -10,7 +10,6 @@ import (
 	"github.com/vmihailenco/msgpack"
 	"strings"
 	"time"
-	"strconv"
 )
 
 func parseAddress(addrs []string) map[string]string {
@@ -51,12 +50,6 @@ func NewRedis(redisAddress []string, clientConfig map[string]string) *RedisCache
 func NewRedisCluster(redisAddress []string, clientConfig map[string]string) *RedisCache {
 	ring := goRedis.NewClusterClient(&goRedis.ClusterOptions{
 		Addrs: redisAddress,
-		NewClient: func(opt *goRedis.Options) *goRedis.Client {
-			if db, ok := clientConfig["db"]; ok {
-				opt.DB, _ = strconv.Atoi(db)
-			}
-			return goRedis.NewClient(opt)
-		},
 	})
 	cache := redisCache.New(&redisCache.Options{
 		Redis:      ring,
@@ -71,6 +64,9 @@ func NewRedisCluster(redisAddress []string, clientConfig map[string]string) *Red
 
 	return &RedisCache{cache}
 }
+func (c *RedisCache) getKey(obj *object.FileObject) string {
+	return "mort-v1:" + obj.GetResponseCacheKey()
+}
 
 // Set put response into cache
 func (c *RedisCache) Set(obj *object.FileObject, res *response.Response) error {
@@ -80,7 +76,7 @@ func (c *RedisCache) Set(obj *object.FileObject, res *response.Response) error {
 		return err
 	}
 	item := redisCache.Item{
-		Key:        obj.GetResponseCacheKey(),
+		Key:      c.getKey(obj),
 		Value:   v,
 		TTL: time.Second * time.Duration(res.GetTTL()),
 	}
@@ -91,7 +87,7 @@ func (c *RedisCache) Set(obj *object.FileObject, res *response.Response) error {
 func (c *RedisCache) Get(obj *object.FileObject) (*response.Response, error) {
 	var buf []byte
 	var res response.Response
-	err := c.client.Get(obj.Ctx, obj.GetResponseCacheKey(), &buf)
+	err := c.client.Get(obj.Ctx, c.getKey(obj), &buf)
 	if err != nil {
 		monitoring.Report().Inc("cache_ratio;status:miss")
 	} else {
@@ -107,5 +103,5 @@ func (c *RedisCache) Get(obj *object.FileObject) (*response.Response, error) {
 
 // Delete remove response from cache
 func (c *RedisCache) Delete(obj *object.FileObject) error {
-	return c.client.Delete(obj.Ctx, obj.GetResponseCacheKey())
+	return c.client.Delete(obj.Ctx, c.getKey(obj))
 }
