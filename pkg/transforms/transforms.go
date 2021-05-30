@@ -6,10 +6,11 @@ import (
 	"hash"
 	"strings"
 
+	"math"
+
 	"github.com/aldor007/mort/pkg/helpers"
 	"github.com/spaolacci/murmur3"
 	"gopkg.in/h2non/bimg.v1"
-	"math"
 )
 
 var watermarkPosX = map[string]float32{
@@ -78,32 +79,34 @@ func NewImageInfo(metadata bimg.ImageMetadata, format string) ImageInfo {
 
 // Transforms struct hold information about what operations should be performed on image
 type Transforms struct {
-	height         int
-	width          int
-	areaHeight     int
-	areaWidth      int
-	quality        int
-	compression    int
-	zoom           int
-	top            int
-	left           int
-	crop           bool
-	enlarge        bool
-	embed          bool
-	flip           bool
-	flop           bool
-	force          bool
-	noAutoRotate   bool
-	noProfile      bool
-	interlace      bool
-	stripMetadata  bool
-	trim           bool
-	rotate         bimg.Angle
-	interpretation bimg.Interpretation
-	gravity        bimg.Gravity
-	blur           blur
-	format         bimg.ImageType
-	FormatStr      string
+	height              int
+	width               int
+	areaHeight          int
+	areaWidth           int
+	quality             int
+	compression         int
+	zoom                int
+	top                 int
+	left                int
+	crop                bool
+	enlarge             bool
+	embed               bool
+	fill                bool
+	flip                bool
+	flop                bool
+	force               bool
+	noAutoRotate        bool
+	noProfile           bool
+	interlace           bool
+	stripMetadata       bool
+	trim                bool
+	preserveAspectRatio bool
+	rotate              bimg.Angle
+	interpretation      bimg.Interpretation
+	gravity             bimg.Gravity
+	blur                blur
+	format              bimg.ImageType
+	FormatStr           string
 
 	watermark watermark
 
@@ -122,15 +125,23 @@ func New() Transforms {
 }
 
 // Resize change image width and height
-func (t *Transforms) Resize(width, height int, enlarge bool) error {
+func (t *Transforms) Resize(width, height int, enlarge bool, preserveAspectRatio bool, fill bool) error {
 	t.width = width
 	t.height = height
 	t.enlarge = enlarge
+	t.preserveAspectRatio = preserveAspectRatio
+	t.fill = fill
 
 	t.transHash.write(1111, uint64(t.width)*7, uint64(t.height)*3)
 
 	if t.enlarge {
 		t.transHash.write(12311)
+	}
+	if t.preserveAspectRatio {
+		t.transHash.write(700000001)
+	}
+	if t.fill {
+		t.transHash.write(700000002)
 	}
 
 	t.NotEmpty = true
@@ -327,6 +338,13 @@ func (t *Transforms) Merge(other Transforms) error {
 		t.embed = other.embed
 	}
 
+	if other.preserveAspectRatio {
+		t.preserveAspectRatio = other.preserveAspectRatio
+	}
+	if other.fill {
+		t.fill = other.fill
+	}
+
 	t.autoCropWidth = other.autoCropWidth
 	t.autoCropHeight = other.autoCropHeight
 	t.areaHeight = other.areaHeight
@@ -449,6 +467,32 @@ func (t *Transforms) calculateAutoCrop(info ImageInfo) (int, int, int, int) {
 // BimgOptions return complete options for bimg lib
 func (t *Transforms) BimgOptions(imageInfo ImageInfo) ([]bimg.Options, error) {
 	var opts []bimg.Options
+	if t.fill && t.width > 0 && t.height > 0 {
+		ar := float64(t.width) / float64(t.height)
+		b := bimg.Options{
+			Crop: true,
+		}
+		if ar > 1 {
+			b.Width = imageInfo.width
+			b.Height = int(float64(imageInfo.width) / ar)
+		} else {
+			b.Height = imageInfo.height
+			b.Width = int(float64(imageInfo.height) * ar)
+		}
+		// log.Printf("FILL %v w=%v h=%v iw=%v ih=%v\n", ar, b.Width, b.Height, imageInfo.width, imageInfo.height)
+		opts = append(opts, b)
+	}
+
+	if t.preserveAspectRatio && t.width != 0 && t.height != 0 {
+		verticalRatio := imageInfo.width / t.width
+		horizontalRatio := imageInfo.height / t.height
+		if verticalRatio < horizontalRatio {
+			t.width = 0
+		} else {
+			t.height = 0
+		}
+	}
+
 	b := bimg.Options{
 		Width:         t.width,
 		Height:        t.height,

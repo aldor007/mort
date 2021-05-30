@@ -10,6 +10,13 @@ import (
 	"github.com/go-chi/chi/middleware"
 	"go.uber.org/zap"
 
+	"net"
+	"os"
+	"os/signal"
+	"strings"
+	"sync"
+	"syscall"
+
 	"github.com/aldor007/mort/pkg/config"
 	"github.com/aldor007/mort/pkg/lock"
 	mortMiddleware "github.com/aldor007/mort/pkg/middleware"
@@ -21,17 +28,13 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap/zapcore"
-	"net"
-	"os"
-	"os/signal"
-	"strings"
-	"sync"
-	"syscall"
+
+	_ "github.com/aldor007/mort/pkg/object/cloudinary"
 )
 
 const (
 	// Version of mort
-	Version = "0.15.0"
+	Version = "0.16.0"
 	// BANNER just fancy command line banner
 	BANNER = `
   /\/\   ___  _ __| |_
@@ -243,7 +246,7 @@ func main() {
 			res.Set("Access-Control-Allow-Origin", "*")
 			defer monitoring.Log().Sync() // flushes buffer, if any
 			if res.HasError() {
-				monitoring.Log().Warn("Mort process error", zap.String("obj.Key", obj.Key), zap.Error(res.Error()))
+				monitoring.Log().Error("Mort process error", zap.String("obj.Key", obj.Key), zap.Error(res.Error()))
 			}
 
 			res.SendContent(req, resWriter)

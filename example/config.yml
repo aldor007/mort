@@ -115,3 +115,22 @@ buckets:
             basic:
                 kind: "local-meta"
                 rootPath: "/data/buckets/"
+
+    cloudinary:
+        transform:
+            kind: "cloudinary"
+            resultKey: "hash"
+            parentBucket: "cloudinary"
+            path: "(?:\\/)(?P<transformations>[^\\/]+)?(?P<parent>\\/[^\\/]*)"
+        storages:
+            basic:
+                kind: "http"
+                url: "https://i.imgur.com/<item>"
+                headers:
+                  "x--key": "sec"
+            transform:
+                kind: "noop"
+            # transform:
+            #     kind: "local-meta"
+            #     rootPath: "/tmp/cache"
+            #     pathPrefix: "transforms"
