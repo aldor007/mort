@@ -2,15 +2,18 @@ package object
 
 import (
 	"errors"
+
 	"github.com/aldor007/mort/pkg/config"
 	"github.com/aldor007/mort/pkg/monitoring"
 	"github.com/aldor007/mort/pkg/transforms"
+
 	//"github.com/aldor007/mort/pkg/object"
-	"go.uber.org/zap"
 	"net/url"
 	"path"
 	"strings"
 	"sync"
+
+	"go.uber.org/zap"
 )
 
 func init() {
@@ -81,7 +84,7 @@ func presetToTransform(preset config.Preset) (transforms.Transforms, error) {
 	filters := preset.Filters
 
 	if filters.Thumbnail != nil {
-		err := trans.Resize(filters.Thumbnail.Width, filters.Thumbnail.Height, filters.Thumbnail.Mode == "outbound")
+		err := trans.Resize(filters.Thumbnail.Width, filters.Thumbnail.Height, filters.Thumbnail.Mode == "outbound", false, false)
 		if err != nil {
 			return trans, err
 		}

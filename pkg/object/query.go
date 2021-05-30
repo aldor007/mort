@@ -1,11 +1,12 @@
 package object
 
 import (
-	"github.com/aldor007/mort/pkg/config"
-	"github.com/aldor007/mort/pkg/transforms"
 	"net/url"
 	"path"
 	"strconv"
+
+	"github.com/aldor007/mort/pkg/config"
+	"github.com/aldor007/mort/pkg/transforms"
 )
 
 func init() {
@@ -76,7 +77,7 @@ func parseOperation(query url.Values) (transforms.Transforms, error) {
 		w, err1 := queryToInt(query, "width")
 		h, err2 := queryToInt(query, "height")
 		if (err1 == nil || err2 == nil) && (w != 0 || h != 0) {
-			err = trans.Resize(w, h, false)
+			err = trans.Resize(w, h, false, false, false)
 			if err != nil {
 				return trans, err
 			}
@@ -93,7 +94,7 @@ func parseOperation(query url.Values) (transforms.Transforms, error) {
 					w, _ = queryToInt(query, "width")
 					h, _ = queryToInt(query, "height")
 
-					err = trans.Resize(w, h, false)
+					err = trans.Resize(w, h, false, false, false)
 					if err != nil {
 						return trans, err
 					}
