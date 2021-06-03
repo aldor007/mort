@@ -2,7 +2,6 @@ package cloudinary
 
 import (
 	"errors"
-	"log"
 	"net/url"
 	"path"
 	"strings"
@@ -41,7 +40,7 @@ func (c *Decoder) getCached(definition string) (transforms.Transforms, bool) {
 	return t, exists
 }
 
-func (c *Decoder) translate(definition string) (transforms.Transforms, error) {
+func (c *Decoder) createTransformationsFromDefinition(definition string) (transforms.Transforms, error) {
 	parser, err := newNotationParser(definition)
 	if err != nil {
 		return transforms.Transforms{}, err
@@ -56,6 +55,21 @@ func (c *Decoder) translate(definition string) (transforms.Transforms, error) {
 	return transform, nil
 }
 
+func (c *Decoder) getTransformations(transformationsDefinition string) (transforms.Transforms, error) {
+	var err error
+	t, ok := c.getCached(transformationsDefinition)
+	if !ok {
+		t, err = c.createTransformationsFromDefinition(transformationsDefinition)
+		if err != nil && err != errNoToken {
+			return t, err
+		}
+		c.cacheLock.Lock()
+		c.cache[transformationsDefinition] = t
+		c.cacheLock.Unlock()
+	}
+	return t, nil
+}
+
 // decodePreset parse given url by matching user defined regexp with request path
 func (c *Decoder) decode(_ *url.URL, bucketConfig config.Bucket, obj *object.FileObject) (string, error) {
 	trans := bucketConfig.Transform
@@ -63,7 +77,6 @@ func (c *Decoder) decode(_ *url.URL, bucketConfig config.Bucket, obj *object.Fil
 	if matches == nil {
 		return "", nil
 	}
-
 	subMatchMap := make(map[string]string)
 
 	for i, name := range trans.PathRegexp.SubexpNames() {
@@ -73,25 +86,17 @@ func (c *Decoder) decode(_ *url.URL, bucketConfig config.Bucket, obj *object.Fil
 	}
 
 	transformationsDefinition := subMatchMap["transformations"]
-
-	var err error
-	t, ok := c.getCached(transformationsDefinition)
-	if ok {
-		obj.Transforms = t
-	} else {
-		obj.Transforms, err = c.translate(transformationsDefinition)
-		switch {
-		case errors.Is(err, notImplementedError{}):
-			monitoring.Log().Error("Cloudinary", append([]zapcore.Field{zap.Error(err)}, obj.LogData()...)...)
-		case err == nil, err == errNoToken:
-		default:
+	if transformationsDefinition != "" {
+		var err error
+		obj.Transforms, err = c.getTransformations(transformationsDefinition)
+		if err != nil {
+			if errors.Is(err, notImplementedError{}) {
+				monitoring.Log().Error("Cloudinary", append([]zapcore.Field{zap.Error(err)}, obj.LogData()...)...)
+				return "", err
+			}
 			monitoring.Log().Info("Cloudinary", append([]zapcore.Field{zap.Error(err)}, obj.LogData()...)...)
 			return "", err
 		}
-
-		c.cacheLock.Lock()
-		c.cache[transformationsDefinition] = obj.Transforms
-		c.cacheLock.Unlock()
 	}
 
 	parent := subMatchMap["parent"]
@@ -101,6 +106,5 @@ func (c *Decoder) decode(_ *url.URL, bucketConfig config.Bucket, obj *object.Fil
 		parent = "/" + parent
 	}
 
-	log.Printf("tutaj %+v %+v %s %+v\n", matches, subMatchMap, parent, obj.Transforms.NotEmpty)
 	return parent, nil
 }

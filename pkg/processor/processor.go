@@ -3,10 +3,11 @@ package processor
 import (
 	"context"
 	"errors"
-	"github.com/aldor007/mort/pkg/cache"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/aldor007/mort/pkg/cache"
 
 	"github.com/aldor007/mort/pkg/config"
 	"github.com/aldor007/mort/pkg/engine"
@@ -251,7 +252,7 @@ func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) 
 	var res *response.Response
 	var parentRes *response.Response
 
-	// search for last parent
+	// search for root parent
 	for currObj.HasParent() {
 		if currObj.HasTransform() {
 			transformsTab = append(transformsTab, currObj.Transforms)
@@ -267,30 +268,22 @@ func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) 
 	parentChan := make(chan *response.Response, 1)
 
 	go func(o *object.FileObject) {
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case resChan <- storage.Get(o):
-				return
-			default:
-
-			}
+		select {
+		case <-ctx.Done():
+			return
+		case resChan <- storage.Get(o):
+			return
 		}
 	}(obj)
 
 	// get parent from storage
 	if parentObj != nil && obj.CheckParent {
 		go func(p *object.FileObject) {
-			for {
-				select {
-				case <-ctx.Done():
-					return
-				case parentChan <- storage.Head(p):
-					return
-				default:
-
-				}
+			select {
+			case <-ctx.Done():
+				return
+			case parentChan <- storage.Head(p):
+				return
 			}
 		}(parentObj)
 	}
@@ -334,35 +327,35 @@ func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) 
 }
 
 func (r *RequestProcessor) handleNotFound(obj, parentObj *object.FileObject, transformsTab []transforms.Transforms, parentRes, res *response.Response) *response.Response {
-	if parentObj != nil {
-		if !obj.CheckParent {
-			parentRes = storage.Head(parentObj)
-		}
-
-		if parentRes.HasError() {
-			return r.replyWithError(obj, parentRes.StatusCode, parentRes.Error())
-		} else if parentRes.StatusCode == 404 {
-			monitoring.Log().Warn("Missing parent for object", obj.LogData()...)
-			return parentRes
-		}
-
-		if obj.HasTransform() && parentRes.StatusCode == 200 && parentRes.IsImage() {
-			defer res.Close()
-			parentRes.Close()
-			parentRes = storage.Get(parentObj)
-
-			defer parentRes.Close()
-
-			return r.processImage(obj, parentRes, transformsTab)
-		} else if obj.HasTransform() {
-			parentRes.Close()
-			monitoring.Log().Warn("Not performing transforms", obj.LogData(zap.Int("parent.sc", parentRes.StatusCode),
-				zap.String("parent.ContentType", parentRes.Headers.Get(response.HeaderContentType)), zap.Error(parentRes.Error()))...)
-		}
-
+	// We can close res as we will not use it
+	res.Close()
+	if parentObj == nil {
+		return res
 	}
 
-	return res
+	if !obj.CheckParent {
+		parentRes = storage.Head(parentObj)
+	}
+
+	if parentRes.HasError() {
+		return r.replyWithError(obj, parentRes.StatusCode, parentRes.Error())
+	} else if parentRes.StatusCode == 404 {
+		monitoring.Log().Warn("Missing parent for object", obj.LogData()...)
+		return parentRes
+	}
+	parentRes.Close()
+	if parentRes.StatusCode != 200 || !parentRes.IsImage() {
+		// monitoring.Log().Warn("Not performing transforms", obj.LogData(zap.Int("parent.sc", parentRes.StatusCode),
+		// 	zap.String("parent.ContentType", parentRes.Headers.Get(response.HeaderContentType)), zap.Error(parentRes.Error()))...)
+		return res
+	}
+	parentRes = storage.Get(parentObj)
+	if obj.HasTransform() {
+		// processImage returns new response so both parentRes must be closed
+		defer parentRes.Close()
+		return r.processImage(obj, parentRes, transformsTab)
+	}
+	return parentRes
 }
 
 func handleS3Get(req *http.Request, obj *object.FileObject) *response.Response {
