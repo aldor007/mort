@@ -3,7 +3,7 @@ FROM ubuntu:20.04 as builder
 # ENV LIBVIPS_VERSION 8.7.3
 ENV LIBVIPS_VERSION 8.10.2
 ENV DEP_VERSION v0.5.1
-ENV GOLANG_VERSION 1.15.8
+ENV GOLANG_VERSION 1.16.4
 ARG TARGETARCH amd64
 
 # Installs libvips + required libraries
@@ -46,11 +46,10 @@ ENV PATH $WORKDIR/bin:/usr/local/go/bin:$PATH
 
 RUN mkdir -p "$WORKDIR/src" "$WORKDIR/bin" && chmod -R 777 "$WORKDIR"
 WORKDIR $WORKDIR
-# RUN curl -fsSL -o /usr/local/bin/dep https://github.com/golang/dep/releases/download/$DEP_VERSION/dep-linux-amd64 && chmod +x /usr/local/bin/dep
-ADD . /go/src/github.com/aldor007/mort
+ADD . /go/src
 
 # RUN cd /go/src/github.com/aldor007/mort &&  dep ensure -vendor-only
-RUN cd /go/src/github.com/aldor007/mort; go build -o /go/mort cmd/mort/mort.go;
+RUN cd /go/src; go build -o /go/mort cmd/mort/mort.go;
 
 FROM ubuntu:20.04
 
@@ -73,13 +72,12 @@ RUN rm -rf /go/src; rm -rf /usr/share/; rm -rf /usr/include/
 COPY --from=builder /usr/local/lib /usr/local/lib
 RUN ldconfig
 COPY --from=builder /go/mort /go/mort
-COPY --from=builder /go/src/github.com/aldor007/mort/configuration/config.yml /etc/mort/mort.yml
-RUN /go/mort -version
+COPY --from=builder /go/src/configuration/config.yml /etc/mort/mort.yml
 # add mime types
 ADD http://svn.apache.org/viewvc/httpd/httpd/branches/2.2.x/docs/conf/mime.types?view=co /etc/mime.types
 
+RUN /go/mort -version
 # Run the outyet command by default when the container starts.
 ENTRYPOINT ["/go/mort"]
-
 # Expose the server TCP port
 EXPOSE 8080 8081
