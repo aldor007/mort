@@ -17,6 +17,7 @@ An S3-compatible image processing server written in Go. Still in active developm
 * Build in rate limiter
 * HTTP Range and Conditional requests
 * Compression (gzip, brotli)
+* Env variables driven configuration
 
 And more see [changelog](CHANGELOG.md) for more info
 

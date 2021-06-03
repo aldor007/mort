@@ -4,13 +4,17 @@ import (
 	"bytes"
 	"encoding/hex"
 	"errors"
-	"github.com/aldor007/mort/pkg/config"
-	"github.com/spaolacci/murmur3"
+	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
 	"sync"
+
+	"github.com/aldor007/mort/pkg/config"
+	"github.com/spaolacci/murmur3"
 )
+
+var errUnknownBucket = errors.New("unknown bucket")
 
 var bufPool = sync.Pool{
 	New: func() interface{} {
@@ -37,58 +41,57 @@ func Parse(url *url.URL, mortConfig *config.Config, obj *FileObject) error {
 	if lenElements < 2 {
 		return errors.New("invalid path " + url.Path)
 	}
-
 	obj.Bucket = elements[1]
 	if lenElements > 2 {
 		obj.Key = "/" + elements[2]
 		obj.key = elements[2]
 	}
-
-	var parent string
-	if bucketConfig, ok := mortConfig.Buckets[obj.Bucket]; ok {
-		var err error
-		var parentObj *FileObject
-		if bucketConfig.Transform != nil {
-			if fn, ok := parsers[bucketConfig.Transform.Kind]; ok {
-				parent, err = fn(url, bucketConfig, obj)
-			}
-
-			if err != nil {
-				return err
-			}
-
-			if parent == "" {
-				obj.Storage = bucketConfig.Storages.Basic()
-				return err
-			}
-
-			parentObj, err = newFileObjectFromPath(parent, mortConfig, false)
-			if parentObj.Bucket == obj.Bucket {
-				parentObj.Storage = bucketConfig.Storages.Get(bucketConfig.Transform.ParentStorage)
-			}
-
-			obj.Parent = parentObj
-			obj.CheckParent = bucketConfig.Transform.CheckParent
-			if obj.Transforms.NotEmpty && obj.allowChangeKey {
-				obj.Storage = bucketConfig.Storages.Transform()
-				switch bucketConfig.Transform.ResultKey {
-				case "hash":
-					obj.Key = hashKey(obj)
-				case "hashParent":
-					obj.Key = hashKeyParent(obj)
-				}
-			} else {
-				obj.Storage = bucketConfig.Storages.Basic()
-			}
-		} else {
-			obj.Storage = bucketConfig.Storages.Basic()
-		}
-
-		return err
-
+	bucketConfig, ok := mortConfig.Buckets[obj.Bucket]
+	if !ok {
+		return errUnknownBucket
+	}
+	// Assign default storage.
+	obj.Storage = bucketConfig.Storages.Basic()
+	if bucketConfig.Transform == nil {
+		return nil
+	}
+	// Get transform parser and execute it.
+	fn, ok := parsers[bucketConfig.Transform.Kind]
+	if !ok {
+		return fmt.Errorf("unknown transform of kind '%s'", bucketConfig.Transform.Kind)
+	}
+	parent, err := fn(url, bucketConfig, obj)
+	if err != nil {
+		return fmt.Errorf("transform '%s' parser failed: %w", bucketConfig.Transform.Kind, err)
+	}
+	if parent == "" {
+		return nil
 	}
 
-	return errors.New("unknown bucket")
+	// Creating new object for a parent.
+	var parentObj *FileObject
+	parentObj, err = newFileObjectFromPath(parent, mortConfig, false)
+	if err != nil {
+		return fmt.Errorf("failed to get transformed object for %s: %w", parent, err)
+	}
+	parentObj.Storage = bucketConfig.Storages.Get(bucketConfig.Transform.ParentStorage)
+	obj.Parent = parentObj
+	obj.CheckParent = bucketConfig.Transform.CheckParent
+	// In case of no transformation available object will be fetched from parent
+	// without creating the duplicate in the transform storage.
+	obj.Storage = bucketConfig.Storages.Noop()
+	if obj.Transforms.NotEmpty {
+		obj.Storage = bucketConfig.Storages.Transform()
+		if obj.allowChangeKey {
+			switch bucketConfig.Transform.ResultKey {
+			case "hash":
+				obj.Key = hashKey(obj)
+			case "hashParent":
+				obj.Key = hashKeyParent(obj)
+			}
+		}
+	}
+	return nil
 }
 
 func hashKey(obj *FileObject) string {

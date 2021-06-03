@@ -90,6 +90,10 @@ func (s *StorageTypes) Transform() Storage {
 	return s.Get("transform")
 }
 
+func (s *StorageTypes) Noop() Storage {
+	return Storage{Kind: "noop"}
+}
+
 // Get basic method for getting storage by name
 func (s *StorageTypes) Get(name string) Storage {
 	return (*s)[name]

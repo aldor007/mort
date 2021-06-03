@@ -48,8 +48,8 @@ RUN mkdir -p "$WORKDIR/src" "$WORKDIR/bin" && chmod -R 777 "$WORKDIR"
 WORKDIR $WORKDIR
 ADD . /go/src
 
-# RUN cd /go/src/github.com/aldor007/mort &&  dep ensure -vendor-only
 RUN cd /go/src; go build -o /go/mort cmd/mort/mort.go;
+
 
 FROM ubuntu:20.04
 
