@@ -4,13 +4,15 @@ import (
 	"github.com/aldor007/mort/pkg/config"
 	"github.com/aldor007/mort/pkg/monitoring"
 	"github.com/aldor007/mort/pkg/transforms"
+
 	//"github.com/aldor007/mort/pkg/uri"
 	"context"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 	"net/http"
 	"net/url"
 	"strconv"
+
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 // FileObject is representing parsed request for image or file
@@ -73,7 +75,12 @@ func NewFileObject(uri *url.URL, mortConfig *config.Config) (*FileObject, error)
 	obj.allowChangeKey = true
 
 	err := Parse(uri, mortConfig, &obj)
-
+	switch {
+	case err == errUnknownBucket:
+		// continue
+	case err != nil:
+		monitoring.Log().Error("FileObject", append(obj.LogData(), zap.Error(err))...)
+	}
 	monitoring.Log().Info("FileObject", obj.LogData()...)
 	return &obj, err
 }
@@ -85,7 +92,7 @@ func (o *FileObject) HasParent() bool {
 
 // HasTransform inform if object has transform
 func (o *FileObject) HasTransform() bool {
-	return o.Transforms.NotEmpty == true
+	return o.Transforms.NotEmpty
 }
 
 //  Type returns type of object "parent" or "transform"
@@ -93,7 +100,6 @@ func (o *FileObject) Type() string {
 	if o.HasTransform() {
 		return "transform"
 	}
-
 	return "parent"
 }
 
@@ -113,7 +119,7 @@ func (o *FileObject) GetResponseCacheKey() string {
 	return o.Bucket + o.Key + o.Range
 }
 
-func (o *FileObject) Copy() *FileObject{
+func (o *FileObject) Copy() *FileObject {
 	copy := FileObject{
 		Uri:            o.Uri,
 		Bucket:         o.Bucket,

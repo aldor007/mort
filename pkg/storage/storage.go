@@ -2,6 +2,7 @@ package storage
 
 import (
 	"encoding/json"
+
 	"github.com/aldor007/stow"
 	httpStorage "github.com/aldor007/stow/http"
 	fileStorage "github.com/aldor007/stow/local"
@@ -9,13 +10,6 @@ import (
 
 	"encoding/xml"
 	"fmt"
-	"github.com/aldor007/mort/pkg/monitoring"
-	"github.com/aldor007/mort/pkg/object"
-	"github.com/aldor007/mort/pkg/response"
-	b2Storage "github.com/aldor007/stow/b2"
-	_ "github.com/aldor007/stow/noop"
-	s3Storage "github.com/aldor007/stow/s3"
-	"go.uber.org/zap"
 	"io"
 	"mime"
 	"net/http"
@@ -23,6 +17,14 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/aldor007/mort/pkg/monitoring"
+	"github.com/aldor007/mort/pkg/object"
+	"github.com/aldor007/mort/pkg/response"
+	b2Storage "github.com/aldor007/stow/b2"
+	_ "github.com/aldor007/stow/noop"
+	s3Storage "github.com/aldor007/stow/s3"
+	"go.uber.org/zap"
 )
 
 const notFound = "{\"error\":\"item not found\"}"
@@ -70,7 +72,7 @@ func Get(obj *object.FileObject) *response.Response {
 	item, err := client.Item(key)
 	if err != nil {
 		if err == stow.ErrNotFound {
-			monitoring.Log().Info("Storage/Get item response", zap.String("obj.Key", obj.Key), zap.String("key", key), zap.String("obj.Bucket", obj.Bucket), zap.Int("statusCode", 404))
+			monitoring.Log().Info("Storage/Get item response", zap.String("obj.Storage.Kind", obj.Storage.Kind), zap.String("obj.Key", obj.Key), zap.String("key", key), zap.String("obj.Bucket", obj.Bucket), zap.Int("statusCode", 404))
 			return response.NewString(404, notFound)
 		}
 
@@ -78,32 +80,32 @@ func Get(obj *object.FileObject) *response.Response {
 		return response.NewError(500, err)
 	}
 
-	if isDir(item) == false {
-		resData := newResponseData()
-		var reader io.ReadCloser
-
-		if instance.client.HasRanges() && obj.Range != "" {
-			params := make(map[string]interface{}, 1)
-			params["range"] = obj.Range
-			reader, err = item.OpenParams(params)
-			resData.statusCode = 206
-		} else {
-			reader, err = item.Open()
-			resData.statusCode = 200
-		}
-		resData.item = item
-		resData.stream = reader
-
-		if err != nil {
-			monitoring.Log().Warn("Storage/Get open item", obj.LogData(zap.Int("statusCode", 500), zap.Error(err))...)
-			return response.NewError(500, err)
-		}
-		return prepareResponse(obj, resData)
+	if isDir(item) {
+		res := response.NewNoContent(404)
+		res.SetContentType("application/xml")
+		return res
 	}
 
-	res := response.NewNoContent(404)
-	res.SetContentType("application/xml")
-	return res
+	resData := newResponseData()
+	var reader io.ReadCloser
+
+	if instance.client.HasRanges() && obj.Range != "" {
+		params := make(map[string]interface{}, 1)
+		params["range"] = obj.Range
+		reader, err = item.OpenParams(params)
+		resData.statusCode = 206
+	} else {
+		reader, err = item.Open()
+		resData.statusCode = 200
+	}
+	resData.item = item
+	resData.stream = reader
+
+	if err != nil {
+		monitoring.Log().Warn("Storage/Get open item", obj.LogData(zap.Int("statusCode", 500), zap.Error(err))...)
+		return response.NewError(500, err)
+	}
+	return prepareResponse(obj, resData)
 }
 
 // Head retrieve obj from given storage and returns its wrapped in response (but only headers, content of object is omitted)
@@ -477,7 +479,6 @@ func prepareResponse(obj *object.FileObject, resData responseData) *response.Res
 			}
 		}
 	}
-
 	return res
 }
 
