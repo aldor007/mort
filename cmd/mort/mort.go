@@ -29,6 +29,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap/zapcore"
 
+	"github.com/aldor007/mort/pkg/object/cloudinary"
 	_ "github.com/aldor007/mort/pkg/object/cloudinary"
 )
 
@@ -214,8 +215,11 @@ func main() {
 	fmt.Printf("Config file %s listen addr %s montoring: and debug listen %s pid: %d \n", *configPath, imgConfig.Server.Listen, imgConfig.Server.InternalListen, os.Getpid())
 
 	rp := processor.NewRequestProcessor(imgConfig.Server, lock.NewMemoryLock(), throttler.NewBucketThrottler(10))
-	s3Auth := mortMiddleware.NewS3AuthMiddleware(imgConfig)
 
+	cloudinaryUploadInterceptor := cloudinary.NewUploadInterceptorMiddleware(imgConfig)
+	router.Use(cloudinaryUploadInterceptor.Handler)
+
+	s3Auth := mortMiddleware.NewS3AuthMiddleware(imgConfig)
 	router.Use(s3Auth.Handler)
 
 	router.Use(func(_ http.Handler) http.Handler {
