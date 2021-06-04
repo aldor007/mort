@@ -15,6 +15,8 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+const Kind = "cloudinary"
+
 type (
 	Decoder struct {
 		cache     map[string]transforms.Transforms
@@ -24,7 +26,7 @@ type (
 
 func init() {
 	decoder := newCloudinaryDecoder()
-	object.RegisterParser("cloudinary", decoder.decode)
+	object.RegisterParser(Kind, decoder.decode)
 }
 
 func newCloudinaryDecoder() *Decoder {
