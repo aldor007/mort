@@ -180,6 +180,25 @@ Other options:
 
 **checkParent** - flag indicated that mort should always check if original object exists before returning transformation to client 
 
+#### Cloudinary
+
+```yaml
+kind: "cloudinary"
+```
+In this kind you have to define matching regexp for request path (path without bucket name). In regexp you have to add two matching groups - transformations, parent.
+* transformations captures the part of path with transformation definiton in a Cloudinary format.
+* parent is an image identifier stored in a Basic storage 
+
+Example usage:
+```yaml
+    path: "\\/(?P<transformations>[a-z0-9_]+)\\/(?P<parent>.*)"
+```
+Currently a set of supported transformation is limited to following:
+ - c_fit
+ - c_fill
+
+Configuring cloudinary transform automatically enables upload support. 
+
 ### Storage
 
 This section define way of fetching object from storage. For fetching original object storage of name **basic** or defined in **parentStorage**, for image transformation
