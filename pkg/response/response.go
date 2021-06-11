@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-
 	"github.com/aldor007/mort/pkg/helpers"
 	"github.com/aldor007/mort/pkg/monitoring"
 	"github.com/aldor007/mort/pkg/object"
@@ -94,6 +93,7 @@ func NewError(statusCode int, err error) *Response {
 	res := Response{StatusCode: statusCode, errorValue: err}
 	res.Headers = make(http.Header)
 	res.Headers.Set(HeaderContentType, "application/json")
+	res.setBodyBytes([]byte{})
 	return &res
 }
 
@@ -154,9 +154,6 @@ func (r *Response) CopyBody() ([]byte, error) {
 
 // Close response reader
 func (r *Response) Close() {
-	if r == nil {
-		return;
-	}
 	if r.reader != nil {
 		io.ReadAll(r.reader)
 		r.reader.Close()
