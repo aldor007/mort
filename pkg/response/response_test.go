@@ -25,9 +25,9 @@ func TestResponse_Copy(t *testing.T) {
 	assert.Equal(t, res.StatusCode, resCpy.StatusCode, "status code should be equal")
 	assert.Equal(t, res.ContentLength, resCpy.ContentLength, "content type code should be equal")
 
-	buf1, err := res.ReadBody()
+	buf1, err := res.Body()
 	assert.Nil(t, err, "Should not return error when reading body")
-	buf2, err := resCpy.ReadBody()
+	buf2, err := resCpy.Body()
 	assert.Nil(t, err, "Should not return error when reading body")
 	assert.Equal(t, len(buf1), len(buf2), "buffors from response should have equal length")
 	assert.Equal(t, len(buf1), 1000, "buffors from response should have equal length")
@@ -45,7 +45,7 @@ func TestNew(t *testing.T) {
 	assert.Equal(t, res.Headers.Get(HeaderContentType), "text/plain")
 	assert.Equal(t, res.Headers["X-Header"][0], "1")
 
-	buf2, err := res.ReadBody()
+	buf2, err := res.Body()
 	assert.Nil(t, err, "Should not return error when reading body")
 	assert.Equal(t, len(buf), len(buf2), "buffors from response should have equal length")
 	assert.Equal(t, len(buf), 1000, "buffors from response should have equal length")
@@ -60,7 +60,7 @@ func TestNewString(t *testing.T) {
 	assert.Equal(t, res.Headers.Get(HeaderContentType), "text/plain")
 	assert.Equal(t, res.Headers["X-Header"][0], "1")
 
-	buf2, err := res.ReadBody()
+	buf2, err := res.Body()
 	assert.Nil(t, err, "Should not return error when reading body")
 	assert.Equal(t, len(buf2), 5, "buffors from response should have equal length")
 
@@ -75,7 +75,7 @@ func TestNewNoContent(t *testing.T) {
 	assert.Equal(t, res.Headers.Get(HeaderContentType), "text/plain")
 	assert.Equal(t, res.Headers["X-Header"][0], "1")
 
-	buf2, err := res.ReadBody()
+	buf2, err := res.Body()
 	assert.NotNil(t, err, "Should return error when reading body")
 	assert.Nil(t, buf2)
 }
@@ -92,13 +92,13 @@ func TestNewError(t *testing.T) {
 	assert.True(t, res.HasError())
 	assert.Equal(t, res.Error(), err)
 
-	buf, err := res.ReadBody()
+	buf, err := res.Body()
 	assert.NotNil(t, err, "Should return error when reading body")
 	assert.Nil(t, buf)
 
 	p := &object.FileObject{}
 	res.SetDebug(&object.FileObject{Debug: true, Parent: p, Transforms: transforms.Transforms{NotEmpty: true}})
-	buf, err = res.ReadBody()
+	buf, err = res.Body()
 	assert.Nil(t, err)
 	assert.NotNil(t, buf, "Should return error when reading body")
 
@@ -152,7 +152,7 @@ func TestResponse_Send_and_Copy(t *testing.T) {
 	assert.Equal(t, resCpy.StatusCode, 200)
 	assert.Equal(t, resCpy.Headers.Get("X-Header"), "1")
 	assert.Equal(t, resCpy.Headers.Get("Content-Type"), "text/html")
-	body, err := resCpy.ReadBody()
+	body, err := resCpy.Body()
 
 	assert.Nil(t, err, "Shouldn't return error when reading body")
 	assert.Equal(t, len(body), 1000)
@@ -235,7 +235,7 @@ func TestResponse_DecodeMsgpack(t *testing.T) {
 	res := NewString(400, "testuje")
 	res.Headers.Set("etag", "md5")
 	res.Headers.Set("cache-control", "private")
-	res.ReadBody()
+	res.Body()
 	buf, err := msgpack.Marshal(res)
 
 	assert.Nil(t, err)
@@ -245,7 +245,7 @@ func TestResponse_DecodeMsgpack(t *testing.T) {
 
 	assert.Nil(t, err)
 
-	b, err := resMsg.ReadBody()
+	b, err := resMsg.Body()
 	assert.Nil(t, err)
 
 	assert.Equal(t, resMsg.StatusCode, 400)
@@ -273,7 +273,7 @@ func BenchmarkNewCopy(b *testing.B) {
 		res.SetContentType("text/html")
 		resCpy, _ := res.Copy()
 
-		body, err := resCpy.ReadBody()
+		body, err := resCpy.Body()
 		if err != nil {
 			b.Fatalf("Errors %s", err)
 		}

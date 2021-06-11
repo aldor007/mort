@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+
 	"github.com/aldor007/mort/pkg/helpers"
 	"github.com/aldor007/mort/pkg/monitoring"
 	"github.com/aldor007/mort/pkg/object"
@@ -74,9 +75,7 @@ func NewNoContent(statusCode int) *Response {
 // NewString create response object from string
 func NewString(statusCode int, body string) *Response {
 	res := Response{StatusCode: statusCode}
-	res.bodySeeker = strings.NewReader(body)
-	res.reader = ioutil.NopCloser(res.bodySeeker)
-	res.ContentLength = int64(len(body))
+	res.setBodyBytes([]byte(body))
 	res.Headers = make(http.Header)
 	res.Headers.Set(HeaderContentType, "text/plain")
 	return &res
@@ -85,11 +84,8 @@ func NewString(statusCode int, body string) *Response {
 // NewBuf create response object from []byte
 func NewBuf(statusCode int, body []byte) *Response {
 	res := Response{StatusCode: statusCode}
-	res.bodySeeker = bytes.NewReader(body)
-	res.reader = ioutil.NopCloser(res.bodySeeker)
-	res.ContentLength = int64(len(body))
-	res.body = body
 	res.Headers = make(http.Header)
+	res.setBodyBytes(body)
 	return &res
 }
 
@@ -112,10 +108,20 @@ func (r *Response) Set(headerName string, headerValue string) {
 	r.Headers.Set(headerName, headerValue)
 }
 
-// ReadBody reads all content of response and returns []byte
+func (r *Response) setBodyBytes(body []byte) {
+	if r.reader != nil {
+		panic("reader must not be set when setBodyBytes is used")
+	}
+	r.bodySeeker = bytes.NewReader(body)
+	r.reader = ioutil.NopCloser(r.bodySeeker)
+	r.ContentLength = int64(len(body))
+	r.body = body
+}
+
+// Body reads all content of response and returns []byte
 // Content of the response is changed
 // Such response shouldn't be Send to client
-func (r *Response) ReadBody() ([]byte, error) {
+func (r *Response) Body() ([]byte, error) {
 	if r.body != nil {
 		return r.body, nil
 	}
@@ -125,46 +131,40 @@ func (r *Response) ReadBody() ([]byte, error) {
 	}
 
 	body, err := ioutil.ReadAll(r.reader)
-	r.body = body
+	r.reader.Close()
+	r.reader = nil
+	r.setBodyBytes(body)
 	return r.body, err
 }
 
-// CopyBody read all content of response and returns it in []byte
-// but doesn't change response object body
+// CopyBody returns a copy of Body in []byte
 func (r *Response) CopyBody() ([]byte, error) {
-	var buf []byte
-	if r.body != nil {
-		buf = r.body
-	} else {
-		var err error
-		buf, err = ioutil.ReadAll(r.reader)
-
+	var err error
+	src := r.body
+	if src == nil {
+		src, err = r.Body()
 		if err != nil {
 			return nil, err
 		}
-
-		// if we have reader that allow rewind just rewind instead of creat new one
-		if r.bodySeeker != nil {
-			r.bodySeeker.Seek(0, 0)
-		} else {
-			r.reader.Close()
-			r.reader = ioutil.NopCloser(bytes.NewReader(buf))
-		}
-
-		r.body = buf
 	}
-
-	return buf, nil
+	dst := make([]byte, len(src))
+	copy(dst, src)
+	return dst, nil
 }
 
 // Close response reader
 func (r *Response) Close() {
+	if r == nil {
+		return;
+	}
 	if r.reader != nil {
+		io.ReadAll(r.reader)
 		r.reader.Close()
 		r.reader = nil
 	}
 
 	if r.bodyReader != nil {
+		io.ReadAll(r.bodyReader)
 		r.bodyReader.Close()
 		r.bodyReader = nil
 	}
@@ -229,24 +229,25 @@ func (r *Response) Send(w http.ResponseWriter) error {
 	}
 
 	defer r.Close()
-	var resStream io.Reader
-	if r.ContentLength != 0 {
-		resStream = r.Stream()
-	}
-
 	w.WriteHeader(r.StatusCode)
 
-	if resStream != nil {
-		if r.transformer != nil {
-			tW := r.transformer(w)
-			io.Copy(tW, resStream)
-			tW.Close()
-		} else {
-			io.Copy(w, resStream)
-		}
+	var resStream io.ReadCloser
+	if r.ContentLength == 0 {
+		return nil
 	}
 
-	return nil
+	resStream = r.Stream()
+	if resStream == nil {
+		return nil
+	}
+	if r.transformer != nil {
+		tW := r.transformer(w)
+		io.Copy(tW, resStream)
+		tW.Close()
+	} else {
+		io.Copy(w, resStream)
+	}
+	return resStream.Close()
 }
 
 // SendContent use http.ServeContent to return response to client
@@ -270,7 +271,6 @@ func (r *Response) SendContent(req *http.Request, w http.ResponseWriter) error {
 	}
 
 	http.ServeContent(w, req, "", lastMod, r.bodySeeker)
-
 	return nil
 }
 
@@ -335,26 +335,11 @@ func (r *Response) Copy() (*Response, error) {
 
 	c.trans = make([]transforms.Transforms, len(r.trans))
 	copy(c.trans, r.trans)
-
-	if r.body != nil {
-		c.ContentLength = int64(len(r.body))
-		c.body = make([]byte, c.ContentLength)
-		copy(c.body, r.body)
-		c.bodySeeker = bytes.NewReader(c.body)
-		c.reader = ioutil.NopCloser(c.bodySeeker)
-	} else if r.reader != nil {
-		buf, err := r.CopyBody()
-		if err != nil {
-			return nil, err
-		}
-
-		c.bodySeeker = bytes.NewReader(buf)
-		c.reader = ioutil.NopCloser(c.bodySeeker)
-		c.ContentLength = int64(len(buf))
-		c.body = buf
-
+	body, err := r.CopyBody()
+	if err != nil {
+		return nil, err
 	}
-
+	c.setBodyBytes(body)
 	return &c, nil
 
 }
@@ -362,6 +347,9 @@ func (r *Response) Copy() (*Response, error) {
 // CopyWithStream should be used with not buffered response that contain stream
 // it try duplicate response stream for multiple readers
 func (r *Response) CopyWithStream() (*Response, error) {
+	if r == nil {
+		return nil, errors.New("response is not created")
+	}
 	if r.body != nil {
 		return r.Copy()
 	}
@@ -379,7 +367,6 @@ func (r *Response) CopyWithStream() (*Response, error) {
 	}
 
 	r.bodyReader = r.reader
-
 	var err error
 	r.resStream, err = stream.New("res")
 	if err != nil {
@@ -393,6 +380,26 @@ func (r *Response) CopyWithStream() (*Response, error) {
 
 }
 
+// BytesReaderCloser wraps Bytes
+
+type (
+	readerAtSeeker interface {
+		io.ReaderAt
+		io.ReadSeeker
+	}
+	// bytesReaderAtSeekerNopCloser implements Closer in a way
+	// that it preservers readerAtSeeker interface.
+	// Helper ioutil.NopCloser narrows the interface to a io.Reader
+	// and thus the s3 client spawns extra buffer which is by default 5MB in size.
+	bytesReaderAtSeekerNopCloser struct {
+		readerAtSeeker
+	}
+)
+
+func (c bytesReaderAtSeekerNopCloser) Close() error {
+	return nil
+}
+
 // Stream return io.Reader interface from correct response content
 func (r *Response) Stream() io.ReadCloser {
 	if r.hasParent == true && r.resStream != nil {
@@ -401,7 +408,7 @@ func (r *Response) Stream() io.ReadCloser {
 	}
 
 	if r.body != nil {
-		return ioutil.NopCloser(bytes.NewReader(r.body))
+		return bytesReaderAtSeekerNopCloser{readerAtSeeker: bytes.NewReader(r.body)}
 	}
 
 	if r.reader != nil {

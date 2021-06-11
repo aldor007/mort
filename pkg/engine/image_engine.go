@@ -32,7 +32,8 @@ func (c *ImageEngine) Process(obj *object.FileObject, trans []transforms.Transfo
 	t := monitoring.Report().Timer("generation_time")
 	defer t.Done()
 
-	buf, err := c.parent.ReadBody()
+	buf, err := c.parent.Body()
+
 	if err != nil {
 		return response.NewError(500, err), err
 	}
