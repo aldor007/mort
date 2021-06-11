@@ -137,6 +137,7 @@ type Server struct {
 	SingleListen   string                 `yaml:"listen"`
 	RequestTimeout int                    `yaml:"requestTimeout"`
 	LockTimeout    int                    `yaml:"lockTimeout"`
+	// Unused, intention unknown
 	QueueLen       int                    `yaml:"queueLen"`
 	Listen         []string               `yaml:"listens"`
 	Monitoring     string                 `yaml:"monitoring"`
