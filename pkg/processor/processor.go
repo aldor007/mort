@@ -260,12 +260,22 @@ func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) 
 
 	go func(o *object.FileObject) {
 		resp := storage.Get(o)
+		// Ensure before passing the response that the context is canceled.
+		// In such case Close the response.
+		// Passing the data to respChan and checking ctx.Done cannot be
+		// done in a single select since golang randomly choice which channel
+		// to handle. So in case of ctx.Done closed there is 50% of chance that
+		// it will choice to send resp to resChan.
 		select {
 		case <-ctx.Done():
 			resp.Close()
 			return
+		default:
+		}
+		select {
 		case resChan <- resp:
 			return
+		default:
 		}
 	}(obj)
 
