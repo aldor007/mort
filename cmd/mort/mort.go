@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	mortMiddleware "github.com/aldor007/mort/pkg/middleware"
 	"net/http"
 	"time"
 
@@ -19,7 +20,6 @@ import (
 
 	"github.com/aldor007/mort/pkg/config"
 	"github.com/aldor007/mort/pkg/lock"
-	mortMiddleware "github.com/aldor007/mort/pkg/middleware"
 	"github.com/aldor007/mort/pkg/monitoring"
 	"github.com/aldor007/mort/pkg/object"
 	"github.com/aldor007/mort/pkg/processor"
@@ -31,6 +31,7 @@ import (
 
 	"github.com/aldor007/mort/pkg/object/cloudinary"
 	_ "github.com/aldor007/mort/pkg/object/cloudinary"
+	_ "github.com/aldor007/mort/pkg/storage/s3-fixed"
 )
 
 const (
