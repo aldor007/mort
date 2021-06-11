@@ -1,13 +1,14 @@
 package cache
 
 import (
+	"time"
+
 	"github.com/aldor007/mort/pkg/monitoring"
 	"github.com/aldor007/mort/pkg/object"
 	"github.com/aldor007/mort/pkg/response"
 	"github.com/karlseguin/ccache"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-	"time"
 )
 
 // MemoryCache uses memory for cache purpose
