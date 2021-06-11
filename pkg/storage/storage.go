@@ -2,14 +2,12 @@ package storage
 
 import (
 	"encoding/json"
-
+	"encoding/xml"
+	"fmt"
 	"github.com/aldor007/stow"
 	httpStorage "github.com/aldor007/stow/http"
 	fileStorage "github.com/aldor007/stow/local"
 	metaStorage "github.com/aldor007/stow/local-meta"
-
-	"encoding/xml"
-	"fmt"
 	"io"
 	"mime"
 	"net/http"
@@ -87,24 +85,22 @@ func Get(obj *object.FileObject) *response.Response {
 	}
 
 	resData := newResponseData()
-	var reader io.ReadCloser
-
+	resData.item = item
+	var responseStream io.ReadCloser
 	if instance.client.HasRanges() && obj.Range != "" {
 		params := make(map[string]interface{}, 1)
 		params["range"] = obj.Range
-		reader, err = item.OpenParams(params)
+		responseStream, err = item.OpenParams(params)
 		resData.statusCode = 206
 	} else {
-		reader, err = item.Open()
+		responseStream, err = item.Open()
 		resData.statusCode = 200
 	}
-	resData.item = item
-	resData.stream = reader
-
 	if err != nil {
 		monitoring.Log().Warn("Storage/Get open item", obj.LogData(zap.Int("statusCode", 500), zap.Error(err))...)
 		return response.NewError(500, err)
 	}
+	resData.stream = responseStream
 	return prepareResponse(obj, resData)
 }
 
@@ -325,6 +321,11 @@ func getClient(obj *object.FileObject) (storageClient, error) {
 		return c, nil
 	}
 	storageCacheLock.RUnlock()
+	storageCacheLock.Lock()
+	defer storageCacheLock.Unlock()
+	if c, ok := storageCache[storageCfg.Hash]; ok {
+		return c, nil
+	}
 
 	var config stow.Config
 	var client stow.Location
@@ -342,7 +343,7 @@ func getClient(obj *object.FileObject) (storageClient, error) {
 			httpStorage.ConfigUrl:    storageCfg.Url,
 			httpStorage.ConfigHeader: string(headers),
 		}
-	case "s3":
+	case "s3", "s3-fixed":
 		config = stow.ConfigMap{
 			s3Storage.ConfigAccessKeyID: storageCfg.AccessKey,
 			s3Storage.ConfigSecretKey:   storageCfg.SecretAccessKey,
@@ -391,9 +392,7 @@ func getClient(obj *object.FileObject) (storageClient, error) {
 	}
 
 	storageInstance := storageClient{container, client}
-	storageCacheLock.Lock()
 	storageCache[storageCfg.Hash] = storageInstance
-	storageCacheLock.Unlock()
 	return storageInstance, nil
 }
 
