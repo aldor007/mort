@@ -53,14 +53,13 @@ func TestMemoryLock_NotifyAndReleaseWhenError(t *testing.T) {
 	timer := time.NewTimer(time.Second * 2)
 	select {
 	case <-timer.C:
-		t.Fatalf("timeout waitgin for lock")
+		t.Fatalf("Timeout while waiting for response propagation")
 		return
 	case res := <-result.ResponseChan:
-		assert.NotNil(t, res, "Response shound't be nil")
+		assert.NotNil(t, res, "Response shouldn't be nil")
 		if res != nil {
 			assert.Equal(t, res.StatusCode, 400)
 		}
-
 	}
 }
 
@@ -90,7 +89,7 @@ func TestMemoryLock_NotifyAndRelease(t *testing.T) {
 		if res != nil {
 			assert.Equal(t, res.StatusCode, 200, "Response should have sc = 200")
 		}
-		buf2, err := res.ReadBody()
+		buf2, err := res.Body()
 		assert.Nil(t, err)
 		assert.Equal(t, len(buf), len(buf2))
 
