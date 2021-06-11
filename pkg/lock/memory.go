@@ -1,10 +1,11 @@
 package lock
 
 import (
+	"sync"
+
 	"github.com/aldor007/mort/pkg/monitoring"
 	"github.com/aldor007/mort/pkg/response"
 	"go.uber.org/zap"
-	"sync"
 )
 
 // MemoryLock is in memory lock for single mort instance
@@ -20,73 +21,76 @@ func NewMemoryLock() *MemoryLock {
 	return m
 }
 
+func notifyListeners(lock lockData, respFactory func() (*response.Response, bool)) {
+	for _, q := range lock.notifyQueue {
+		select {
+		case <-q.Cancel:
+			close(q.ResponseChan)
+			continue
+		default:
+		}
+		resp, ok := respFactory()
+		if ok {
+			q.ResponseChan <- resp
+		}
+		close(q.ResponseChan)
+	}
+}
+
 // NotifyAndRelease tries notify all waiting goroutines about response
-func (m *MemoryLock) NotifyAndRelease(key string, res *response.Response) {
+func (m *MemoryLock) NotifyAndRelease(key string, firstResponse *response.Response) {
 	m.lock.Lock()
-	result, ok := m.internal[key]
+	lock, ok := m.internal[key]
 	if !ok {
 		m.lock.Unlock()
 		return
 	}
-
 	delete(m.internal, key)
 	m.lock.Unlock()
 
-	if len(result.notifyQueue) == 0 {
+	if len(lock.notifyQueue) == 0 {
 		return
 	}
 
-	monitoring.Log().Warn("Notify queue", zap.String("key", key), zap.Int("len", len(result.notifyQueue)))
+	monitoring.Log().Info("Notify lock queue", zap.String("key", key), zap.Int("len", len(lock.notifyQueue)))
 
-	if res.IsBuffered() {
-		resCopy, err := res.Copy()
+	if firstResponse.IsBuffered() {
+		mirroredResponse, err := firstResponse.Copy()
 		if err != nil {
-			for _, q := range result.notifyQueue {
-				close(q.ResponseChan)
-			}
-
-		} else {
-			buf, err := resCopy.ReadBody()
-			if err != nil {
-				for _, q := range result.notifyQueue {
-					close(q.ResponseChan)
-				}
-				return
-			}
-
-			go func() {
-				for _, q := range result.notifyQueue {
-					resCpy := response.NewBuf(resCopy.StatusCode, buf)
-					resCpy.CopyHeadersFrom(resCopy)
-					select {
-					case <-q.Cancel:
-						close(q.ResponseChan)
-						continue
-					default:
-
-					}
-					q.ResponseChan <- resCpy
-					close(q.ResponseChan)
-				}
-
-				resCopy.Close()
-			}()
-
+			notifyListeners(lock, func() (*response.Response, bool) {
+				return nil, false
+			})
+			return
 		}
-	} else {
-		resCopy, _ := res.Copy()
+		mirroredResponseBody, err := mirroredResponse.Body()
+		if err != nil {
+			notifyListeners(lock, func() (*response.Response, bool) {
+				return nil, false
+			})
+			return
+		}
 		go func() {
-			for _, q := range result.notifyQueue {
-				resCpy, _ := resCopy.CopyWithStream()
-				select {
-				case <-q.Cancel:
-					close(q.ResponseChan)
-				case q.ResponseChan <- resCpy:
-					close(q.ResponseChan)
-				default:
-				}
-			}
-			resCopy.Close()
+			notifyListeners(lock, func() (*response.Response, bool) {
+				res := response.NewBuf(mirroredResponse.StatusCode, mirroredResponseBody)
+				res.CopyHeadersFrom(mirroredResponse)
+				return res, true
+			})
+			mirroredResponse.Close()
+		}()
+	} else {
+		mirroredResponse, err := firstResponse.Copy()
+		if err != nil {
+			notifyListeners(lock, func() (*response.Response, bool) {
+				return nil, false
+			})
+			return
+		}
+		go func() {
+			notifyListeners(lock, func() (*response.Response, bool) {
+				res, err := mirroredResponse.CopyWithStream()
+				return res, err == nil
+			})
+			mirroredResponse.Close()
 		}()
 	}
 
@@ -96,30 +100,33 @@ func (m *MemoryLock) NotifyAndRelease(key string, res *response.Response) {
 func (m *MemoryLock) Lock(key string) (LockResult, bool) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
-	result, ok := m.internal[key]
-	if ok {
-		r := result.AddWatcher()
-		m.internal[key] = result
-		return r, !ok
+	lock, ok := m.internal[key]
+	result := LockResult{}
+	if !ok {
+		lock = lockData{}
+		lock.notifyQueue = make([]LockResult, 0, 5)
+	} else {
+		result = lock.AddWatcher()
 	}
-
-	data := lockData{}
-	data.notifyQueue = make([]LockResult, 0, 5)
-	m.internal[key] = data
-	return LockResult{}, !ok
+	m.internal[key] = lock
+	return result, !ok
 }
 
 // Release remove entry from memory map
 func (m *MemoryLock) Release(key string) {
 	m.lock.RLock()
-	res, ok := m.internal[key]
+	_, ok := m.internal[key]
 	m.lock.RUnlock()
 	if ok {
 		m.lock.Lock()
-		for _, q := range res.notifyQueue {
-			close(q.ResponseChan)
-		}
 		defer m.lock.Unlock()
+		res, exists := m.internal[key]
+		if !exists {
+			return
+		}
+		notifyListeners(res, func() (*response.Response, bool) {
+			return nil, false
+		})
 		delete(m.internal, key)
 		return
 	}
