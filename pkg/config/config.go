@@ -2,17 +2,19 @@ package config
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
+	"os"
 	"regexp"
 	"strings"
 	"sync"
-	"os"
+
+	"github.com/pkg/errors"
+	"gopkg.in/yaml.v2"
+
+	"net/http"
 
 	"github.com/aldor007/mort/pkg/helpers"
 	"github.com/aldor007/mort/pkg/monitoring"
-	"net/http"
 )
 
 // Config contains configuration for buckets etc
@@ -29,7 +31,7 @@ var instance *Config
 var once sync.Once
 
 // storageKinds is list of available storage kinds
-var storageKinds = []string{"local", "local-meta", "s3", "http", "b2", "noop"}
+var storageKinds = []string{"local", "local-meta", "s3", "s3-fixed", "http", "b2", "noop"}
 
 // transformKind is list of available kinds of transforms
 var transformKinds = []string{"query", "presets", "presets-query"}
@@ -157,7 +159,7 @@ func (c *Config) validateStorage(bucketName string, storages StorageTypes) error
 			}
 		}
 
-		if storage.Kind == "s3" {
+		if storage.Kind == "s3" || storage.Kind == "s3-fixed" {
 			if storage.AccessKey == "" {
 				err = configInvalidError(fmt.Sprintf("%s - no accessKey", errorMsgPrefix))
 			}

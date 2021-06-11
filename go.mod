@@ -5,6 +5,7 @@ go 1.16
 require (
 	github.com/aldor007/go-aws-auth v0.0.0-20180623204207-00898dfb9272
 	github.com/aldor007/stow v1.0.1
+	github.com/aws/aws-sdk-go v1.38.57
 	github.com/cheekybits/is v0.0.0-20150225183255-68e9c0620927 // indirect
 	github.com/djherbis/stream v1.3.1
 	github.com/go-chi/chi v1.5.2

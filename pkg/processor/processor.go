@@ -37,7 +37,6 @@ func NewRequestProcessor(serverConfig config.Server, l lock.Lock, throttler thro
 	rp := RequestProcessor{}
 	rp.collapse = l
 	rp.throttler = throttler
-	rp.queue = make(chan requestMessage, serverConfig.QueueLen)
 	rp.processTimeout = time.Duration(serverConfig.RequestTimeout) * time.Second
 	rp.lockTimeout = time.Duration(serverConfig.LockTimeout) * time.Second
 	rp.serverConfig = serverConfig
@@ -50,7 +49,6 @@ func NewRequestProcessor(serverConfig config.Server, l lock.Lock, throttler thro
 type RequestProcessor struct {
 	collapse       lock.Lock              // interface used for request collapsing
 	throttler      throttler.Throttler    // interface used for rate limiting creating of new images
-	queue          chan requestMessage    // request queue
 	processTimeout time.Duration          // request processing timeout
 	lockTimeout    time.Duration          // lock timeout for collapsed request it equal processTimeout - 1 s
 	plugins        plugins.PluginsManager // plugins run plugins before some phases of requests processing
@@ -78,35 +76,31 @@ func (r *RequestProcessor) Process(req *http.Request, obj *object.FileObject) *r
 	msg.responseChan = make(chan *response.Response)
 	msg.cancel = make(chan struct{}, 1)
 
-	go r.processChan(ctx)
-	r.queue <- msg
+	go r.processChan(ctx, msg)
 
 	select {
 	case <-ctx.Done():
-		msg.cancel <- struct{}{}
-		close(msg.responseChan)
+		close(msg.cancel)
 		monitoring.Log().Warn("Process timeout", obj.LogData(zap.String("error", "Context.timeout"))...)
 		return r.replyWithError(obj, 499, errContextCancel)
 	case res := <-msg.responseChan:
 		r.plugins.PostProcess(obj, req, res)
-		close(msg.responseChan)
 		return res
 	}
 
 }
 
-func (r *RequestProcessor) processChan(ctx context.Context) {
-	msg := <-r.queue
+func (r *RequestProcessor) processChan(ctx context.Context, msg requestMessage) {
 	res := r.process(msg.request, msg.obj)
 	select {
 	case <-msg.cancel:
+		res.Close()
 		return
 	case <-ctx.Done():
+		res.Close()
 		return
-	case <-msg.responseChan:
+	case msg.responseChan <- res:
 		return
-	default:
-		msg.responseChan <- res
 	}
 }
 
@@ -174,7 +168,7 @@ func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *r
 			objCpy := obj.Copy()
 			if err == nil {
 				go func() {
-					resCpy.ReadBody()
+					resCpy.Body()
 					err = r.responseCache.Set(objCpy, resCpy)
 					if err != nil {
 						monitoring.Log().Error("response cache error set", obj.LogData(zap.Error(err))...)
@@ -223,19 +217,16 @@ func (r *RequestProcessor) collapseGET(req *http.Request, obj *object.FileObject
 			lockResult.Cancel <- true
 			return r.replyWithError(obj, 504, errContextCancel)
 		case res, ok := <-lockResult.ResponseChan:
-			if ok {
-				return res
+			if !ok {
+				return r.handleGET(req, obj)
 			}
-
-			return r.handleGET(req, obj)
+			return res
 		case <-timer.C:
 			lockResult.Cancel <- true
-			return r.replyWithError(obj, 504, errTimeout)
-		default:
 			if cacheRes, err := r.responseCache.Get(obj); err == nil {
-				lockResult.Cancel <- true
 				return cacheRes
 			}
+			return r.replyWithError(obj, 504, errTimeout)
 		}
 	}
 
@@ -268,10 +259,12 @@ func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) 
 	parentChan := make(chan *response.Response, 1)
 
 	go func(o *object.FileObject) {
+		resp := storage.Get(o)
 		select {
 		case <-ctx.Done():
+			resp.Close()
 			return
-		case resChan <- storage.Get(o):
+		case resChan <- resp:
 			return
 		}
 	}(obj)
@@ -291,7 +284,7 @@ func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) 
 	for {
 		select {
 		case <-ctx.Done():
-			return r.replyWithError(obj, 504, errContextCancel)
+			return r.replyWithError(obj, 499, errContextCancel)
 		case res = <-resChan:
 			if obj.CheckParent && parentObj != nil && (parentRes == nil || parentRes.StatusCode == 0) {
 				go func() {
@@ -300,7 +293,14 @@ func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) 
 
 			} else {
 				if res.StatusCode == 404 {
-					return r.handleNotFound(obj, parentObj, transformsTab, parentRes, res)
+					res = r.handleNotFound(obj, parentObj, transformsTab, parentRes, res)
+					select {
+					case <-ctx.Done():
+						res.Close()
+						return res
+					default:
+						return res
+					}
 				}
 
 				monitoring.Report().Inc("request_type;type:download")
@@ -319,8 +319,6 @@ func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) 
 			if parentRes.StatusCode == 404 {
 				return parentRes
 			}
-		default:
-
 		}
 	}
 
@@ -415,18 +413,23 @@ func (r *RequestProcessor) processImage(obj *object.FileObject, parent *response
 	}
 	res.SetTransforms(mergedTrans)
 
-	resCpy, err := res.Copy()
-	if err == nil {
-		go func(objS object.FileObject, resS *response.Response) {
-			storage.Set(&objS, resS.Headers, resS.ContentLength, resS.Stream())
-			resS.Close()
-		}(*obj, resCpy)
-	} else {
+	if err := storeProcessedImage(res, obj); err != nil {
 		monitoring.Log().Warn("Processor/processImage", obj.LogData(zap.Error(err))...)
 	}
 
 	return res
+}
 
+func storeProcessedImage(res *response.Response, obj *object.FileObject) error {
+	resCpy, err := res.Copy()
+	if err != nil {
+		return err
+	}
+	go func(objS object.FileObject, resS *response.Response) {
+		storage.Set(&objS, resS.Headers, resS.ContentLength, resS.Stream())
+		resS.Close()
+	}(*obj, resCpy)
+	return nil
 }
 
 func updateHeaders(obj *object.FileObject, res *response.Response) *response.Response {
