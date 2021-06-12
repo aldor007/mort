@@ -63,11 +63,11 @@ RUN apt-get update && \
     apt-get autoclean && \
     apt-get clean && \
     ldconfig /usr/local/lib && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    rm -rf /tmp/* /var/tmp/*
 
 RUN mkdir -p /etc/mort/
 # clean up
-RUN rm -rf /go/src; rm -rf /usr/share/; rm -rf /usr/include/
+RUN rm -rf /go/src; rm -rf /usr/include/
 
 COPY --from=builder /usr/local/lib /usr/local/lib
 RUN ldconfig
