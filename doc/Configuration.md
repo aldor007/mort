@@ -16,7 +16,7 @@
 
 # Configuration
 
-Mort require some configuration to proper run. This section aim to provide basic information about config.
+Mort requires some configuration to run properly. This section aims at basic information about config.
 
 Example config:
 
@@ -62,6 +62,7 @@ server:
     monitoring: "" # default no monitoring ( or prometheus)
     cache: 
       type: "memory" # default or redis
+      cacheSize: 50000 # limit of bytes used by memory cache.
       maxCacheItemSizeMB: 50 # max item size to cache default 5 MB
       # config for redis
       address:
