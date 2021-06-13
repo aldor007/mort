@@ -273,12 +273,9 @@ func (r *Response) SendContent(req *http.Request, w http.ResponseWriter) error {
 
 // CopyHeadersFrom copy all headers from src response but body is omitted
 func (r *Response) CopyHeadersFrom(src *Response) {
-	r.Headers = make(http.Header, len(src.Headers))
-	for k, v := range src.Headers {
-		r.Headers[k] = v
-	}
-
+	r.Headers = src.Headers.Clone()
 	r.StatusCode = src.StatusCode
+	// Might cause bug??? ContentLength is determined while setting body.
 	r.ContentLength = src.ContentLength
 	r.debug = src.debug
 	r.errorValue = src.errorValue
@@ -325,11 +322,7 @@ func (r *Response) Copy() (*Response, error) {
 	}
 
 	c := Response{StatusCode: r.StatusCode, ContentLength: r.ContentLength, debug: r.debug, errorValue: r.errorValue}
-	c.Headers = make(http.Header)
-	for k, v := range r.Headers {
-		c.Headers[k] = v
-	}
-
+	c.Headers = r.Headers.Clone()
 	c.trans = make([]transforms.Transforms, len(r.trans))
 	copy(c.trans, r.trans)
 	body, err := r.CopyBody()
@@ -352,11 +345,7 @@ func (r *Response) CopyWithStream() (*Response, error) {
 	}
 
 	c := Response{StatusCode: r.StatusCode, ContentLength: r.ContentLength, debug: r.debug, errorValue: r.errorValue}
-	c.Headers = make(http.Header)
-	for k, v := range r.Headers {
-		c.Headers[k] = v
-	}
-
+	c.Headers = r.Headers.Clone()
 	if r.resStream != nil {
 		c.resStream = r.resStream
 		c.hasParent = true
