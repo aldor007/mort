@@ -32,7 +32,9 @@ func notifyListeners(lock lockData, respFactory func() (*response.Response, bool
 		}
 		resp, ok := respFactory()
 		if ok {
-			// The response is present
+			// As the response channel is under our package control
+			// we are sure that it was initiated with a single place for a response
+			// and there is no need to use select.
 			q.ResponseChan <- resp
 		}
 		close(q.ResponseChan)
@@ -40,7 +42,7 @@ func notifyListeners(lock lockData, respFactory func() (*response.Response, bool
 }
 
 // NotifyAndRelease tries notify all waiting goroutines about response
-func (m *MemoryLock) NotifyAndRelease(key string, firstResponse *response.Response) {
+func (m *MemoryLock) NotifyAndRelease(key string, originalResponse *response.Response) {
 	m.lock.Lock()
 	lock, ok := m.internal[key]
 	if !ok {
@@ -55,25 +57,25 @@ func (m *MemoryLock) NotifyAndRelease(key string, firstResponse *response.Respon
 	}
 
 	monitoring.Log().Info("Notify lock queue", zap.String("key", key), zap.Int("len", len(lock.notifyQueue)))
-	mirroredResponse, err := firstResponse.Copy()
-	if err != nil {
-		notifyListeners(lock, func() (*response.Response, bool) {
-			return nil, false
-		})
-		return
-	}
-	go func() {
-		notifyListeners(lock, func() (*response.Response, bool) {
-			if mirroredResponse.IsBuffered() {
-				res, err := mirroredResponse.Copy()
-				return res, err == nil
-			} else {
-				res, err := mirroredResponse.CopyWithStream()
-				return res, err == nil
-			}
-		})
-		mirroredResponse.Close()
-	}()
+	// Notify all listeners by sending them a copy of originalResponse.
+	//
+	// Current synchronous notification is simpler compared to asynchronous implementation.
+	// The asynchronous implementation might be tricky since the response in not buffered mode must be
+	// protected from being read before it is copied. Otherwise CopyWithStream in a worst case will deliver partial body
+	// since it can read in parallel with HTTP handler. To prevent such behaviour extra temporary copy of response
+	// must be created before returning from this method. Of course such creation must
+	// also take into account whether the originalResponse is buffered or not.
+	// The time spend on notifying listeners is negligible compared to the total time of image processing,
+	// so making this process asynchronous makes almost no sense.
+	notifyListeners(lock, func() (*response.Response, bool) {
+		if originalResponse.IsBuffered() {
+			res, err := originalResponse.Copy()
+			return res, err == nil
+		} else {
+			res, err := originalResponse.CopyWithStream()
+			return res, err == nil
+		}
+	})
 }
 
 // Lock create unique entry in memory map

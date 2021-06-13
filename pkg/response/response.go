@@ -333,6 +333,8 @@ func (r *Response) CopyWithStream() (*Response, error) {
 	if r.body != nil {
 		return r.Copy()
 	}
+	// todo Add some protection mechanism to disallow CopyWithStream when Send or SendContent method is called.
+	// todo Also Stream method should be protected somehow, maybe if it possible should be removed in favor of SendContent.
 
 	c := Response{StatusCode: r.StatusCode, ContentLength: r.ContentLength, debug: r.debug, errorValue: r.errorValue}
 	c.Headers = r.Headers.Clone()
