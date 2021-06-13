@@ -271,16 +271,6 @@ func (r *Response) SendContent(req *http.Request, w http.ResponseWriter) error {
 	return nil
 }
 
-// CopyHeadersFrom copy all headers from src response but body is omitted
-func (r *Response) CopyHeadersFrom(src *Response) {
-	r.Headers = src.Headers.Clone()
-	r.StatusCode = src.StatusCode
-	// Might cause bug??? ContentLength is determined while setting body.
-	r.ContentLength = src.ContentLength
-	r.debug = src.debug
-	r.errorValue = src.errorValue
-}
-
 func (r *Response) IsCacheable() bool {
 	r.parseCacheHeaders()
 	return r.StatusCode > 199 && r.StatusCode < 299 && r.cachable
@@ -334,8 +324,8 @@ func (r *Response) Copy() (*Response, error) {
 
 }
 
-// CopyWithStream should be used with not buffered response that contain stream
-// it try duplicate response stream for multiple readers
+// CopyWithStream should be used with not buffered response that contain stream.
+// It tries to duplicate response stream for multiple readers.
 func (r *Response) CopyWithStream() (*Response, error) {
 	if r == nil {
 		return nil, errors.New("response is not created")

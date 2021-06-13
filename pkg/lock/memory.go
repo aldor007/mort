@@ -25,12 +25,14 @@ func notifyListeners(lock lockData, respFactory func() (*response.Response, bool
 	for _, q := range lock.notifyQueue {
 		select {
 		case <-q.Cancel:
+			// Observer revoked his interest in obtaining the response.
 			close(q.ResponseChan)
 			continue
 		default:
 		}
 		resp, ok := respFactory()
 		if ok {
+			// The response is present
 			q.ResponseChan <- resp
 		}
 		close(q.ResponseChan)
@@ -53,47 +55,25 @@ func (m *MemoryLock) NotifyAndRelease(key string, firstResponse *response.Respon
 	}
 
 	monitoring.Log().Info("Notify lock queue", zap.String("key", key), zap.Int("len", len(lock.notifyQueue)))
-
-	if firstResponse.IsBuffered() {
-		mirroredResponse, err := firstResponse.Copy()
-		if err != nil {
-			notifyListeners(lock, func() (*response.Response, bool) {
-				return nil, false
-			})
-			return
-		}
-		mirroredResponseBody, err := mirroredResponse.Body()
-		if err != nil {
-			notifyListeners(lock, func() (*response.Response, bool) {
-				return nil, false
-			})
-			return
-		}
-		go func() {
-			notifyListeners(lock, func() (*response.Response, bool) {
-				res := response.NewBuf(mirroredResponse.StatusCode, mirroredResponseBody)
-				res.CopyHeadersFrom(mirroredResponse)
-				return res, true
-			})
-			mirroredResponse.Close()
-		}()
-	} else {
-		mirroredResponse, err := firstResponse.Copy()
-		if err != nil {
-			notifyListeners(lock, func() (*response.Response, bool) {
-				return nil, false
-			})
-			return
-		}
-		go func() {
-			notifyListeners(lock, func() (*response.Response, bool) {
+	mirroredResponse, err := firstResponse.Copy()
+	if err != nil {
+		notifyListeners(lock, func() (*response.Response, bool) {
+			return nil, false
+		})
+		return
+	}
+	go func() {
+		notifyListeners(lock, func() (*response.Response, bool) {
+			if mirroredResponse.IsBuffered() {
+				res, err := mirroredResponse.Copy()
+				return res, err == nil
+			} else {
 				res, err := mirroredResponse.CopyWithStream()
 				return res, err == nil
-			})
-			mirroredResponse.Close()
-		}()
-	}
-
+			}
+		})
+		mirroredResponse.Close()
+	}()
 }
 
 // Lock create unique entry in memory map
