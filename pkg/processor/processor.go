@@ -152,6 +152,7 @@ func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *r
 			return handleS3Get(req, obj)
 		}
 
+		// todo Cache layer should be protected by memory lock.
 		res, err := r.responseCache.Get(obj)
 		if err == nil {
 			return res
@@ -260,11 +261,11 @@ func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) 
 
 	go func(o *object.FileObject) {
 		resp := storage.Get(o)
-		// Ensure before passing the response that the context is canceled.
+		// Ensure before passing the response that the context is not canceled.
 		// In such case Close the response.
 		// Passing the data to respChan and checking ctx.Done cannot be
 		// done in a single select since golang randomly choice which channel
-		// to handle. So in case of ctx.Done closed there is 50% of chance that
+		// to handle. So when ctx.Done is closed there is 50% of chance that
 		// it will choice to send resp to resChan.
 		select {
 		case <-ctx.Done():
