@@ -16,7 +16,7 @@
 
 # Configuration
 
-Mort requires some configuration to run properly. This section aims at basic information about config.
+Mort requires some configuration to run properly. This section aims at basic information about configuration.
 
 Example config:
 
