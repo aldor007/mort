@@ -230,7 +230,7 @@ cd $GOPATH/src/github.com/aldor007/mort
 ```
 5. Install dependencies:
 ```bash
-dep ensure
+go mod vendor
 ```
 Run unit tests:
 ```bash
@@ -239,6 +239,12 @@ make unit
 Run integration tests:
 ```bash
 make integrations
+```
+
+If you encounter following problem `go build gopkg.in/h2non/bimg.v1: invalid flag in pkg-config --cflags: -Xpreprocessor` 
+while running tests in your IDE add this to your environment:
+```
+export CGO_CFLAGS_ALLOW="-Xpreprocessor"
 ```
 
 ## Built With
