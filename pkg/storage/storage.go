@@ -343,7 +343,7 @@ func getClient(obj *object.FileObject) (storageClient, error) {
 			httpStorage.ConfigUrl:    storageCfg.Url,
 			httpStorage.ConfigHeader: string(headers),
 		}
-	case "s3", "s3-fixed":
+	case "s3":
 		config = stow.ConfigMap{
 			s3Storage.ConfigAccessKeyID: storageCfg.AccessKey,
 			s3Storage.ConfigSecretKey:   storageCfg.SecretAccessKey,

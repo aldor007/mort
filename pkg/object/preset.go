@@ -84,7 +84,7 @@ func presetToTransform(preset config.Preset) (transforms.Transforms, error) {
 	filters := preset.Filters
 
 	if filters.Thumbnail != nil {
-		err := trans.Resize(filters.Thumbnail.Width, filters.Thumbnail.Height, filters.Thumbnail.Mode == "outbound", false, false)
+		err := trans.Resize(filters.Thumbnail.Width, filters.Thumbnail.Height, filters.Thumbnail.Mode == "outbound", filters.Thumbnail.PreserveAspectRatio, filters.Thumbnail.Fill)
 		if err != nil {
 			return trans, err
 		}

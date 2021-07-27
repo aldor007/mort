@@ -40,7 +40,7 @@ func TestImageEngine_Process(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, obj)
 
-	obj.Transforms.Resize(100, 70, false)
+	obj.Transforms.Resize(100, 70, false, false, false)
 
 	e := NewImageEngine(image)
 	res, err := e.Process(obj, []transforms.Transforms{obj.Transforms})

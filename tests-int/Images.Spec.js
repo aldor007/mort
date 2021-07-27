@@ -51,7 +51,7 @@ describe('Image processing', function () {
                     }
 
                     const body = res.body;
-                    expect(body.length).to.be.within(9300, 9700);
+                    expect(body.length).to.be.within(9300, 10000);
 
                     expect(res.headers['x-amz-meta-public-width']).to.eql('150');
                     expect(res.headers['x-amz-meta-public-height']).to.eql('200');
@@ -77,7 +77,7 @@ describe('Image processing', function () {
             const reqPath = '/remote/nxpvwo7qqfwz.jpg/crop';
             const width = '756';
             const height = '396';
-            checkImage(reqPath, width, height, [30950, 33000], done)
+            checkImage(reqPath, width, height, [30000, 33000], done)
         });
 
         it('should create thumbnails with blur from external source', function (done) {
@@ -93,7 +93,7 @@ describe('Image processing', function () {
             const reqPath = '/remote/nxpvwo7qqfwz.jpg/watermark';
             const width = '200';
             const height = '200';
-            checkImage(reqPath, width, height, [4500, 4600], done)
+            checkImage(reqPath, width, height, [3500, 4600], done)
         });
 
         it('should extract given area from image', function (done) {
@@ -118,7 +118,7 @@ describe('Image processing', function () {
                     }
 
                     const body = res.body;
-                    expect(body.length).to.be.within(2400, 2700);
+                    expect(body.length).to.be.within(2000, 2700);
 
                     expect(res.headers['x-amz-meta-public-width']).to.eql(width);
                     expect(res.headers['x-amz-meta-public-height']).to.eql(height);
@@ -172,7 +172,7 @@ describe('Image processing', function () {
                     }
 
                     const body = res.body;
-                    expect(body.length).to.be.within(1900, 2000);
+                    expect(body.length).to.be.within(1500, 2000);
 
                     expect(res.headers['x-amz-meta-public-width']).to.eql('100');
                     expect(res.headers['x-amz-meta-public-height']).to.eql('125');
@@ -205,7 +205,7 @@ describe('Image processing', function () {
                     }
 
                     const body = res.body;
-                    expect(body.length).to.be.within(1500, 2054);
+                    expect(body.length).to.be.within(1300, 2054);
 
                     expect(res.headers['x-amz-meta-public-width']).to.eql('100');
                     expect(res.headers['x-amz-meta-public-height']).to.eql('100');
@@ -266,7 +266,7 @@ describe('Image processing', function () {
             const reqPath = '/remote/nxpvwo7qqfwz.jpg?operation=resize&width=400&operation=rotate&angle=90';
             const width = '400';
             const height = '320';
-            checkImage(reqPath, width, height, [18100, 18300], done);
+            checkImage(reqPath, width, height, [10100, 18300], done);
         });
 
         it('should create thumbnails with watermark', function (done) {
@@ -274,7 +274,7 @@ describe('Image processing', function () {
             const reqPath = '/remote/nxpvwo7qqfwz.jpg?operation=resize&width=400&height=100&image=https://i.imgur.com/uomkVIL.png&opacity=0.5&position=top-left&operation=watermark';
             const width = '400';
             const height = '100';
-            checkImage(reqPath, width, height, [4000, 4600], done);
+            checkImage(reqPath, width, height, [3500, 4600], done);
         });
 
         it('should return 404 when parent not found', function (done) {

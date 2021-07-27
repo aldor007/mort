@@ -4,15 +4,13 @@ go 1.16
 
 require (
 	github.com/aldor007/go-aws-auth v0.0.0-20180623204207-00898dfb9272
-	github.com/aldor007/stow v1.0.1
-	github.com/aws/aws-sdk-go v1.38.57
-	github.com/cheekybits/is v0.0.0-20150225183255-68e9c0620927 // indirect
+	github.com/aldor007/stow v1.1.0
+	github.com/aws/aws-sdk-go v1.38.57 // indirect
 	github.com/djherbis/stream v1.3.1
 	github.com/go-chi/chi v1.5.2
 	github.com/go-redis/cache/v8 v8.3.1-0.20210129151214-1cdfea0b552b
 	github.com/go-redis/redis/v8 v8.5.0
 	github.com/google/brotli/go/cbrotli v0.0.0-20210127140805-63be8a994019
-	github.com/google/readahead v0.0.0-20161222183148-eaceba169032 // indirect
 	github.com/karlseguin/ccache v2.0.3+incompatible
 	github.com/karlseguin/expect v1.0.7 // indirect
 	github.com/pkg/errors v0.9.1
