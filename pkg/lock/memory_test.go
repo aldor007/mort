@@ -132,8 +132,7 @@ func BenchmarkMemoryLock_NotifyAndRelease(b *testing.B) {
 					case <-r.ResponseChan:
 						return
 					case <-timer.C:
-						b.Fatalf("timeout waiting for lock")
-						return
+						panic("timeout waiting for lock")
 					default:
 
 					}

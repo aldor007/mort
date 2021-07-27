@@ -8,9 +8,11 @@ type Preset struct {
 	Format  string `yaml:"format"`
 	Filters struct {
 		Thumbnail *struct {
-			Width  int    `yaml:"width"`
-			Height int    `yaml:"height"`
-			Mode   string `yaml:"mode"`
+			Width               int    `yaml:"width"`
+			Height              int    `yaml:"height"`
+			Mode                string `yaml:"mode"`
+			PreserveAspectRatio bool   `yaml:"preserveAspectRatio"`
+			Fill                bool   `yaml:"fill"`
 		} `yaml:"thumbnail,omitempty"`
 		Interlace bool `yaml:"interlace"`
 		Crop      *struct {
@@ -117,7 +119,7 @@ type Bucket struct {
 // HeaderYaml allow you to override response headers
 type HeaderYaml struct {
 	StatusCodes []int             `yaml:"statusCodes"`
-	Override    bool              `yaml:"override`
+	Override    bool              `yaml:"override"`
 	Values      map[string]string `yaml:"values"`
 }
 
@@ -132,11 +134,11 @@ type CacheCfg struct {
 
 // Server configure HTTP server
 type Server struct {
-	LogLevel       string                 `yaml:"logLevel"`
-	InternalListen string                 `yaml:"internalListen"`
-	SingleListen   string                 `yaml:"listen"`
-	RequestTimeout int                    `yaml:"requestTimeout"`
-	LockTimeout    int                    `yaml:"lockTimeout"`
+	LogLevel       string `yaml:"logLevel"`
+	InternalListen string `yaml:"internalListen"`
+	SingleListen   string `yaml:"listen"`
+	RequestTimeout int    `yaml:"requestTimeout"`
+	LockTimeout    int    `yaml:"lockTimeout"`
 	// Unused, intention unknown
 	QueueLen       int                    `yaml:"queueLen"`
 	Listen         []string               `yaml:"listens"`

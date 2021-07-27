@@ -44,7 +44,7 @@ func TestTransformsBlur(t *testing.T) {
 
 func TestTransformsResize(t *testing.T) {
 	trans := Transforms{}
-	trans.Resize(5, 100, true)
+	trans.Resize(5, 100, true, false, false)
 
 	optsArr, err := trans.BimgOptions(ImageInfo{})
 	assert.Nil(t, err)
@@ -60,7 +60,7 @@ func TestTransformsResize(t *testing.T) {
 	assert.Equal(t, "3c9adb04ba75bd9c", hashStr)
 
 	trans2 := Transforms{}
-	trans2.Resize(100, 5, false)
+	trans2.Resize(100, 5, false, false, false)
 
 	hashStr2 := strconv.FormatUint(uint64(trans2.Hash().Sum64()), 16)
 	assert.NotEqual(t, hashStr, hashStr2)
@@ -252,9 +252,9 @@ func TestTransforms_Watermark(t *testing.T) {
 
 func TestTransforms_Merge_Resize(t *testing.T) {
 	tab := make([]Transforms, 2)
-	tab[0].Resize(100, 0, false)
+	tab[0].Resize(100, 0, false, false, false)
 
-	tab[1].Resize(0, 300, true)
+	tab[1].Resize(0, 300, true, false, false)
 
 	result := Merge(tab)
 

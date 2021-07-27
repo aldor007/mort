@@ -74,8 +74,11 @@ func TestFetchFromCache(t *testing.T) {
 
 	assert.Equal(t, 404, storageRes.StatusCode)
 
+	obj2, err := object.NewFileObject(req.URL, &mortConfig)
+	assert.Nil(t, err)
+
 	req, _ = http.NewRequest("GET", "http://mort/local/small.jpg-m?width=55", nil)
-	res = rp.Process(req, obj)
+	res = rp.Process(req, obj2)
 
 	assert.Equal(t, res.StatusCode, 200)
 	assert.Equal(t, res.Headers.Get("x-amz-meta-public-width"), "100")
@@ -224,8 +227,11 @@ func TestPut(t *testing.T) {
 
 	assert.Equal(t, res.StatusCode, 200)
 
+	obj2, err := object.NewFileObject(req.URL, &mortConfig)
+	assert.Nil(t, err)
+
 	req, _ = http.NewRequest("HEAD", "http://mort/local/file-test", &buf)
-	res = rp.Process(req, obj)
+	res = rp.Process(req, obj2)
 
 	assert.Equal(t, res.StatusCode, 200)
 }

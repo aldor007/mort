@@ -14,7 +14,6 @@ func init() {
 	RegisterParser("base64_presets", decodeBase64Preset)
 }
 
-
 // decodePreset parse given url by matching user defined regexp with request path
 func decodeBase64Preset(u *url.URL, bucketConfig config.Bucket, obj *FileObject) (string, error) {
 	trans := bucketConfig.Transform
@@ -51,4 +50,3 @@ func decodeBase64Preset(u *url.URL, bucketConfig config.Bucket, obj *FileObject)
 
 	return parent, err
 }
-

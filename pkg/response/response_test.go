@@ -110,8 +110,7 @@ func TestResponse_CopyHeadersFrom(t *testing.T) {
 	src.Headers.Set("X-Header", "1")
 	src.SetContentType("text/html")
 
-	res := NewBuf(200, buf)
-	res.CopyHeadersFrom(src)
+	res, _ := src.Copy()
 
 	assert.Equal(t, res.Headers["X-Header"][0], "1")
 	assert.Equal(t, res.Headers.Get(HeaderContentType), "text/html")

@@ -93,7 +93,6 @@ func NewError(statusCode int, err error) *Response {
 	res := Response{StatusCode: statusCode, errorValue: err}
 	res.Headers = make(http.Header)
 	res.Headers.Set(HeaderContentType, "application/json")
-	res.setBodyBytes([]byte{})
 	return &res
 }
 

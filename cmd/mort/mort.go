@@ -31,7 +31,6 @@ import (
 
 	"github.com/aldor007/mort/pkg/object/cloudinary"
 	_ "github.com/aldor007/mort/pkg/object/cloudinary"
-	_ "github.com/aldor007/mort/pkg/storage/s3-fixed"
 )
 
 const (
