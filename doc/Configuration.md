@@ -26,19 +26,19 @@ headers: # add or overwrite response headers of given status. This field is opti
     values:
       "cache-control": "max-age=84000, public"
 
-buckets: # list of available buckets 
-    demo:    # bucket name 
-        keys: # list of S3 keys (optional)
+buckets: # list of available buckets
+    demo:    # bucket name
+        keys: # list of keys, to access mort over the S3 protocol (optional)
           - accessKey: "access"
             secretAccessKey: "random"
         transform: # config for transforms
-            path: "\\/(?P<presetName>[a-z0-9_]+)\\/(?P<parent>[a-z0-9-\\.]+)" # regexp for transform path 
+            path: "\\/(?P<presetName>[a-z0-9_]+)\\/(?P<parent>[a-z0-9-\\.]+)" # regexp for transform path
             kind: "presets-query" #  type of transform or "query"
             presets: # list of presets
                 small:
                     quality: 75
                     filters:
-                        thumbnail: 
+                        thumbnail:
                             width: 150
         storages:
              basic: # retrieve originals from s3
@@ -54,20 +54,20 @@ buckets: # list of available buckets
 
 ## Server
 
-Server section describe configuration for HTTP server and some runtime variables
+Server section describe configuration for the HTTP server and some runtime variables
 
 ```yaml
 server:
     listen: "0.0.0.0:8080" # default traffic listener
     monitoring: "" # default no monitoring ( or prometheus)
-    cache: 
+    cache:
       type: "memory" # default or redis
       cacheSize: 50000 # limit of bytes used by memory cache.
       maxCacheItemSizeMB: 50 # max item size to cache default 5 MB
       # config for redis
       address:
         - "localhost:6379"
-      clientConfig: # change redis instance config 
+      clientConfig: # change redis instance config
     requestTimeout: 70 # default request timeout in seconds
     internalListen: "0.0.0.0:8081" # default listener for debug /debug and metrics /metrics
     plugins: # list of additional plugins
@@ -76,7 +76,7 @@ server:
 
 ## Response Headers
 
-Overwrite response headers for given status code.
+Overwrite the response headers for a given status code.
 
 ```yaml
 headers:
@@ -93,7 +93,7 @@ headers:
 
 ## Buckets
 
-Main configuration for processing of request for storage or image processing. It should contain list of buckets.
+Main configuration for storage and image processing. It contains a list of buckets.
 
 Example buckets config:
 
@@ -128,15 +128,15 @@ buckets:
 
 ### Transform
 
-Transform section describe if and what operation should be processed on image.
+This section describes, if and what operation can be applied to an image.
 
-There are 3 kinds of transforms configuration:
+There are 3 ways to determine which operation should be applied to an image:
 #### Presets
 
 ```yaml
 kind: "presets"
 ```
-In this kind you have to define matching regexp for request path (path without bucket name). In regexp you have to add two matching groups - presetName, parent.
+In this kind you have to define a matching regexp for request path (path without bucket name). In this regexp you have to add two matching groups - presetName, parent.
 * presetName is a name of preset that should be performed on given image(parent).
 * parent is a image original on which we are performing operations
 
@@ -144,7 +144,7 @@ Example usage:
 ```yaml
     path: "\\/(?P<presetName>[a-z0-9_]+)\\/(?P<parent>.*)"
 ```
-It will match url http://mort/media/preset/dir/parent.jpg and 
+It will match url http://mort/media/preset/dir/parent.jpg and
 * presetName will be - preset
 * parent will be - dir/parent.jpg
 
@@ -154,7 +154,7 @@ It will match url http://mort/media/preset/dir/parent.jpg and
 kind: "query"
 ```
 
-This kind of transform parse operations from query string. There is no need to provide regexp path.
+This kind of transform determines the operations from the query string. There is no need to provide regexp path.
 
 Example usage:
 
@@ -179,14 +179,15 @@ Other options:
 **parentStorage** - change storage from with mort should fetch originals of image
 
 
-**checkParent** - flag indicated that mort should always check if original object exists before returning transformation to client 
+**checkParent** - flag indicated that mort should always check if original object exists before returning transformation to client
 
 #### Cloudinary
 
 ```yaml
 kind: "cloudinary"
 ```
-In this kind you have to define matching regexp for request path (path without bucket name). In regexp you have to add two matching groups - transformations, parent.
+Like for "presets", you also have to define a matching regexp for request path (path without bucket name). In this regexp you have to add two matching groups - transformations and parent.
+* 
 * transformations captures the part of path with transformation definiton in a Cloudinary format.
 * parent is an image identifier stored in a Basic storage 
 
@@ -213,7 +214,7 @@ List of storage adapters:
 
 #### local-meta
 
-Local filesystem storage. 
+Local filesystem storage.
 
 Example definition:
 ```yaml
@@ -243,7 +244,7 @@ Example definition
 ```
 
 **url** - remote address, in url you should provide placeholders for bucket name (conatiner) and item path (item)
- 
+
 **headers** - additional request headers (optional)
 
 #### s3
@@ -268,5 +269,3 @@ Example definition
 **region** = region of s3 service
 
 **bucket** - bucket used for storage, when empty name of bucket will be used
-
-
