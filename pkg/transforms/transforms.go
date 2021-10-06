@@ -10,7 +10,7 @@ import (
 
 	"github.com/aldor007/mort/pkg/helpers"
 	"github.com/spaolacci/murmur3"
-	"gopkg.in/h2non/bimg.v1"
+	 "github.com/h2non/bimg"
 )
 
 var watermarkPosX = map[string]float32{

@@ -8,7 +8,7 @@ import (
 
 	"github.com/aldor007/mort/pkg/config"
 	"github.com/aldor007/mort/pkg/transforms"
-	"gopkg.in/h2non/bimg.v1"
+	 "github.com/h2non/bimg"
 	"net/url"
 )
 

@@ -2,7 +2,7 @@ package transforms
 
 import (
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/h2non/bimg.v1"
+	 "github.com/h2non/bimg"
 	"strconv"
 	"testing"
 )
