@@ -9,8 +9,8 @@ import (
 	"math"
 
 	"github.com/aldor007/mort/pkg/helpers"
+	"github.com/h2non/bimg"
 	"github.com/spaolacci/murmur3"
-	 "github.com/h2non/bimg"
 )
 
 var watermarkPosX = map[string]float32{
@@ -446,8 +446,14 @@ func (t *Transforms) calculateAutoCrop(info ImageInfo) (int, int, int, int) {
 		info.height = t.height
 	}
 
-	wFactor := float64(info.width / t.autoCropWidth)
-	hFactor := float64(info.height / t.autoCropHeight)
+	var wFactor, hFactor float64
+	if t.autoCropWidth != 0 {
+		wFactor = float64(info.width / t.autoCropWidth)
+	}
+
+	if t.autoCropHeight != 0 {
+		hFactor = float64(info.height / t.autoCropHeight)
+	}
 
 	var cropWidth, cropHeight float64
 	if wFactor < hFactor {
