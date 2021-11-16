@@ -2,7 +2,7 @@
   "name": "mort-integrations-tests",
   "version": "1.0.0",
   "dependencies": {
-    "aws-sdk": "^2.327.0",
+    "aws-sdk": "^2.814.0",
     "chai": "^4.2.0",
     "mocha": "^5.2.0",
     "moment": "^2.22.1",
