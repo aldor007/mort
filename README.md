@@ -202,7 +202,9 @@ docker pull aldor007/mort
 Create Dockerfile or use Dockerfile.service
 ```
 FROM aldor007/mort:latest
-ADD config.yml /etc/mort/mort.yml # add yours config
+
+# add your config
+ADD config.yml /etc/mort/mort.yml 
 ```
 
 Build container
