@@ -1,8 +1,8 @@
 package transforms
 
 import (
+	"github.com/h2non/bimg"
 	"github.com/stretchr/testify/assert"
-	 "github.com/h2non/bimg"
 	"strconv"
 	"testing"
 )

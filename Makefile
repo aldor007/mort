@@ -1,4 +1,3 @@
-tag := $(shell git describe)
 
 install:
 	dep ensure
@@ -27,7 +26,7 @@ docker-push:
 run-server:
 	mkdir -p /tmp/mort
 	go run cmd/mort/mort.go -config configuration/config.yml
-	
+
 run-test-server:
 	mkdir -p /tmp/mort-tests/remote
 	mkdir -p /tmp/mort-tests/remote-query
@@ -41,4 +40,3 @@ clean-prof:
 
 release:
 	docker build . -f Dockerfile.build --build-arg GITHUB_TOKEN=${GITHUB_TOKEN}
-	docker build . -t aldor007/mort:${tag}; docker push aldor007/mort:${tag}

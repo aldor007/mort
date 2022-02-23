@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+
 	"github.com/aldor007/mort/pkg/helpers"
 	"github.com/aldor007/mort/pkg/monitoring"
 	"github.com/aldor007/mort/pkg/object"
@@ -183,7 +184,11 @@ func (r *Response) SetDebug(obj *object.FileObject) *Response {
 
 		if obj.HasTransform() {
 			r.Headers.Set("x-mort-transform", "true")
-			buf, err := json.Marshal(r.trans)
+			jsonRes := make([]map[string]interface{}, len(r.trans))
+			for i, t := range r.trans {
+				jsonRes[i] = t.ToJSON()
+			}
+			buf, err := json.Marshal(jsonRes)
 			if err == nil {
 				r.Headers.Set("x-mort-transform-json", string(buf))
 			} else {

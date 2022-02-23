@@ -8,7 +8,7 @@ server:
       clientConfig:
 
   listens:
-    - ":8080"
+    - ":8084"
     - "unix:/tmp/mort.sock"
   monitoring: "prometheus"
   plugins:
@@ -107,6 +107,23 @@ buckets:
         transform:
             kind: "query"
             resultKey: "hash"
+        storages:
+            basic:
+                kind: "http"
+                url: "https://i.imgur.com/<item>"
+                headers:
+                  "x--key": "sec"
+            transform:
+                kind: "local-meta"
+                rootPath: "/tmp/mort/"
+                pathPrefix: "transforms"
+    tengo:
+        keys:
+          - accessKey: "acc"
+            secretAccessKey: "sec"
+        transform:
+            kind: "tengo"
+            tengoPath: './configuration/parse.tengo'
         storages:
             basic:
                 kind: "http"

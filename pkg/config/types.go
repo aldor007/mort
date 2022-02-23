@@ -1,6 +1,7 @@
 package config
 
 import "regexp"
+import "github.com/d5/tengo/v2"
 
 // Preset describe properties of transform preset
 type Preset struct {
@@ -60,6 +61,22 @@ type Transform struct {
 	Presets       map[string]Preset `yaml:"presets"`
 	CheckParent   bool              `yaml:"checkParent"`
 	ResultKey     string            `yaml:"resultKey"`
+	TengoPath     string            `yaml:"tengoPath"`
+	TengoScript   *tengo.Compiled
+}
+
+func (t *Transform) ForParser() *Transform{
+	return &Transform{
+		Path: t.Path,
+		ParentStorage: t.ParentStorage,
+		ParentBucket: t.ParentBucket,
+		PathRegexp: t.PathRegexp,
+		Kind: t.Kind,
+		Presets: t.Presets,
+		CheckParent: t.CheckParent,
+		ResultKey: t.ResultKey,
+	}
+
 }
 
 // Storage contains information about kind of used storage

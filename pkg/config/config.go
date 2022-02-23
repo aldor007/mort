@@ -8,6 +8,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/d5/tengo/v2"
+	"github.com/d5/tengo/v2/stdlib"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 
@@ -213,6 +215,27 @@ func (c *Config) validateTransform(bucketName string, bucket *Bucket) error {
 
 	if transform.ResultKey == "" && (transform.Kind == "query" || transform.Kind == "presets-query") {
 		bucket.Transform.ResultKey = "hashParent"
+	}
+
+	if transform.Kind == "tengo" {
+		buf, errTengo := os.ReadFile(transform.TengoPath)
+		if errTengo != nil {
+			err = configInvalidError(fmt.Sprintf("unable to read tengo script file %s, error %v", transform.TengoPath, errTengo))
+		}
+
+		t := tengo.NewScript(buf)
+		t.SetImports(stdlib.GetModuleMap(stdlib.AllModuleNames()...))
+		t.Add("url", nil)
+		t.Add("bucketConfig", nil)
+		t.Add("obj", nil)
+		t.Add("transforms", nil)
+
+		c, errTengo := t.Compile()
+		if errTengo != nil {
+			err = configInvalidError(fmt.Sprintf("unable to compile tengo script %s error %v", transform.TengoPath, errTengo))
+		}
+		bucket.Transform.TengoScript = c
+
 	}
 
 	return err
