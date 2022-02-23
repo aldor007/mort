@@ -6,6 +6,7 @@ require (
 	github.com/aldor007/go-aws-auth v0.0.0-20180623204207-00898dfb9272
 	github.com/aldor007/stow v1.1.0
 	github.com/aws/aws-sdk-go v1.38.57 // indirect
+	github.com/d5/tengo/v2 v2.10.1
 	github.com/djherbis/stream v1.3.1
 	github.com/go-chi/chi v1.5.2
 	github.com/go-redis/cache/v8 v8.3.1-0.20210129151214-1cdfea0b552b

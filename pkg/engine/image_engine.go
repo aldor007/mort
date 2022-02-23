@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/h2non/bimg"
 	"crypto/md5"
 	"encoding/hex"
+	"github.com/h2non/bimg"
 
 	"github.com/aldor007/mort/pkg/monitoring"
 	"github.com/aldor007/mort/pkg/object"
