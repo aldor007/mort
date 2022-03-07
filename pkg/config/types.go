@@ -65,16 +65,16 @@ type Transform struct {
 	TengoScript   *tengo.Compiled
 }
 
-func (t *Transform) ForParser() *Transform{
+func (t *Transform) ForParser() *Transform {
 	return &Transform{
-		Path: t.Path,
+		Path:          t.Path,
 		ParentStorage: t.ParentStorage,
-		ParentBucket: t.ParentBucket,
-		PathRegexp: t.PathRegexp,
-		Kind: t.Kind,
-		Presets: t.Presets,
-		CheckParent: t.CheckParent,
-		ResultKey: t.ResultKey,
+		ParentBucket:  t.ParentBucket,
+		PathRegexp:    t.PathRegexp,
+		Kind:          t.Kind,
+		Presets:       t.Presets,
+		CheckParent:   t.CheckParent,
+		ResultKey:     t.ResultKey,
 	}
 
 }

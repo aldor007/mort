@@ -33,9 +33,15 @@ import (
 	_ "github.com/aldor007/mort/pkg/object/cloudinary"
 )
 
+
+// variables provided by goreleaser
+var (
+    version = "dev"
+    commit  = "none"
+    date = "unknown"
+)
+
 const (
-	// Version of mort
-	Version = "0.16.1"
 	// BANNER just fancy command line banner
 	BANNER = `
   /\/\   ___  _ __| |_
@@ -43,6 +49,8 @@ const (
 / /\/\ \ (_) | |  | |_
 \/    \/\___/|_|   \__|
  Version: %s
+ Commit: %s
+ Date: %s
 `
 )
 
@@ -194,11 +202,11 @@ func startServer(s *http.Server, ln net.Listener) {
 
 func main() {
 	configPath := flag.String("config", "/etc/mort/mort.yml", "Path to configuration")
-	version := flag.Bool("version", false, "get mort version")
+	versionCmd := flag.Bool("version", false, "get mort version")
 	flag.Parse()
 
-	if version != nil && *version == true {
-		fmt.Println(Version)
+	if versionCmd != nil && *versionCmd == true {
+		fmt.Println(version, "commit", commit, "date", date)
 		return
 	}
 
@@ -211,7 +219,7 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Printf(BANNER, "v"+Version)
+	fmt.Printf(BANNER, version, commit, date)
 	fmt.Printf("Config file %s listen addr %s montoring: and debug listen %s pid: %d \n", *configPath, imgConfig.Server.Listen, imgConfig.Server.InternalListen, os.Getpid())
 
 	rp := processor.NewRequestProcessor(imgConfig.Server, lock.NewMemoryLock(), throttler.NewBucketThrottler(10))
@@ -240,7 +248,7 @@ func main() {
 			defer res.Close()
 			res.SetDebug(obj)
 			if debug {
-				res.Set("X-Mort-Version", Version)
+				res.Set("X-Mort-Version", version)
 			}
 
 			// FIXME

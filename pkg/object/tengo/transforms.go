@@ -1,29 +1,27 @@
 package tengo
 
 import (
-
 	"github.com/aldor007/mort/pkg/transforms"
 	"github.com/d5/tengo/v2"
 	tengoLib "github.com/d5/tengo/v2"
 	"github.com/d5/tengo/v2/token"
 )
 
-
 type Transforms struct {
-    tengoLib.ObjectImpl
-    Value transforms.Transforms
+	tengoLib.ObjectImpl
+	Value transforms.Transforms
 }
 
 func (o *Transforms) String() string {
-    return string(o.Value.Hash().Sum64())
+	return string(o.Value.Hash().Sum64())
 }
 
 func (o *Transforms) BinaryOp(op token.Token, rhs tengoLib.Object) (tengoLib.Object, error) {
-    return nil, tengoLib.ErrInvalidOperator
+	return nil, tengoLib.ErrInvalidOperator
 }
 
 func (o *Transforms) IsFalsy() bool {
-    return o.Value.NotEmpty
+	return o.Value.NotEmpty
 }
 
 func (o *Transforms) Equals(x tengoLib.Object) bool {
@@ -31,14 +29,15 @@ func (o *Transforms) Equals(x tengoLib.Object) bool {
 }
 
 func (o *Transforms) Copy() tengoLib.Object {
-    return &Transforms{
-        Value: o.Value,
-    }
+	return &Transforms{
+		Value: o.Value,
+	}
 }
 
 func (o *Transforms) TypeName() string {
-    return "Transforms-object"
+	return "Transforms-object"
 }
+
 // IndexGet returns the value for the given key.
 func (o *Transforms) IndexGet(index tengoLib.Object) (val tengoLib.Object, err error) {
 	strIdx, ok := tengoLib.ToString(index)
@@ -48,33 +47,32 @@ func (o *Transforms) IndexGet(index tengoLib.Object) (val tengoLib.Object, err e
 	}
 
 	val = tengo.UndefinedValue
-    switch strIdx {
-    case "resize":
-        val = &tengoLib.UserFunction{Name: "resize", Value: o.resize}
-    case "extract":
-        val = &tengoLib.UserFunction{Name: "extract", Value: o.extract}
-    case "crop":
-        val = &tengoLib.UserFunction{Name: "crop", Value: o.crop}
-    case "resizeCropAuto":
-        val = &tengoLib.UserFunction{Name: "resizeCropAuto", Value: o.resizeCropAuto}
-    case "interlace":
-        val = &tengoLib.UserFunction{Name: "interlace", Value: o.interlace}
-    case "quality":
-        val = &tengoLib.UserFunction{Name: "quality", Value: o.quality}
-    case "stripMetadata":
-        val = &tengoLib.UserFunction{Name: "stripMetadata", Value: o.stripMetadata}
-    case "blur":
-        val = &tengoLib.UserFunction{Name: "blur", Value: o.blur}
-    case "format":
-        val = &tengoLib.UserFunction{Name: "format", Value: o.format}
-    case "watermark":
-        val = &tengoLib.UserFunction{Name: "watermark", Value: o.watermark}
-    case "grayscale":
-        val = &tengoLib.UserFunction{Name: strIdx, Value: o.grayscale}
-    case "rotate":
-        val = &tengoLib.UserFunction{Name: strIdx, Value: o.rotate}
-    }
-
+	switch strIdx {
+	case "resize":
+		val = &tengoLib.UserFunction{Name: "resize", Value: o.resize}
+	case "extract":
+		val = &tengoLib.UserFunction{Name: "extract", Value: o.extract}
+	case "crop":
+		val = &tengoLib.UserFunction{Name: "crop", Value: o.crop}
+	case "resizeCropAuto":
+		val = &tengoLib.UserFunction{Name: "resizeCropAuto", Value: o.resizeCropAuto}
+	case "interlace":
+		val = &tengoLib.UserFunction{Name: "interlace", Value: o.interlace}
+	case "quality":
+		val = &tengoLib.UserFunction{Name: "quality", Value: o.quality}
+	case "stripMetadata":
+		val = &tengoLib.UserFunction{Name: "stripMetadata", Value: o.stripMetadata}
+	case "blur":
+		val = &tengoLib.UserFunction{Name: "blur", Value: o.blur}
+	case "format":
+		val = &tengoLib.UserFunction{Name: "format", Value: o.format}
+	case "watermark":
+		val = &tengoLib.UserFunction{Name: "watermark", Value: o.watermark}
+	case "grayscale":
+		val = &tengoLib.UserFunction{Name: strIdx, Value: o.grayscale}
+	case "rotate":
+		val = &tengoLib.UserFunction{Name: strIdx, Value: o.rotate}
+	}
 
 	return val, nil
 }
@@ -106,7 +104,6 @@ func (o *Transforms) resize(args ...tengoLib.Object) (ret tengoLib.Object, err e
 		return nil, tengo.ErrInvalidArgumentType{Name: "height", Expected: "int", Found: args[4].TypeName()}
 	}
 
-
 	o.Value.Resize(width, height, enlarge, preserveAspectRatio, fill)
 	return tengo.UndefinedValue, nil
 }
@@ -133,8 +130,6 @@ func (o *Transforms) extract(args ...tengoLib.Object) (ret tengoLib.Object, err 
 		return nil, tengo.ErrInvalidArgumentType{Name: "height", Expected: "int", Found: args[3].TypeName()}
 	}
 
-
-
 	o.Value.Extract(top, left, width, height)
 	return tengo.UndefinedValue, nil
 }
@@ -145,7 +140,7 @@ func (o *Transforms) crop(args ...tengoLib.Object) (ret tengoLib.Object, err err
 	}
 
 	var gravity string
-	var ok, enlarge, embed  bool
+	var ok, enlarge, embed bool
 	var width, height int
 	if width, ok = tengoLib.ToInt(args[0]); !ok {
 		return nil, tengoLib.ErrInvalidArgumentType{Name: "width", Expected: "int", Found: args[0].TypeName()}
@@ -190,7 +185,7 @@ func (o *Transforms) resizeCropAuto(args ...tengoLib.Object) (ret tengoLib.Objec
 	return tengo.UndefinedValue, nil
 }
 
-func (o *Transforms) interlace(_...tengoLib.Object) (ret tengoLib.Object, err error) {
+func (o *Transforms) interlace(_ ...tengoLib.Object) (ret tengoLib.Object, err error) {
 
 	o.Value.Interlace()
 	return tengo.UndefinedValue, nil
@@ -272,7 +267,7 @@ func (o *Transforms) watermark(args ...tengoLib.Object) (ret tengoLib.Object, er
 	return tengo.UndefinedValue, o.Value.Watermark(image, position, float32(opacity))
 }
 
-func (o *Transforms) grayscale(_...tengoLib.Object) (ret tengoLib.Object, err error) {
+func (o *Transforms) grayscale(_ ...tengoLib.Object) (ret tengoLib.Object, err error) {
 
 	o.Value.Grayscale()
 	return tengo.UndefinedValue, nil
