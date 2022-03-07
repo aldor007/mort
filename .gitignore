@@ -22,3 +22,5 @@ vendor/
 node_modules/
 pkg/processor/benchmark/local/file-test
 coverage.txt
+
+dist/

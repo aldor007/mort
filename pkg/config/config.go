@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
@@ -218,7 +220,7 @@ func (c *Config) validateTransform(bucketName string, bucket *Bucket) error {
 	}
 
 	if transform.Kind == "tengo" {
-		buf, errTengo := os.ReadFile(transform.TengoPath)
+		buf, errTengo := os.ReadFile(c.getPathToConfig(transform.TengoPath))
 		if errTengo != nil {
 			err = configInvalidError(fmt.Sprintf("unable to read tengo script file %s, error %v", transform.TengoPath, errTengo))
 		}
@@ -240,6 +242,18 @@ func (c *Config) validateTransform(bucketName string, bucket *Bucket) error {
 
 	return err
 
+}
+
+func (c *Config) getPathToConfig(filePath string) string {
+	if filepath.IsAbs(filePath) {
+		return filePath
+	} 
+
+	basePath := "./configuration/"
+	if v := os.Getenv("MORT_CONFIG_DIR"); v != "" {
+		basePath = v
+	}
+	return path.Join(basePath, filePath)
 }
 
 func (c *Config) validateServer() error {

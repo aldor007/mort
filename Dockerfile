@@ -3,6 +3,9 @@ FROM ubuntu:20.04 as builder
 ENV LIBVIPS_VERSION 8.11.2
 ENV GOLANG_VERSION 1.16.6
 ARG TARGETARCH amd64
+ARG TAG 'dev'
+ARG COMMIT "master"
+ARG DATE "now"
 
 # Installs libvips + required libraries
 RUN apt-get update && \
@@ -38,15 +41,22 @@ RUN curl -fsSL --insecure "$GOLANG_DOWNLOAD_URL" -o golang.tar.gz \
   && tar -C /usr/local -xzf golang.tar.gz \
   && rm golang.tar.gz
 
-ENV WORKDIR /go
-ENV PATH $WORKDIR/bin:/usr/local/go/bin:$PATH
-# ENV GOROOT /go:$GOROOT
+ENV WORKDIR /workspace
+ENV PATH /usr/local/go/bin:$PATH
 
-RUN mkdir -p "$WORKDIR/src" "$WORKDIR/bin" && chmod -R 777 "$WORKDIR"
+
 WORKDIR $WORKDIR
-ADD . /go/src
+COPY go.mod  ./
+COPY go.sum ./
+RUN go mod  download 
 
-RUN cd /go/src; go build -o /go/mort cmd/mort/mort.go;
+COPY cmd/  $WORKDIR/cmd
+COPY .godir ${WORKDIR}/.godir
+COPY configuration/ ${WORKDIR}/configuration
+COPY etc/ ${WORKDIR}/etc
+COPY pkg/ ${WORKDIR}/pkg
+
+RUN go build -ldflags="-X 'main.version=${TAG}' -X 'main.commit=${COMMIT}' -X 'main.date=${DATE}'" -o /go/mort ./cmd/mort/mort.go 
 
 
 FROM ubuntu:20.04
@@ -70,7 +80,9 @@ RUN rm -rf /go/src; rm -rf /usr/include/
 COPY --from=builder /usr/local/lib /usr/local/lib
 RUN ldconfig
 COPY --from=builder /go/mort /go/mort
-COPY --from=builder /go/src/configuration/config.yml /etc/mort/mort.yml
+COPY --from=builder /workspace/configuration/config.yml /etc/mort/mort.yml
+COPY --from=builder /workspace/configuration/parse.tengo /etc/mort/parse.tengo
+ENV MORT_CONFIG_DIR /etc/mort
 # add mime types
 ADD http://svn.apache.org/viewvc/httpd/httpd/branches/2.2.x/docs/conf/mime.types?view=co /etc/mime.types
 

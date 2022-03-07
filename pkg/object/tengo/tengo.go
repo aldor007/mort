@@ -1,9 +1,9 @@
 package tengo
 
 import (
+	"fmt"
 	"github.com/aldor007/mort/pkg/config"
 	"github.com/aldor007/mort/pkg/transforms"
-	"fmt"
 	"net/url"
 
 	"github.com/aldor007/mort/pkg/object"
@@ -12,9 +12,6 @@ import (
 func init() {
 	object.RegisterParser("tengo", decodeUsingTengo)
 }
-
-
-
 
 // decodePreset parse given url by matching user defined regexp with request path
 func decodeUsingTengo(url *url.URL, bucketConfig config.Bucket, obj *object.FileObject) (string, error) {

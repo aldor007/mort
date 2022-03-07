@@ -124,38 +124,38 @@ func New() Transforms {
 	return t
 }
 
-func(t *Transforms) ToJSON() map[string]interface{} {
+func (t *Transforms) ToJSON() map[string]interface{} {
 	return map[string]interface{}{
-		"height": t.height,
-		"width": t.width,
-		"areaHeight": t.areaHeight,
-		"areaWidth": t.areaWidth,
-		"quality":  t.quality,
-		"compression": t.compression,
-		"zoom": t.zoom,
-		"top": t.top,
-		"left": t.left,
-		"crop": t.crop,
-		"enlarge": t.enlarge,
-		"embed": t.embed,
-		"fill": t.fill,
-		"flip": t.flip,
-		"flop": t.flop,
-		"force": t.force,
-		"noAutoRotate": t.noAutoRotate,
-		"noProfile": t.noProfile,
-		"interlace": t.interlace,
-		"stripMetada": t.stripMetadata,
-		"trim": t.trim,
+		"height":              t.height,
+		"width":               t.width,
+		"areaHeight":          t.areaHeight,
+		"areaWidth":           t.areaWidth,
+		"quality":             t.quality,
+		"compression":         t.compression,
+		"zoom":                t.zoom,
+		"top":                 t.top,
+		"left":                t.left,
+		"crop":                t.crop,
+		"enlarge":             t.enlarge,
+		"embed":               t.embed,
+		"fill":                t.fill,
+		"flip":                t.flip,
+		"flop":                t.flop,
+		"force":               t.force,
+		"noAutoRotate":        t.noAutoRotate,
+		"noProfile":           t.noProfile,
+		"interlace":           t.interlace,
+		"stripMetada":         t.stripMetadata,
+		"trim":                t.trim,
 		"preserveAspectRatio": t.preserveAspectRatio,
-		"rotate": t.rotate,
-		"interpretation": t.interpretation,
-		"gravity": t.gravity,
-		"blur":    t.blur,
-		"format":  t.format,
-		"autoCropWidth": t.autoCropWidth,
-		"autoCropHeight": t.autoCropHeight,
-		"hash": t.Hash().Sum64(),
+		"rotate":              t.rotate,
+		"interpretation":      t.interpretation,
+		"gravity":             t.gravity,
+		"blur":                t.blur,
+		"format":              t.format,
+		"autoCropWidth":       t.autoCropWidth,
+		"autoCropHeight":      t.autoCropHeight,
+		"hash":                t.Hash().Sum64(),
 	}
 
 }
@@ -167,7 +167,6 @@ func (t *Transforms) Resize(width, height int, enlarge bool, preserveAspectRatio
 	t.enlarge = enlarge
 	t.preserveAspectRatio = preserveAspectRatio
 	t.fill = fill
-
 
 	t.transHash.write(1111, uint64(t.width)*7, uint64(t.height)*3)
 
