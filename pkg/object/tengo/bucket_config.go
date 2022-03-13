@@ -1,6 +1,8 @@
 package tengo
 
 import (
+	"fmt"
+
 	"github.com/aldor007/mort/pkg/config"
 	tengoLib "github.com/d5/tengo/v2"
 	"github.com/d5/tengo/v2/token"
@@ -40,17 +42,23 @@ func (o *BucketConfig) TypeName() string {
 }
 
 // IndexGet returns the value for the given key.
-func (o *BucketConfig) IndexGet(index tengoLib.Object) (res tengoLib.Object, err error) {
+func (o *BucketConfig) IndexGet(index tengoLib.Object) (val tengoLib.Object, err error) {
 	strIdx, ok := tengoLib.ToString(index)
 	if !ok {
 		err = tengoLib.ErrInvalidIndexType
 		return
 	}
 
-	var val tengoLib.Object
+	val = tengoLib.UndefinedValue
 	switch strIdx {
 	case "transform":
-		val = &Transform{Value: o.Value.Transform.ForParser()}
+		if o.Value.Transform != nil {
+			val = &Transform{Value: o.Value.Transform.ForParser()}
+		} else {
+			err = fmt.Errorf("no transform for %s", o.Value.Name)
+			return
+		}
+
 	case "keys":
 		keys := make([]tengoLib.Object, len(o.Value.Keys))
 		for i, k := range o.Value.Keys {
@@ -79,5 +87,5 @@ func (o *BucketConfig) IndexGet(index tengoLib.Object) (res tengoLib.Object, err
 
 	}
 
-	return val, nil
+	return
 }

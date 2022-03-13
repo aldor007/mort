@@ -21,7 +21,7 @@ func (o *URL) BinaryOp(op token.Token, rhs tengoLib.Object) (tengoLib.Object, er
 }
 
 func (o *URL) IsFalsy() bool {
-	return o.Value.Host == ""
+	return o.String() == ""
 }
 
 func (o *URL) Equals(x tengoLib.Object) bool {
@@ -38,16 +38,16 @@ func (o *URL) Copy() tengoLib.Object {
 }
 
 // IndexGet returns the value for the given key.
-func (o *URL) IndexGet(index tengoLib.Object) (res tengoLib.Object, err error) {
+func (o *URL) IndexGet(index tengoLib.Object) (val tengoLib.Object, err error) {
 	strIdx, ok := tengoLib.ToString(index)
 	if !ok {
 		err = tengoLib.ErrInvalidIndexType
 		return
 	}
 
-	var val tengoLib.Object
+	val = tengoLib.UndefinedValue
 	switch strIdx {
-	case "schema":
+	case "scheme":
 		val = &tengoLib.String{
 			Value: o.Value.Scheme,
 		}

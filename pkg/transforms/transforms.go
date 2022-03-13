@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"hash"
+	"strconv"
 	"strings"
 
 	"math"
@@ -155,7 +156,7 @@ func (t *Transforms) ToJSON() map[string]interface{} {
 		"format":              t.format,
 		"autoCropWidth":       t.autoCropWidth,
 		"autoCropHeight":      t.autoCropHeight,
-		"hash":                t.Hash().Sum64(),
+		"hash":                t.HashStr(),
 	}
 
 }
@@ -277,6 +278,10 @@ func (t *Transforms) Hash() hash.Hash64 {
 	binary.LittleEndian.PutUint64(transHashB, t.transHash.value())
 	hashValue.Write(transHashB)
 	return hashValue
+}
+
+func (t *Transforms) HashStr() string {
+	return strconv.FormatUint(uint64(t.Hash().Sum64()), 16)
 }
 
 // Format change image format

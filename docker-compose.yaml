@@ -12,3 +12,12 @@ services:
     restart: always
     ports:
       - 8080:8080
+  tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+      args:
+        - TAG=dev
+        - COMMIT=master
+        - DATE=now
+    command: make unit

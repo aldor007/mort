@@ -1,6 +1,8 @@
 package tengo
 
 import (
+	"strconv"
+
 	"github.com/aldor007/mort/pkg/transforms"
 	"github.com/d5/tengo/v2"
 	tengoLib "github.com/d5/tengo/v2"
@@ -13,7 +15,7 @@ type Transforms struct {
 }
 
 func (o *Transforms) String() string {
-	return string(o.Value.Hash().Sum64())
+	return strconv.FormatUint(o.Value.Hash().Sum64(), 16)
 }
 
 func (o *Transforms) BinaryOp(op token.Token, rhs tengoLib.Object) (tengoLib.Object, error) {
@@ -25,7 +27,7 @@ func (o *Transforms) IsFalsy() bool {
 }
 
 func (o *Transforms) Equals(x tengoLib.Object) bool {
-	return false
+	return o.String() == x.String()
 }
 
 func (o *Transforms) Copy() tengoLib.Object {
@@ -92,20 +94,12 @@ func (o *Transforms) resize(args ...tengoLib.Object) (ret tengoLib.Object, err e
 		return nil, tengo.ErrInvalidArgumentType{Name: "height", Expected: "int", Found: args[1].TypeName()}
 	}
 
-	if enlarge, ok = tengoLib.ToBool(args[2]); !ok {
-		return nil, tengoLib.ErrInvalidArgumentType{Name: "width", Expected: "int", Found: args[2].TypeName()}
-	}
+	enlarge, _ = tengoLib.ToBool(args[2])
+	preserveAspectRatio, _ = tengo.ToBool(args[3])
+	fill, _ = tengo.ToBool(args[4])
 
-	if preserveAspectRatio, ok = tengo.ToBool(args[3]); !ok {
-		return nil, tengo.ErrInvalidArgumentType{Name: "height", Expected: "int", Found: args[3].TypeName()}
-	}
-
-	if fill, ok = tengo.ToBool(args[4]); !ok {
-		return nil, tengo.ErrInvalidArgumentType{Name: "height", Expected: "int", Found: args[4].TypeName()}
-	}
-
-	o.Value.Resize(width, height, enlarge, preserveAspectRatio, fill)
-	return tengo.UndefinedValue, nil
+	err = o.Value.Resize(width, height, enlarge, preserveAspectRatio, fill)
+	return tengo.UndefinedValue, err
 }
 
 func (o *Transforms) extract(args ...tengoLib.Object) (ret tengoLib.Object, err error) {
@@ -130,8 +124,8 @@ func (o *Transforms) extract(args ...tengoLib.Object) (ret tengoLib.Object, err 
 		return nil, tengo.ErrInvalidArgumentType{Name: "height", Expected: "int", Found: args[3].TypeName()}
 	}
 
-	o.Value.Extract(top, left, width, height)
-	return tengo.UndefinedValue, nil
+	err = o.Value.Extract(top, left, width, height)
+	return tengo.UndefinedValue, err
 }
 
 func (o *Transforms) crop(args ...tengoLib.Object) (ret tengoLib.Object, err error) {
@@ -162,8 +156,8 @@ func (o *Transforms) crop(args ...tengoLib.Object) (ret tengoLib.Object, err err
 		return nil, tengo.ErrInvalidArgumentType{Name: "enlarge", Expected: "bool", Found: args[4].TypeName()}
 	}
 
-	o.Value.Crop(width, height, gravity, enlarge, embed)
-	return tengo.UndefinedValue, nil
+	err = o.Value.Crop(width, height, gravity, enlarge, embed)
+	return tengo.UndefinedValue, err
 }
 
 func (o *Transforms) resizeCropAuto(args ...tengoLib.Object) (ret tengoLib.Object, err error) {
@@ -181,14 +175,14 @@ func (o *Transforms) resizeCropAuto(args ...tengoLib.Object) (ret tengoLib.Objec
 		return nil, tengo.ErrInvalidArgumentType{Name: "height", Expected: "int", Found: args[1].TypeName()}
 	}
 
-	o.Value.ResizeCropAuto(width, height)
-	return tengo.UndefinedValue, nil
+	err = o.Value.ResizeCropAuto(width, height)
+	return tengo.UndefinedValue, err
 }
 
 func (o *Transforms) interlace(_ ...tengoLib.Object) (ret tengoLib.Object, err error) {
 
-	o.Value.Interlace()
-	return tengo.UndefinedValue, nil
+	err = o.Value.Interlace()
+	return tengo.UndefinedValue, err
 }
 
 func (o *Transforms) quality(args ...tengoLib.Object) (ret tengoLib.Object, err error) {
@@ -202,8 +196,8 @@ func (o *Transforms) quality(args ...tengoLib.Object) (ret tengoLib.Object, err 
 		return nil, tengoLib.ErrInvalidArgumentType{Name: "quality", Expected: "int", Found: args[0].TypeName()}
 	}
 
-	o.Value.Quality(quality)
-	return tengo.UndefinedValue, nil
+	err = o.Value.Quality(quality)
+	return tengo.UndefinedValue, err
 }
 
 func (o *Transforms) stripMetadata(_ ...tengoLib.Object) (ret tengoLib.Object, err error) {
@@ -223,11 +217,10 @@ func (o *Transforms) blur(args ...tengoLib.Object) (ret tengoLib.Object, err err
 	}
 
 	if minAmpl, ok = tengoLib.ToFloat64(args[1]); !ok {
-		return nil, tengoLib.ErrInvalidArgumentType{Name: "quality", Expected: "flaot64", Found: args[1].TypeName()}
+		return nil, tengoLib.ErrInvalidArgumentType{Name: "minAmpl", Expected: "float64", Found: args[1].TypeName()}
 	}
 
-	o.Value.Blur(sigma, minAmpl)
-	return tengo.UndefinedValue, nil
+	return tengo.UndefinedValue, o.Value.Blur(sigma, minAmpl)
 }
 
 func (o *Transforms) format(args ...tengoLib.Object) (ret tengoLib.Object, err error) {

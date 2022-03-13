@@ -28,6 +28,7 @@ type Config struct {
 	Buckets         map[string]Bucket `yaml:"buckets"`
 	Headers         []HeaderYaml      `yaml:"headers"`
 	Server          Server            `yaml:"server"`
+	BaseConfigPath  string
 	accessKeyBucket map[string][]string
 }
 
@@ -247,12 +248,17 @@ func (c *Config) validateTransform(bucketName string, bucket *Bucket) error {
 func (c *Config) getPathToConfig(filePath string) string {
 	if filepath.IsAbs(filePath) {
 		return filePath
-	} 
+	}
 
 	basePath := "./configuration/"
 	if v := os.Getenv("MORT_CONFIG_DIR"); v != "" {
 		basePath = v
 	}
+
+	if c.BaseConfigPath != "" {
+		basePath = c.BaseConfigPath
+	}
+
 	return path.Join(basePath, filePath)
 }
 
