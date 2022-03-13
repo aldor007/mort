@@ -5,7 +5,6 @@
 *.dylib
 
 # Test binary, build with `go test -c`
-*.test
 
 prof.cpu
 prof.mem
