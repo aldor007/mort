@@ -24,7 +24,7 @@ func (o *Transform) IsFalsy() bool {
 }
 
 func (o *Transform) Equals(x tengoLib.Object) bool {
-	return false
+	return o.String() == x.String()
 }
 
 func (o *Transform) Copy() tengoLib.Object {
@@ -38,22 +38,22 @@ func (o *Transform) TypeName() string {
 }
 
 // IndexGet returns the value for the given key.
-func (o *Transform) IndexGet(index tengoLib.Object) (res tengoLib.Object, err error) {
+func (o *Transform) IndexGet(index tengoLib.Object) (val tengoLib.Object, err error) {
 	strIdx, ok := tengoLib.ToString(index)
 	if !ok {
 		err = tengoLib.ErrInvalidIndexType
 		return
 	}
 
-	var val tengoLib.Object
+	val = tengoLib.UndefinedValue
 	switch strIdx {
 	case "path":
 		val = &tengoLib.String{Value: o.Value.Path}
-	case "parentstorage":
+	case "parentStorage":
 		val = &tengoLib.String{Value: o.Value.ParentStorage}
-	case "parentbucket":
+	case "parentBucket":
 		val = &tengoLib.String{Value: o.Value.ParentBucket}
-	case "pathregexp":
+	case "pathRegexp":
 		val = &Regexp{Value: o.Value.PathRegexp}
 	case "kind":
 		val = &tengoLib.String{Value: o.Value.Kind}
@@ -62,7 +62,7 @@ func (o *Transform) IndexGet(index tengoLib.Object) (res tengoLib.Object, err er
 		for k, v := range o.Value.Presets {
 			internalMap[k] = &Preset{Value: v}
 		}
-		val = &tengoLib.Map{Value: internalMap}
+		val = &tengoLib.ImmutableMap{Value: internalMap}
 
 	}
 

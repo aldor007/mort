@@ -41,6 +41,14 @@ func TestTransformsBlur(t *testing.T) {
 	hashStr2 := strconv.FormatUint(uint64(trans2.Hash().Sum64()), 16)
 	assert.NotEqual(t, hashStr, hashStr2)
 }
+func TestTransformsJSON(t *testing.T) {
+	trans := Transforms{}
+	trans.Blur(1, 2)
+
+	d := trans.ToJSON()
+
+	assert.Equal(t, d["hash"], trans.HashStr())
+}
 
 func TestTransformsResize(t *testing.T) {
 	trans := Transforms{}

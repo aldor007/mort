@@ -33,12 +33,11 @@ import (
 	_ "github.com/aldor007/mort/pkg/object/cloudinary"
 )
 
-
 // variables provided by goreleaser
 var (
-    version = "dev"
-    commit  = "none"
-    date = "unknown"
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
 )
 
 const (

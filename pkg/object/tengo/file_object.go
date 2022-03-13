@@ -20,11 +20,11 @@ func (o *FileObject) BinaryOp(op token.Token, rhs tengoLib.Object) (tengoLib.Obj
 }
 
 func (o *FileObject) IsFalsy() bool {
-	return o.Value.Uri.String() != ""
+	return o.Value.Uri.String() == ""
 }
 
 func (o *FileObject) Equals(x tengoLib.Object) bool {
-	return false
+	return o.String() == x.String()
 }
 
 func (o *FileObject) Copy() tengoLib.Object {
@@ -38,14 +38,14 @@ func (o *FileObject) TypeName() string {
 }
 
 // IndexGet returns the value for the given key.
-func (o *FileObject) IndexGet(index tengoLib.Object) (res tengoLib.Object, err error) {
+func (o *FileObject) IndexGet(index tengoLib.Object) (val tengoLib.Object, err error) {
 	strIdx, ok := tengoLib.ToString(index)
 	if !ok {
 		err = tengoLib.ErrInvalidIndexType
 		return
 	}
 
-	var val tengoLib.Object
+	val = tengoLib.UndefinedValue
 	switch strIdx {
 	case "uri":
 		val = &URL{Value: o.Value.Uri}

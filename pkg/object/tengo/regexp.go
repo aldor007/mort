@@ -21,15 +21,14 @@ func (o *Regexp) BinaryOp(op token.Token, rhs tengoLib.Object) (tengoLib.Object,
 }
 
 func (o *Regexp) IsFalsy() bool {
-	return false
+	return o.Value == nil
 }
 
 func (o *Regexp) Equals(x tengoLib.Object) bool {
-	return false
+	return o.Value.String() == o.Value.String()
 }
 
 func (o *Regexp) Copy() tengoLib.Object {
-
 	return &Regexp{
 		Value: o.Value,
 	}
@@ -44,6 +43,10 @@ func (o *Regexp) CanCall() bool {
 }
 
 func (o *Regexp) Call(args ...tengoLib.Object) (ret tengoLib.Object, err error) {
+	if len(args) != 1 {
+		err = tengoLib.ErrWrongNumArguments
+		return
+	}
 	val := args[0].(*tengoLib.String)
 	matches := o.Value.FindStringSubmatch(val.Value)
 	if matches == nil {
