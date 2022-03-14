@@ -12,7 +12,6 @@ builds:
       - GOFLAGS=-mod=vendor
     goos:
       - linux
-      - darwin
     binary: mort
     main: "./cmd/mort/mort.go"
 archives:
