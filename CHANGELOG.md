@@ -1,3 +1,15 @@
+# [0.17.0](https://github.com/aldor007/mort/compare/0.16.1...0.17.0) (2022-03-14)
+
+
+### Bug Fixes
+
+* fix resizeCropAuto when one parameter is 0 ([ffbdeea](https://github.com/aldor007/mort/commit/ffbdeeace392cc31eddf25789eeaf86ecee97c11))
+
+
+### Features
+
+* add user defined script for parsing URL ([ca950c1](https://github.com/aldor007/mort/commit/ca950c148aecaf72363b5f659a2b4fe72109003c))
+
 * 0.14.1
      * Bugfix: Fix copying headers from object for S3 
 * 0.14.0
