@@ -13,7 +13,7 @@ func init() {
 	object.RegisterParser("tengo", decodeUsingTengo)
 }
 
-// decodePreset parse given url by matching user defined regexp with request path
+// decodeUsingTengo parse given url by executing tengo script
 func decodeUsingTengo(url *url.URL, bucketConfig config.Bucket, obj *object.FileObject) (string, error) {
 	t := bucketConfig.Transform.TengoScript.Clone()
 	err := t.Set("url", &URL{Value: url})

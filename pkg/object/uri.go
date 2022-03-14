@@ -82,7 +82,7 @@ func Parse(url *url.URL, mortConfig *config.Config, obj *FileObject) error {
 	obj.Storage = bucketConfig.Storages.Noop()
 	if obj.Transforms.NotEmpty {
 		obj.Storage = bucketConfig.Storages.Transform()
-		if obj.allowChangeKey {
+		if obj.AllowChangeKey {
 			switch bucketConfig.Transform.ResultKey {
 			case "hash":
 				obj.Key = hashKey(obj)
@@ -120,7 +120,7 @@ func hashKey(obj *FileObject) string {
 func hashKeyParent(obj *FileObject) string {
 	var currObj *FileObject
 	currObj = obj.Parent
-	currObj.allowChangeKey = false
+	currObj.AllowChangeKey = false
 	buf := bufHashPool.Get().(*bytes.Buffer)
 	defer bufHashPool.Put(buf)
 	buf.Reset()

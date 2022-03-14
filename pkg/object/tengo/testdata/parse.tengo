@@ -31,6 +31,7 @@ parse := func(reqUrl, bucketConfigF, obj) {
         }
     }
 
+    obj.checkParent = true
     transforms.resize(int(width), int(height), false, false, false)
     return parent
 }

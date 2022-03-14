@@ -23,4 +23,6 @@ func TestParseUsingTengo(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Equal(t, "/bucket/image.png", parent)
+	assert.True(t, fObj.CheckParent)
+
 }

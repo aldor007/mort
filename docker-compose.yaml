@@ -1,17 +1,17 @@
 version: '3'
 
 services:
-  mort:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        - TAG=dev
-        - COMMIT=master
-        - DATE=now
-    restart: always
-    ports:
-      - 8080:8080
+  # mort:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #     args:
+  #       - TAG=dev
+  #       - COMMIT=master
+  #       - DATE=now
+  #   restart: always
+  #   ports:
+  #     - 8084:8080
   tests:
     build:
       context: .

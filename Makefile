@@ -40,3 +40,6 @@ clean-prof:
 
 release:
 	docker build . -f Dockerfile.build --build-arg GITHUB_TOKEN=${GITHUB_TOKEN}
+
+docker-tests:
+	docker-compose up --build

@@ -45,27 +45,14 @@ headers:
       "cache-control": "max-age=10, public"
 
 buckets:
-    tengo:
-        transform:
-            kind: "tengo"
-            tengoPath: 'parse.tengo'
-        storages:
-            basic:
-                kind: "http"
-                url: "https://i.imgur.com/<item>"
-                headers:
-                  "x--key": "sec"
-            transform:
-                kind: "local-meta"
-                rootPath: "/tmp/mort/"
-                pathPrefix: "transforms"
     media:
         keys:
           - accessKey: "acc"
             secretAccessKey: "sec"
         transform:
             path: "\\/(?P<presetName>[a-z0-9_]+)\\/(?P<parent>.*)"
-            kind: "presets"
+            kind: "tengo"
+            tengoPath: "tengo.tengo"
             parentBucket: "media"
             resultKey: "hash"
             presets:
