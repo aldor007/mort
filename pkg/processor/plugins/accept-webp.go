@@ -24,7 +24,7 @@ func (WebpPlugin) configure(_ interface{}) {
 func (WebpPlugin) preProcess(obj *object.FileObject, req *http.Request) {
 	if strings.Contains(req.Header.Get("Accept"), "image/webp") && obj.HasTransform() {
 		obj.Transforms.Format("webp")
-		obj.UpdateKey("webp")
+		obj.AppendToKey("webp")
 	}
 }
 

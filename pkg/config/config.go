@@ -39,7 +39,7 @@ var once sync.Once
 var storageKinds = []string{"local", "local-meta", "s3", "http", "b2", "noop"}
 
 // transformKind is list of available kinds of transforms
-var transformKinds = []string{"query", "presets", "presets-query"}
+var transformKinds = []string{"query", "presets", "presets-query", "tengo"}
 
 // GetInstance return single instance of Config object
 func GetInstance() *Config {
@@ -216,6 +216,8 @@ func (c *Config) validateTransform(bucketName string, bucket *Bucket) error {
 		}
 	}
 
+	// in case of query string URLs, mort by default generate hash for object
+	// example https://mort.mkaciuba.com/demo/img.jpg?operation=rotate&angle=270 will be saved under this path /2c8/img/img.jpg-2c82757531989901
 	if transform.ResultKey == "" && (transform.Kind == "query" || transform.Kind == "presets-query") {
 		bucket.Transform.ResultKey = "hashParent"
 	}
@@ -223,7 +225,7 @@ func (c *Config) validateTransform(bucketName string, bucket *Bucket) error {
 	if transform.Kind == "tengo" {
 		buf, errTengo := os.ReadFile(c.getPathToConfig(transform.TengoPath))
 		if errTengo != nil {
-			err = configInvalidError(fmt.Sprintf("unable to read tengo script file %s, error %v", transform.TengoPath, errTengo))
+			err = configInvalidError(fmt.Sprintf("unable to read tengo script file \"%s\", error %v", transform.TengoPath, errTengo))
 		}
 
 		t := tengo.NewScript(buf)

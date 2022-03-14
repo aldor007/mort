@@ -1,54 +1,60 @@
 package config
 
-import "regexp"
-import "github.com/d5/tengo/v2"
+import (
+	"regexp"
+
+	"github.com/d5/tengo/v2"
+)
+
+// Filter yaml configuration filters
+type Filters struct {
+	Thumbnail *struct {
+		Width               int    `yaml:"width"`
+		Height              int    `yaml:"height"`
+		Mode                string `yaml:"mode"`
+		PreserveAspectRatio bool   `yaml:"preserveAspectRatio"`
+		Fill                bool   `yaml:"fill"`
+	} `yaml:"thumbnail,omitempty"`
+	Interlace bool `yaml:"interlace"`
+	Crop      *struct {
+		Width   int    `yaml:"width"`
+		Height  int    `yaml:"height"`
+		Gravity string `yaml:"gravity"`
+		Mode    string `yaml:"mode"`
+		Embed   bool   `yaml:"embed"`
+	} `yaml:"crop,omitempty"`
+	Extract *struct {
+		Width  int `yaml:"width"`
+		Height int `yaml:"height"`
+		Top    int `yaml:"top"`
+		Left   int `yaml:"left"`
+	} `yaml:"extract,omitempty"`
+	ResizeCropAuto *struct {
+		Width  int `yaml:"width"`
+		Height int `yaml:"height"`
+	} `yaml:"resizeCropAuto,omitempty"`
+	AutoRotate bool `yaml:"auto_rotate"`
+	Grayscale  bool `yaml:"grayscale"`
+	Strip      bool `yaml:"strip"`
+	Blur       *struct {
+		Sigma   float64 `yaml:"sigma"`
+		MinAmpl float64 `yaml:"minAmpl"`
+	} `yaml:"blur,omitempty"`
+	Watermark *struct {
+		Image    string  `yaml:"image"`
+		Position string  `yaml:"position"`
+		Opacity  float32 `yaml:"opacity"`
+	} `yaml:"watermark,omitempty"`
+	Rotate *struct {
+		Angle int `yaml:"angle"`
+	} `yaml:"rotate,omitempty"`
+}
 
 // Preset describe properties of transform preset
 type Preset struct {
-	Quality int    `yaml:"quality"`
-	Format  string `yaml:"format"`
-	Filters struct {
-		Thumbnail *struct {
-			Width               int    `yaml:"width"`
-			Height              int    `yaml:"height"`
-			Mode                string `yaml:"mode"`
-			PreserveAspectRatio bool   `yaml:"preserveAspectRatio"`
-			Fill                bool   `yaml:"fill"`
-		} `yaml:"thumbnail,omitempty"`
-		Interlace bool `yaml:"interlace"`
-		Crop      *struct {
-			Width   int    `yaml:"width"`
-			Height  int    `yaml:"height"`
-			Gravity string `yaml:"gravity"`
-			Mode    string `yaml:"mode"`
-			Embed   bool   `yaml:"embed"`
-		} `yaml:"crop,omitempty"`
-		Extract *struct {
-			Width  int `yaml:"width"`
-			Height int `yaml:"height"`
-			Top    int `yaml:"top"`
-			Left   int `yaml:"left"`
-		} `yaml:"extract,omitempty"`
-		ResizeCropAuto *struct {
-			Width  int `yaml:"width"`
-			Height int `yaml:"height"`
-		} `yaml:"resizeCropAuto,omitempty"`
-		AutoRotate bool `yaml:"auto_rotate"`
-		Grayscale  bool `yaml:"grayscale"`
-		Strip      bool `yaml:"strip"`
-		Blur       *struct {
-			Sigma   float64 `yaml:"sigma"`
-			MinAmpl float64 `yaml:"minAmpl"`
-		} `yaml:"blur,omitempty"`
-		Watermark *struct {
-			Image    string  `yaml:"image"`
-			Position string  `yaml:"position"`
-			Opacity  float32 `yaml:"opacity"`
-		} `yaml:"watermark,omitempty"`
-		Rotate *struct {
-			Angle int `yaml:"angle"`
-		} `yaml:"rotate,omitempty"`
-	} `yaml:"filters"`
+	Quality int     `yaml:"quality"`
+	Format  string  `yaml:"format"`
+	Filters Filters `yaml:"filters"`
 }
 
 // Transform describe transform for bucket

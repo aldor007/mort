@@ -25,7 +25,7 @@ type FileObject struct {
 	Storage        config.Storage        `json:"storage"`    // selected storage that should be used
 	Parent         *FileObject           // original image for transformed image
 	CheckParent    bool                  // boolean if we should always check if parent exists
-	allowChangeKey bool                  // parser can allow or not changing key by this flag
+	AllowChangeKey bool                  // parser can allow or not changing key by this flag
 	Debug          bool                  // flag for debug requests
 	Ctx            context.Context       // context of request
 	Range          string                // HTTP range in request
@@ -56,7 +56,7 @@ func newFileObjectFromPath(path string, mortConfig *config.Config, allowChangeKe
 
 	//obj.uriBytes = []byte(uri)
 	obj.CheckParent = false
-	obj.allowChangeKey = allowChangeKey
+	obj.AllowChangeKey = allowChangeKey
 
 	err := Parse(obj.Uri, mortConfig, &obj)
 
@@ -72,7 +72,7 @@ func NewFileObject(uri *url.URL, mortConfig *config.Config) (*FileObject, error)
 	obj.Uri = uri
 	//obj.uriBytes = []byte(uri)
 	obj.CheckParent = false
-	obj.allowChangeKey = true
+	obj.AllowChangeKey = true
 
 	err := Parse(uri, mortConfig, &obj)
 	switch {
@@ -103,8 +103,8 @@ func (o *FileObject) Type() string {
 	return "parent"
 }
 
-// UpdateKey add string to ky
-func (o *FileObject) UpdateKey(str string) {
+// AppendToKey add string to key
+func (o *FileObject) AppendToKey(str string) {
 	o.key = o.key + str
 	o.Key = o.Key + str
 }
@@ -129,7 +129,7 @@ func (o *FileObject) Copy() *FileObject {
 		Storage:        o.Storage,
 		Parent:         o.Parent,
 		CheckParent:    o.CheckParent,
-		allowChangeKey: o.allowChangeKey,
+		AllowChangeKey: o.AllowChangeKey,
 		Debug:          o.Debug,
 		Ctx:            context.Background(),
 		Range:          o.Range,

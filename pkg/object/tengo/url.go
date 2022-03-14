@@ -7,28 +7,34 @@ import (
 	"github.com/d5/tengo/v2/token"
 )
 
+// URL tengo struct wrapping net/url
 type URL struct {
 	tengoLib.ObjectImpl
 	Value *url.URL
 }
 
+// Strings returns full url
 func (o *URL) String() string {
 	return o.Value.String()
 }
 
+// BinaryOp not implemented
 func (o *URL) BinaryOp(op token.Token, rhs tengoLib.Object) (tengoLib.Object, error) {
 	return nil, tengoLib.ErrInvalidOperator
 }
 
+// IsFalsy returns true if url is emptu
 func (o *URL) IsFalsy() bool {
 	return o.String() == ""
 }
 
+// Equals returns true if url are the same
 func (o *URL) Equals(x tengoLib.Object) bool {
 	other := x.(*URL)
 	return o.Value.String() == other.Value.String()
 }
 
+// Copy create copy of url
 func (o *URL) Copy() tengoLib.Object {
 	newUrl, _ := url.Parse(o.Value.String())
 
@@ -38,6 +44,8 @@ func (o *URL) Copy() tengoLib.Object {
 }
 
 // IndexGet returns the value for the given key.
+// Avaiable operations
+
 func (o *URL) IndexGet(index tengoLib.Object) (val tengoLib.Object, err error) {
 	strIdx, ok := tengoLib.ToString(index)
 	if !ok {

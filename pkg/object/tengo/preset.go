@@ -6,23 +6,28 @@ import (
 	"github.com/d5/tengo/v2/token"
 )
 
+// Preset struct create Preset struct inside of tengo VM
 type Preset struct {
 	tengoLib.ObjectImpl
 	Value config.Preset
 }
 
+// String return empty string
 func (o *Preset) String() string {
 	return ""
 }
 
+// BinaryOp not implemented
 func (o *Preset) BinaryOp(op token.Token, rhs tengoLib.Object) (tengoLib.Object, error) {
 	return nil, tengoLib.ErrInvalidOperator
 }
 
+// IsFalsy return always true
 func (o *Preset) IsFalsy() bool {
 	return true
 }
 
+// Equals returns false
 func (o *Preset) Equals(_ tengoLib.Object) bool {
 	return false
 }
@@ -51,6 +56,8 @@ func (o *Preset) IndexGet(index tengoLib.Object) (val tengoLib.Object, err error
 		val = &tengoLib.Int{Value: int64(o.Value.Quality)}
 	case "format":
 		val = &tengoLib.String{Value: o.Value.Format}
+	case "filters":
+		val = &Filters{Value: o.Value.Filters}
 	}
 
 	return val, nil

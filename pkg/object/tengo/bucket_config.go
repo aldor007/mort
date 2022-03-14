@@ -8,28 +8,34 @@ import (
 	"github.com/d5/tengo/v2/token"
 )
 
+// BucketConfig struct wrapping tengo
 type BucketConfig struct {
 	tengoLib.ObjectImpl
 	Value config.Bucket
 }
 
+// Strings returns Bucket name
 func (o *BucketConfig) String() string {
 	return o.Value.Name
 }
 
+// BinaryOp not implented
 func (o *BucketConfig) BinaryOp(op token.Token, rhs tengoLib.Object) (tengoLib.Object, error) {
 	return nil, tengoLib.ErrInvalidOperator
 }
 
+// IsFalsy returns false if bucket name is empty
 func (o *BucketConfig) IsFalsy() bool {
 	return o.Value.Name == ""
 }
 
+// Equals checks bucket name
 func (o *BucketConfig) Equals(x tengoLib.Object) bool {
 	other := x.(*BucketConfig)
 	return o.Value.Name == other.Value.Name
 }
 
+// Copy create shallow copy of bucket object
 func (o *BucketConfig) Copy() tengoLib.Object {
 
 	return &BucketConfig{
@@ -42,6 +48,12 @@ func (o *BucketConfig) TypeName() string {
 }
 
 // IndexGet returns the value for the given key.
+// for
+// * `transform` it will return Transform tengo object
+// * `keys` it will return tengo map with s3 access keys
+// * `headers` it will return tengo map with headers
+// * `name` it will return name of bucket
+// for others keys it will return undefine value
 func (o *BucketConfig) IndexGet(index tengoLib.Object) (val tengoLib.Object, err error) {
 	strIdx, ok := tengoLib.ToString(index)
 	if !ok {

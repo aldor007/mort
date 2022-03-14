@@ -74,3 +74,23 @@ func TestFileObjectGetTengo(t *testing.T) {
 	assert.Equal(t, kStr, "/image.png")
 
 }
+
+func TestFileObjectSetTengo(t *testing.T) {
+	objectPath := "/bucket/image.png"
+	mortConfig := config.GetInstance()
+	c, _ := object.NewFileObject(pathToURL(objectPath), mortConfig)
+
+	tengoObject := tengo.FileObject{Value: c}
+
+	err := tengoObject.IndexSet(&tengoLib.String{Value: "allowChangeKey"}, tengoLib.FalseValue)
+	assert.Nil(t, err)
+	assert.False(t, c.AllowChangeKey)
+
+	err = tengoObject.IndexSet(&tengoLib.String{Value: "checkParent"}, tengoLib.TrueValue)
+	assert.Nil(t, err)
+	assert.True(t, c.CheckParent)
+
+	err = tengoObject.IndexSet(&tengoLib.String{Value: "debug"}, tengoLib.TrueValue)
+	assert.Nil(t, err)
+	assert.True(t, c.Debug)
+}
