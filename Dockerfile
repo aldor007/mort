@@ -1,39 +1,10 @@
-FROM ubuntu:20.04 as builder
+FROM ghcr.io/aldor007/mort-base as builder
 
-ENV LIBVIPS_VERSION 8.11.2
 ENV GOLANG_VERSION 1.16.6
 ARG TARGETARCH amd64
 ARG TAG 'dev'
 ARG COMMIT "master"
 ARG DATE "now"
-
-# Installs libvips + required libraries
-RUN apt-get update && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y \
-    ca-certificates \
-    automake build-essential curl \
-    gobject-introspection gtk-doc-tools libglib2.0-dev libjpeg-turbo8-dev libpng-dev \
-    libwebp-dev libtiff5-dev libgif-dev libexif-dev libxml2-dev libpoppler-glib-dev \
-    swig libmagickwand-dev libpango1.0-dev libmatio-dev libopenslide-dev libcfitsio-dev \
-    libgsf-1-dev fftw3-dev liborc-0.4-dev librsvg2-dev libimagequant-dev libaom-dev libbrotli-dev  && \
-    cd /tmp && \
-    curl -OL https://github.com/libvips/libvips/releases/download/v${LIBVIPS_VERSION}/vips-${LIBVIPS_VERSION}.tar.gz && \
-    tar zvxf vips-${LIBVIPS_VERSION}.tar.gz && \
-    cd /tmp/vips-${LIBVIPS_VERSION} && \
-    ./configure --enable-debug=no --without-python $1 && \
-    make && \
-    make install && \
-    ldconfig && \
-    apt-get autoremove -y && \
-    apt-get autoclean && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-# gcc for cgo
-RUN apt-get update && apt-get install -y \
-    gcc curl git libc6-dev make ca-certificates \
-    --no-install-recommends \
-  && rm -rf /var/lib/apt/lists/*
 
 ENV GOLANG_DOWNLOAD_URL https://golang.org/dl/go$GOLANG_VERSION.linux-$TARGETARCH.tar.gz
 
