@@ -44,5 +44,5 @@ jobs:
           tags: ghcr.io/aldor007/mort:latest, ghcr.io/aldor007/mort:${{ steps.vars.outputs.tag }}
           cache-from: type=registry,ref=ghcr.io/aldor007/mort:latest
           cache-to: type=inline
-          build-args: TAG=${{ steps.vars.outputs.tag }}, COMMIT=${{ GITHUB_SHA }}, DATE=${{ steps.date.outputs.date }}
+          build-args: TAG=${{ steps.vars.outputs.tag }}, COMMIT=$GITHUB_SHA, DATE=${{ steps.date.outputs.date }}
 
