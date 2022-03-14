@@ -82,6 +82,10 @@ func TestFiltersTengoGet(t *testing.T) {
 		Rotate: &struct{Angle int "yaml:\"angle\""}{
 			Angle: 289,
 		},
+		Interlace: true,
+		Grayscale: true,
+		AutoRotate: true,
+		Strip: true,
 
 	}
 
@@ -124,5 +128,42 @@ func TestFiltersTengoGet(t *testing.T) {
 	widthTengo, _ = res.IndexGet(&tengoLib.String{Value: "width"})
 	width, _ = tengoLib.ToInt(widthTengo)
 	assert.Equal(t, width, 333)
+
+	res, err = tengoObject.IndexGet(&tengoLib.String{Value: "blur"})
+	assert.Nil(t, err)
+	assert.Equal(t, res.TypeName(), "immutable-map")
+	widthTengo, _ = res.IndexGet(&tengoLib.String{Value: "sigma"})
+	sigma, _ := tengoLib.ToFloat64(widthTengo)
+	assert.Equal(t, sigma, 1.1)
+
+	res, err = tengoObject.IndexGet(&tengoLib.String{Value: "rotate"})
+	assert.Nil(t, err)
+	assert.Equal(t, res.TypeName(), "immutable-map")
+	widthTengo, _ = res.IndexGet(&tengoLib.String{Value: "angle"})
+	width, _ = tengoLib.ToInt(widthTengo)
+	assert.Equal(t, width, 289)
+
+	res, err = tengoObject.IndexGet(&tengoLib.String{Value: "watermark"})
+	assert.Nil(t, err)
+	assert.Equal(t, res.TypeName(), "immutable-map")
+	widthTengo, _ = res.IndexGet(&tengoLib.String{Value: "image"})
+	img, _ := tengoLib.ToString(widthTengo)
+	assert.Equal(t, img, "aaa.png")
+
+	res, err = tengoObject.IndexGet(&tengoLib.String{Value: "interlace"})
+	assert.Nil(t, err)
+	assert.Equal(t, res, tengoLib.TrueValue)
+
+	res, err = tengoObject.IndexGet(&tengoLib.String{Value: "autoRotate"})
+	assert.Nil(t, err)
+	assert.Equal(t, res, tengoLib.TrueValue)
+
+	res, err = tengoObject.IndexGet(&tengoLib.String{Value: "grayscale"})
+	assert.Nil(t, err)
+	assert.Equal(t, res, tengoLib.TrueValue)
+
+	res, err = tengoObject.IndexGet(&tengoLib.String{Value: "strip"})
+	assert.Nil(t, err)
+	assert.Equal(t, res, tengoLib.TrueValue)
 
 }

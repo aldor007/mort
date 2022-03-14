@@ -15,9 +15,9 @@ services:
   tests:
     build:
       context: .
-      dockerfile: Dockerfile.test
+      dockerfile: Dockerfile.base
       args:
         - TAG=dev
         - COMMIT=master
         - DATE=now
-    command: make unit
+    command: ["make", "unit"]

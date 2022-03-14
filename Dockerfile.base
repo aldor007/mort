@@ -48,7 +48,7 @@ ENV PATH /usr/local/go/bin:$PATH
 WORKDIR $WORKDIR
 COPY go.mod  ./
 COPY go.sum ./
-RUN go mod  download 
+RUN go mod  download
 
 COPY cmd/  $WORKDIR/cmd
 COPY .godir ${WORKDIR}/.godir
@@ -58,4 +58,3 @@ COPY pkg/ ${WORKDIR}/pkg
 COPY scripts/ ${WORKDIR}/scripts
 COPY Makefile ${WORKDIR}/Makefile
 
-ENTRYPOINT ["make", "unit"]

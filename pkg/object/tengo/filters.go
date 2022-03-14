@@ -110,7 +110,7 @@ func (o *Filters) IndexGet(index tengoLib.Object) (val tengoLib.Object, err erro
 	case "rotate":
 		if o.Value.Rotate != nil {
 			internalMap := make(map[string]tengoLib.Object)
-			internalMap["Angle"] = &tengoLib.Int{Value: int64(o.Value.Rotate.Angle)}
+			internalMap["angle"] = &tengoLib.Int{Value: int64(o.Value.Rotate.Angle)}
 			val = &tengoLib.ImmutableMap{Value: internalMap}
 		}
 	case "watermark":
