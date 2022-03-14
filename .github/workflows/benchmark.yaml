@@ -24,8 +24,10 @@ jobs:
       - uses: actions/setup-go@v2
         with:
           go-version: 1.16
+      - name: install
+        run: go mod vendor && go mod download
       - name: Benchmark
-        run: go test -bench 'Benchmark' ./... | tee bench.txt  
+        run: go test -bench 'Benchmark' ./... | tee bench.txt
       - name: Download previous benchmark data
         uses: actions/cache@v1
         with:
@@ -35,16 +37,7 @@ jobs:
       - name: Store benchmark result
         uses: benchmark-action/github-action-benchmark@v1
         with:
-          # What benchmark tool the output.txt came from
           tool: 'go'
-          # Where the output from the benchmark tool is stored
           output-file-path: bench.txt
-          # Workflow will fail when an alert happens
           fail-on-alert: true
-          # GitHub API token to make a commit comment
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          # Enable alert commit comment
-          comment-on-alert: true
-          # Mention @rhysd in the commit comment
-          alert-comment-cc-users: '@aldor007'
-          auto-push: true

@@ -1,6 +1,6 @@
 LIBVIPS_VERSION=8.11.2
 
-sudo apt-get install    ca-certificates \
+apt-get install    ca-certificates \
     automake build-essential curl \
     gobject-introspection gtk-doc-tools libglib2.0-dev libjpeg-turbo8-dev libpng-dev \
     libwebp-dev libtiff5-dev libgif-dev libexif-dev libxml2-dev libpoppler-glib-dev \
@@ -11,6 +11,6 @@ sudo apt-get install    ca-certificates \
     tar zvxf vips-${LIBVIPS_VERSION}.tar.gz && \
     cd /tmp/vips-${LIBVIPS_VERSION} && \
     ./configure --enable-debug=no --without-python $1 && \
-    make && \
+    make -j 4 && \
     make install && \
     ldconfig
