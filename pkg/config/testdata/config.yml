@@ -106,3 +106,20 @@ buckets:
                 kind: "local-meta"
                 rootPath: "/tmp/mort"
                 pathPrefix: "transf"
+    query:
+        keys:
+          - accessKey: "acc"
+            secretAccessKey: "sec"
+        transform:
+            kind: "query"
+            parentBucket: "media"
+        storages:
+            basic:
+                kind: "http"
+                url: "https://i.imgur.com/<item>"
+                headers:
+                  "x--key": "sec"
+            transform:
+                kind: "local-meta"
+                rootPath: "/tmp/mort"
+                pathPrefix: "transf"

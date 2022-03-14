@@ -43,3 +43,6 @@ release:
 
 docker-tests:
 	docker-compose up --build
+
+base-docker-push:
+	docker buildx build --platform linux/amd64,linux/arm64 -t ghcr.io/aldor007/mort-base:1.0.0-8.11.2  -f Dockerfile.base . -t ghcr.io/aldor007/mort-base:latest --push; docker push ghcr.io/aldor007/mort-test:1.0.0-8.11.2

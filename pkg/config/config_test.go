@@ -56,10 +56,13 @@ func TestConfig_Load(t *testing.T) {
 
 	buckets := c.BucketsByAccessKey("acc")
 
-	assert.Equal(t, len(buckets), 1)
+	assert.Equal(t, len(buckets), 2)
 
 	bucket := c.Buckets["media"]
 	assert.Equal(t, bucket.Storages.Transform().Kind, "local-meta")
+
+	bucket = c.Buckets["query"]
+	assert.Equal(t, bucket.Transform.ResultKey, "hashParent")
 }
 
 func TestConfig_Load_TengoInvalid(t *testing.T) {

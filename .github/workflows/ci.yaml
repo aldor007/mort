@@ -8,12 +8,14 @@ on:
 
 jobs:
   build:
+    # container:
+    #   image: ghcr.io/aldor007/mort-base:latest
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
 
     - name: install deps
-      run: sudo ./scripts/install-deps.sh 
+      run: sudo ./scripts/install-deps.sh
     - name: Set up Go
       uses: actions/setup-go@v2
       with:
@@ -27,3 +29,28 @@ jobs:
     - uses: codecov/codecov-action@v2
       with:
         fail_ci_if_error: true # optional (default = false)
+    - name: Benchmark
+      run: ./scripts/benchmark.sh
+    - name: Download previous benchmark data
+      uses: actions/cache@v1
+      with:
+        path: ./cache
+        key: ${{ runner.os }}-benchmark
+    # Run `github-action-benchmark` action
+    - name: Store benchmark result
+      uses: benchmark-action/github-action-benchmark@v1
+      with:
+        # What benchmark tool the output.txt came from
+        tool: 'go'
+        # Where the output from the benchmark tool is stored
+        output-file-path: bench.txt
+        # Where the previous data file is stored
+        external-data-json-path: ./cache/benchmark-data.json
+        # Workflow will fail when an alert happens
+        fail-on-alert: true
+        # GitHub API token to make a commit comment
+        github-token: ${{ secrets.GHR_TOKEN }}
+        # Enable alert commit comment
+        comment-on-alert: true
+        # Mention @rhysd in the commit comment
+        alert-comment-cc-users: '@aldor007'
