@@ -23,3 +23,4 @@ pkg/processor/benchmark/local/file-test
 coverage.txt
 
 dist/
+bench.txt
