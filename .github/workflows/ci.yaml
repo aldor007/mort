@@ -10,6 +10,9 @@ jobs:
   build:
     container:
       image: ghcr.io/aldor007/mort-base:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GHR_TOKEN }}
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2

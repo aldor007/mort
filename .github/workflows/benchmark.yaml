@@ -14,6 +14,9 @@ jobs:
   benchmark:
     container:
       image: ghcr.io/aldor007/mort-base:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GHR_TOKEN }}
     name: Performance regression check
     runs-on: ubuntu-latest
     steps:
