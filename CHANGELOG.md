@@ -1,3 +1,10 @@
+# [0.18.0](https://github.com/aldor007/mort/compare/0.17.1...0.18.0) (2022-03-14)
+
+
+### Features
+
+* use base image for mort image ([17f6760](https://github.com/aldor007/mort/commit/17f67603d675396bbc5efd96d4a6a7277ee687cf))
+
 ## [0.17.1](https://github.com/aldor007/mort/compare/0.17.0...0.17.1) (2022-03-14)
 
 
