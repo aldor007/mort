@@ -1,3 +1,12 @@
+## [0.17.1](https://github.com/aldor007/mort/compare/0.17.0...0.17.1) (2022-03-14)
+
+
+### Bug Fixes
+
+* run docker and release after semantic release ([18bd855](https://github.com/aldor007/mort/commit/18bd855bee9a2f47ca3cc7b1ff97cb6a00cf05f6))
+* run docker and release after semantic release ([c8c871a](https://github.com/aldor007/mort/commit/c8c871a0b7349ec6819ae22b56f831786eac3563))
+* run docker and release after semantic release ([b980cdb](https://github.com/aldor007/mort/commit/b980cdb0c5ba65a4ceea3b47e22649f9636f80f5))
+
 # [0.17.0](https://github.com/aldor007/mort/compare/0.16.1...0.17.0) (2022-03-14)
 
 
