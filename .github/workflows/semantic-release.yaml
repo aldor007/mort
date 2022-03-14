@@ -30,6 +30,6 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: "14"
-      - run: npx semantic-release
+      - run: npm install && npx semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

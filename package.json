@@ -8,7 +8,11 @@
     "moment": "^2.22.1",
     "request": "^2.88.0",
     "superagent-binary-parser": "^1.0.1",
-    "supertest": "^3.3.0"
+    "supertest": "^3.3.0",
+    "@semantic-release/commit-analyzer":"^9.0.2",
+    "@semantic-release/release-notes-generator":"10.0.3",
+    "@semantic-release/changelog": "^6.0.1",
+    "@semantic-release/git": "^10.0.1"
   },
   "scripts": {
     "test": "mocha tests/*Spec.js"
