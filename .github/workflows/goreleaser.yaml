@@ -1,9 +1,10 @@
 name: goreleaser
 
 on:
-  push:
-    tags:
-      - '*'
+  workflow_run:
+    workflows: ["Semantic release"]
+    branches:
+      - 'master'
 
 permissions:
   # deployments permission to deploy GitHub pages website
