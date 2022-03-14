@@ -12,6 +12,8 @@ builds:
       - GOFLAGS=-mod=vendor
     goos:
       - linux
+    goarch:
+      - amd64
     binary: mort
     main: "./cmd/mort/mort.go"
 archives:
