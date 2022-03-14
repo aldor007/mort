@@ -48,7 +48,7 @@ ENV PATH /usr/local/go/bin:$PATH
 WORKDIR $WORKDIR
 COPY go.mod  ./
 COPY go.sum ./
-RUN go mod  download 
+RUN go mod  download
 
 COPY cmd/  $WORKDIR/cmd
 COPY .godir ${WORKDIR}/.godir
@@ -56,7 +56,7 @@ COPY configuration/ ${WORKDIR}/configuration
 COPY etc/ ${WORKDIR}/etc
 COPY pkg/ ${WORKDIR}/pkg
 
-RUN go build -ldflags="-X 'main.version=${TAG}' -X 'main.commit=${COMMIT}' -X 'main.date=${DATE}'" -o /go/mort ./cmd/mort/mort.go 
+RUN go build -ldflags="-X 'main.version=${TAG}' -X 'main.commit=${COMMIT}' -X 'main.date=${DATE}'" -o /go/mort ./cmd/mort/mort.go
 
 
 FROM ubuntu:20.04

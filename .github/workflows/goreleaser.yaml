@@ -7,6 +7,8 @@ on:
 
 jobs:
   goreleaser:
+    container:
+      image: ghcr.io/aldor007/mort-base:latest
     runs-on: ubuntu-latest
     steps:
       -
@@ -19,8 +21,6 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: '1.16'
-      - name: install deps
-        run: sudo ./scripts/install-deps.sh 
       -
         name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v2

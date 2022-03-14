@@ -14,8 +14,6 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: install deps
-      run: sudo ./scripts/install-deps.sh
     - name: Set up Go
       uses: actions/setup-go@v2
       with:

@@ -24,7 +24,7 @@ RUN \
   tar zvxf vips-${LIBVIPS_VERSION}.tar.gz && \
   cd /tmp/vips-${LIBVIPS_VERSION} && \
   ./configure --enable-debug=no --without-python $1 && \
-  make && \
+  make -j 4 && \
   make install && \
   ldconfig && \
   # Clean up
