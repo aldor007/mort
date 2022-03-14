@@ -3,6 +3,8 @@ name: Docker build
 on:
   workflow_run:
     workflows: ["Semantic release"]
+    types:
+      - completed
     branches:
       - 'master'
 
