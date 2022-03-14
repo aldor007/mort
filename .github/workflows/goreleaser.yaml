@@ -2,8 +2,8 @@ name: goreleaser
 
 on:
   push:
-    branches:
-      - master
+    tags:
+      - '*'
 
 permissions:
   # deployments permission to deploy GitHub pages website

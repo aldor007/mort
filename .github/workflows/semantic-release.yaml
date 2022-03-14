@@ -1,0 +1,35 @@
+name: Release npm package
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  release:
+    name: Release
+    container:
+      image: ghcr.io/aldor007/mort-base:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GHR_TOKEN }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.16
+      - name: Install
+        run: go mod download
+      - name: Build
+        run: go build -v ./...
+
+      - name: Test
+        run: ./scripts/unit-travis.sh
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - run: npx semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
