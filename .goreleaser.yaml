@@ -5,13 +5,15 @@ before:
     # You may remove this if you don't use go modules.
     - go mod tidy
     # you may remove this if you don't need go generate
-    - go generate ./...
+    - go mod vendor
 builds:
   - env:
       - CGO_ENABLED=0
+      - GOFLAGS=-mod=vendor
     goos:
       - linux
       - darwin
+    binary: mort
 archives:
   - replacements:
       darwin: Darwin
@@ -29,3 +31,8 @@ changelog:
     exclude:
       - '^docs:'
       - '^test:'
+release:
+  github:
+    name: mort
+    owner: aldor007
+  name_template: "{{ .Tag }}"
