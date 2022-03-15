@@ -25,7 +25,7 @@ jobs:
           script: |
             const tagExec = await exec.getExecOutput('git', ['tag', '--points-at', 'HEAD'])
             const tag = tagExec.stdout || tagExec.stderr
-            return tag.stdout.trim().replace('v', '');
+            return tag.trim().replace('v', '');
       - name: Get current date
         id: date
         run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
