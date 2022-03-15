@@ -1,3 +1,10 @@
+## [0.18.2](https://github.com/aldor007/mort/compare/v0.18.1...v0.18.2) (2022-03-15)
+
+
+### Bug Fixes
+
+* **redis:** allow to configure redis lock timeoutk ([af97dff](https://github.com/aldor007/mort/commit/af97dffda5c499de11ac48239ff5427493fbb806))
+
 ## [0.18.1](https://github.com/aldor007/mort/compare/v0.18.0...v0.18.1) (2022-03-15)
 
 
