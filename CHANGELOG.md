@@ -1,3 +1,10 @@
+# [0.17.0](https://github.com/aldor007/mort/compare/v0.16.3...v0.17.0) (2022-03-15)
+
+
+### Features
+
+* **tengo:** handling errors, preset example ([39cb9d5](https://github.com/aldor007/mort/commit/39cb9d5f8ffc40c5097ce6b4387a33f3ec439f83))
+
 ## [0.16.3](https://github.com/aldor007/mort/compare/v0.16.2...v0.16.3) (2022-03-15)
 
 
