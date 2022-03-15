@@ -38,6 +38,8 @@ jobs:
         run: echo ${{ steps.dockerTag.outputs.tag }}
       - name: debug result
         run: echo ${{ steps.dockerTag.outputs.result}}
+      - name: debug git
+        run: git tag --points-at HEAD
       -
         name: Set up QEMU
         uses: docker/setup-qemu-action@v1
