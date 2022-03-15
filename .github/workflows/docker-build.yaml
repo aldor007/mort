@@ -22,7 +22,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const tag = await exec.getExecOutput('git', ['tag', '--points-at', 'HEAD')
+            const tag = await exec.getExecOutput('git', ['tag', '--points-at', 'HEAD'])
             return tag.trim().replace('v', '');
       - name: Get current date
         id: date
