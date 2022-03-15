@@ -12,7 +12,7 @@ import (
 )
 
 func TestTransformsTengo(t *testing.T) {
-	c := transforms.Transforms{}
+	c := &transforms.Transforms{}
 
 	tengoObject := tengo.Transforms{Value: c}
 
@@ -42,7 +42,7 @@ func TestTransformsIndexGet(t *testing.T) {
 	}
 
 	t.Run("methods", func(t *testing.T) {
-		c := transforms.Transforms{}
+		c := &transforms.Transforms{}
 		tengoObject := tengo.Transforms{Value: c}
 		// get unknown index
 		v, err := tengoObject.IndexGet(&tengoLib.String{Value: "no-name"})
@@ -297,7 +297,7 @@ func TestTransformsCall(t *testing.T) {
 
 	for i, m := range methods {
 		t.Run(fmt.Sprintf("method %s - %d", m.Method, i), func(t *testing.T) {
-			c := transforms.Transforms{}
+			c := &transforms.Transforms{}
 			tengoObject := tengo.Transforms{Value: c}
 			v, err := tengoObject.IndexGet(&tengoLib.String{Value: m.Method})
 			assert.Nil(t, err)

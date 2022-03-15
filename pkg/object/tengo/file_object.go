@@ -66,7 +66,7 @@ func (o *FileObject) IndexGet(index tengoLib.Object) (val tengoLib.Object, err e
 	case "key":
 		val = &tengoLib.String{Value: o.Value.Key}
 	case "transforms":
-		val = &Transforms{Value: o.Value.Transforms}
+		val = &Transforms{Value: &o.Value.Transforms}
 	}
 
 	return val, nil

@@ -10,7 +10,8 @@ require (
 	github.com/djherbis/stream v1.3.1
 	github.com/go-chi/chi v1.5.2
 	github.com/go-redis/cache/v8 v8.3.1-0.20210129151214-1cdfea0b552b
-	github.com/go-redis/redis/v8 v8.5.0
+	github.com/go-redis/redis/v8 v8.8.0
+	github.com/go-redis/redismock/v8 v8.0.6
 	github.com/google/brotli/go/cbrotli v0.0.0-20210127140805-63be8a994019
 	github.com/h2non/bimg v1.1.6-0.20210807160419-b29a57356338
 	github.com/karlseguin/ccache v2.0.3+incompatible

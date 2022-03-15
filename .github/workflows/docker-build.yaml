@@ -58,7 +58,7 @@ jobs:
           cache-from: type=registry,ref=ghcr.io/aldor007/mort-base:latest
           cache-to: type=inline
           build-args: |
-            COMMIT=$GITHUB_SHA
+            COMMIT=${{ env.GITHUB_SHA }}
             DATE=${{ steps.date.outputs.date }}
             TAG=${{ steps.dockerTag.outputs.result }}
 

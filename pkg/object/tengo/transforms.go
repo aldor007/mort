@@ -11,7 +11,7 @@ import (
 
 type Transforms struct {
 	tengoLib.ObjectImpl
-	Value transforms.Transforms
+	Value *transforms.Transforms
 }
 
 func (o *Transforms) String() string {
@@ -31,8 +31,10 @@ func (o *Transforms) Equals(x tengoLib.Object) bool {
 }
 
 func (o *Transforms) Copy() tengoLib.Object {
+	t := transforms.Transforms{}
+	t.Merge(*o.Value)
 	return &Transforms{
-		Value: o.Value,
+		Value: &t,
 	}
 }
 

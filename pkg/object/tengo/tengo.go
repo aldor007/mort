@@ -1,9 +1,7 @@
 package tengo
 
 import (
-	"fmt"
 	"github.com/aldor007/mort/pkg/config"
-	"github.com/aldor007/mort/pkg/transforms"
 	"net/url"
 
 	"github.com/aldor007/mort/pkg/object"
@@ -29,23 +27,12 @@ func decodeUsingTengo(url *url.URL, bucketConfig config.Bucket, obj *object.File
 		return "", err
 	}
 
-	err = t.Set("transforms", &Transforms{Value: transforms.Transforms{}})
-	if err != nil {
-		return "", err
-	}
-
 	err = t.Run()
 	if err != nil {
 		return "", err
 	}
 
 	parentTengo := t.Get("parent")
-	transTengo := t.Get("transforms")
-	transTengoObj, ok := transTengo.Object().(*Transforms)
-	if !ok {
-		return "", fmt.Errorf("unable to convert objet")
-	}
-	obj.Transforms = transTengoObj.Value
 	parent := parentTengo.String()
 
 	return parent, err

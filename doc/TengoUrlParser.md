@@ -64,18 +64,18 @@ parse := func(reqUrl, bucketConfigF, obj) {
         }
     }
 
-    transforms.resize(int(width), int(height), false, false, false)
+    obj.transforms.resize(int(width), int(height), false, false, false)
     return parent
 }
 
 parent := parse(url, bucketConfig, obj)
 ```
 
-Above script will work for URL http://localhost:8084/tengo/udXmD2T,w100,h100.jpeg  
+Above script will work for URL http://localhost:8084/tengo/udXmD2T,w100,h100.jpeg
 
 
 Mort is injecting variables inside of tengo script
 * `url` golang net.URL struct
 * `bucketConfig` - mort bucket configuration
 * `obj` - mort object.FileObject
-* `transforms` - mort transform.Transforms object on which you can execute image manipulations
+** `obj.transforms` - mort transform.Transforms object on which you can execute image manipulations
