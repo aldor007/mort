@@ -31,6 +31,8 @@ func TestRedisLock_Lock(t *testing.T) {
 	assert.Nil(t, c.ResponseChan, "shouldn't return channel")
 	assert.Nil(t, c.Error, "error should be nil")
 
+	mock.ClearExpect()
+	mock.Regexp().ExpectSetNX(key, `[a-zA-Z0-9]+`, 60*time.Second).SetVal(false)
 	resChan, lock := l.Lock(ctx, key)
 
 	assert.False(t, lock, "Shouldn't acquire lock")
@@ -61,7 +63,7 @@ func TestRedisLock_NotifyAndReleaseWhenError(t *testing.T) {
 	assert.Nil(t, c.Error, "error should be nil")
 
 	mock.ClearExpect()
-	mock.Regexp().ExpectSetNX(key, `[a-zA-Z0-9]+`, 60*time.Second).SetVal(true)
+	mock.Regexp().ExpectSetNX(key, `[a-zA-Z0-9]+`, 60*time.Second).SetVal(false)
 	result, lock := l.Lock(ctx, key)
 
 	assert.False(t, lock, "Shouldn't acquire lock")
@@ -96,7 +98,7 @@ func TestRedisLock_NotifyAndRelease(t *testing.T) {
 	assert.Nil(t, c.ResponseChan, "shouldn't return channel")
 
 	mock.ClearExpect()
-	mock.Regexp().ExpectSetNX(key, `[a-zA-Z0-9]+`, 60*time.Second).SetVal(true)
+	mock.Regexp().ExpectSetNX(key, `[a-zA-Z0-9]+`, 60*time.Second).SetVal(false)
 	result, lock := l.Lock(ctx, key)
 
 	assert.False(t, lock, "Shouldn't acquire lock")

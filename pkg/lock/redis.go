@@ -85,7 +85,12 @@ func (m *RedisLock) Lock(ctx context.Context, key string) (result LockResult, ok
 		lock.Refresh(ctx, time.Millisecond*500, nil)
 	} else {
 		lock, err := m.client.Obtain(ctx, key, 60*time.Second, nil)
-		if err != nil {
+		if err == redislock.ErrNotObtained {
+			result, ok = m.memoryLock.Lock(ctx, key)
+			ok = false
+			return
+
+		} else if err != nil {
 			result.Error = err
 			return
 		}

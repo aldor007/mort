@@ -15,7 +15,7 @@ services:
   tests:
     build:
       context: .
-      dockerfile: Dockerfile.base
+      dockerfile: Dockerfile.test
       args:
         - TAG=dev
         - COMMIT=master
