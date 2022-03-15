@@ -5,6 +5,10 @@ on:
     branches:
       - master
 
+concurrency:
+  group: release
+  cancel-in-progress: true
+
 jobs:
   release:
     name: Release
