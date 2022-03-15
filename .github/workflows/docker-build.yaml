@@ -1,12 +1,16 @@
 name: Docker build
 
+# on:
+#   workflow_run:
+#     workflows: ["Semantic release"]
+#     types:
+#       - completed
+#     branches:
+#       - 'master'
 on:
-  workflow_run:
-    workflows: ["Semantic release"]
-    types:
-      - completed
+  push:
     branches:
-      - 'master'
+      - test
 
 jobs:
   multi:
@@ -25,7 +29,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           result-encoding: string
           script: |
-            const tagExec = await exec.getExecOutput('git', ['tag', '--points-at', 'HEAD'])
+            const tagExec = await exec.getExecOutput('test', ['tag', '--points-at', 'HEAD'])
             const tag = tagExec.stdout || tagExec.stderr
             return tag.trim().replace('v', '');
       - name: Get current date
