@@ -21,8 +21,10 @@ jobs:
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          result-encoding: string
           script: |
-            const tag = await exec.getExecOutput('git', ['tag', '--points-at', 'HEAD'])
+            const tagExec = await exec.getExecOutput('git', ['tag', '--points-at', 'HEAD'])
+            const tag = tagExec.stdout || tagExec.stderr
             return tag.stdout.trim().replace('v', '');
       - name: Get current date
         id: date
