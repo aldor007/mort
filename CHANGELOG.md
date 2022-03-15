@@ -1,3 +1,10 @@
+# [0.16.0](https://github.com/aldor007/mort/compare/v0.15.7...v0.16.0) (2022-03-15)
+
+
+### Features
+
+* refactor tengo script - use object.FileObject for image  manipulation ([4d1d470](https://github.com/aldor007/mort/commit/4d1d470d885da21abe2dcb1f9477f9a07f73dc74))
+
 ## [0.15.7](https://github.com/aldor007/mort/compare/v0.15.6...v0.15.7) (2022-03-15)
 
 
