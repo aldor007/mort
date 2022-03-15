@@ -1,3 +1,10 @@
+## [0.16.1](https://github.com/aldor007/mort/compare/v0.16.0...v0.16.1) (2022-03-15)
+
+
+### Bug Fixes
+
+* trigger release - test deployment ([2f9f05b](https://github.com/aldor007/mort/commit/2f9f05b25d5194d1245b9daf432a10ce4ece346b))
+
 # [0.16.0](https://github.com/aldor007/mort/compare/v0.15.7...v0.16.0) (2022-03-15)
 
 
