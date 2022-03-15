@@ -38,16 +38,16 @@ jobs:
         name: Checkout
         uses: actions/checkout@v2
         with:
-         repository: aldor007/argo-apps
+         repository: ${{ secrets.REPO_NAME }}
          path: infra
-         token: ${{ secrets.GITHUB_TOKEN }}
+         token: ${{ secrets.GHR_TOKEN }}
       - name: Update Image Version in the related HelmChart values.yaml
         uses: fjogeleit/yaml-update-action@main
         with:
           valueFile: 'mort/values.yaml'
           propertyPath: 'image.tag'
           value: ${{ steps.dockerTag.outputs.result }}
-          repository: aldor007/argo-apps
+          repository: ${{ secrets.REPO_NAME }}
           branch: master
           # targetBranch: master
           createPR: false
