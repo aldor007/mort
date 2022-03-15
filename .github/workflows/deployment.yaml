@@ -52,5 +52,5 @@ jobs:
           # targetBranch: master
           createPR: false
           message: 'Update mort image to ${{ steps.dockerTag.outputs.result}}'
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GHR_TOKEN }}
           workDir: infra
