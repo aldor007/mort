@@ -197,7 +197,7 @@ See [Dockerfile](Dockerfile) for image details.
 Pull docker image
 
 ```bash
-docker pull aldor007/mort
+docker pull ghcr.io/aldor007/mort
 
 ```
 
@@ -205,7 +205,7 @@ docker pull aldor007/mort
 
 Create Dockerfile or use Dockerfile.service
 ```
-FROM aldor007/mort:latest
+FROM ghcr.io/aldor007/mort:latest
 
 # add your config
 ADD config.yml /etc/mort/mort.yml
