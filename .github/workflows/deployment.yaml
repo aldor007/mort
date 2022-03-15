@@ -1,0 +1,56 @@
+name: Deployment
+
+concurrency:
+  group: production
+  cancel-in-progress: true
+
+on:
+  workflow_run:
+    workflows: ["Docker build"]
+    types:
+      - completed
+    branches:
+      - 'master'
+
+jobs:
+  deployment:
+    runs-on: ubuntu-latest
+    environment: m39
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v2
+      - name: git tag
+        run: git fetch --tags;  git fetch --prune --unshallow || true
+
+      - name: Extract tag name
+        id: dockerTag
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          result-encoding: string
+          script: |
+            const tagExec = await exec.getExecOutput('git', ['describe', '--tags', '--abbrev=0']);
+            let tag = tagExec.stdout || tagExec.stderr;
+            tag = tag.trim().replace('v', '');
+            return tag;
+      -
+        name: Checkout
+        uses: actions/checkout@v2
+        with:
+         repository: aldor007/argo-apps
+         path: infra
+         token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Update Image Version in the related HelmChart values.yaml
+        uses: fjogeleit/yaml-update-action@main
+        with:
+          valueFile: 'mort/values.yaml'
+          propertyPath: 'image.tag'
+          value: ${{ steps.dockerTag.outputs.result }}
+          repository: aldor007/argo-apps
+          branch: master
+          # targetBranch: master
+          createPR: false
+          message: 'Update mort image to ${{ steps.dockerTag.outputs.result}}'
+          token: ${{ secrets.GITHUB_TOKEN }}
+          workDir: infra
