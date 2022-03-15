@@ -1,3 +1,10 @@
+## [0.15.4](https://github.com/aldor007/mort/compare/v0.15.3...v0.15.4) (2022-03-15)
+
+
+### Bug Fixes
+
+* fix docker build tag v5 ([b59f335](https://github.com/aldor007/mort/commit/b59f335a1885d8f002bd8a8bfe34704d550e3328))
+
 ## [0.15.3](https://github.com/aldor007/mort/compare/v0.15.2...v0.15.3) (2022-03-15)
 
 
