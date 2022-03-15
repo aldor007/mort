@@ -25,10 +25,11 @@ func parseAddress(addrs []string) map[string]string {
 
 // RedisLock is in Redis lock for single mort instance
 type RedisLock struct {
-	client     *redislock.Client
-	memoryLock *MemoryLock
-	locks      map[string]*redislock.Lock
-	lock       sync.RWMutex
+	client      *redislock.Client
+	memoryLock  *MemoryLock
+	locks       map[string]*redislock.Lock
+	lock        sync.RWMutex
+	LockTimeout int
 }
 
 // NewRedis create connection to redis and update it config from clientConfig map
@@ -45,7 +46,7 @@ func NewRedisLock(redisAddress []string, clientConfig map[string]string) *RedisL
 
 	locker := redislock.New(ring)
 
-	return &RedisLock{client: locker, memoryLock: NewMemoryLock(), locks: make(map[string]*redislock.Lock)}
+	return &RedisLock{client: locker, memoryLock: NewMemoryLock(), locks: make(map[string]*redislock.Lock), LockTimeout: 60}
 }
 
 func NewRedisCluster(redisAddress []string, clientConfig map[string]string) *RedisLock {
@@ -60,7 +61,7 @@ func NewRedisCluster(redisAddress []string, clientConfig map[string]string) *Red
 
 	locker := redislock.New(ring)
 
-	return &RedisLock{client: locker, memoryLock: NewMemoryLock(), locks: make(map[string]*redislock.Lock)}
+	return &RedisLock{client: locker, memoryLock: NewMemoryLock(), locks: make(map[string]*redislock.Lock), LockTimeout: 60}
 }
 
 // NotifyAndRelease tries notify all waiting goroutines about response
@@ -84,7 +85,7 @@ func (m *RedisLock) Lock(ctx context.Context, key string) (result LockResult, ok
 	if ok {
 		lock.Refresh(ctx, time.Millisecond*500, nil)
 	} else {
-		lock, err := m.client.Obtain(ctx, key, 60*time.Second, nil)
+		lock, err := m.client.Obtain(ctx, key, time.Duration(m.LockTimeout)*time.Second, nil)
 		if err == redislock.ErrNotObtained {
 			result, ok = m.memoryLock.Lock(ctx, key)
 			ok = false

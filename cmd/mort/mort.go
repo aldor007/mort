@@ -221,7 +221,7 @@ func main() {
 	fmt.Printf(BANNER, version, commit, date)
 	fmt.Printf("Config file %s listen addr %s montoring: and debug listen %s pid: %d \n", *configPath, imgConfig.Server.Listen, imgConfig.Server.InternalListen, os.Getpid())
 
-	rp := processor.NewRequestProcessor(imgConfig.Server, lock.Create(imgConfig.Server.Lock), throttler.NewBucketThrottler(10))
+	rp := processor.NewRequestProcessor(imgConfig.Server, lock.Create(imgConfig.Server.Lock, imgConfig.Server.LockTimeout), throttler.NewBucketThrottler(10))
 
 	cloudinaryUploadInterceptor := cloudinary.NewUploadInterceptorMiddleware(imgConfig)
 	router.Use(cloudinaryUploadInterceptor.Handler)

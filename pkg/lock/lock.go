@@ -62,15 +62,20 @@ func (l *NopLock) NotifyAndRelease(_ context.Context, _ string, _ *response.Resp
 
 }
 
-func Create(lockCfg *config.LockCfg) Lock {
+func Create(lockCfg *config.LockCfg, lockTimeout int) Lock {
 	if lockCfg == nil {
 		return NewMemoryLock()
 	}
 	switch lockCfg.Type {
 	case "redis":
-		return NewRedisLock(lockCfg.Address, lockCfg.ClientConfig)
+		r := NewRedisLock(lockCfg.Address, lockCfg.ClientConfig)
+		r.LockTimeout = lockTimeout
+		return r
 	case "redis-cluster":
-		return NewRedisCluster(lockCfg.Address, lockCfg.ClientConfig)
+		r := NewRedisCluster(lockCfg.Address, lockCfg.ClientConfig)
+		r.LockTimeout = lockTimeout
+		return r
+
 	default:
 		return NewMemoryLock()
 	}
