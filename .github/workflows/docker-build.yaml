@@ -27,7 +27,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           result-encoding: string
           script: |
-            const tagExec = await exec.getExecOutput('git', ['describe', '--tags', '--abbrev=0']);
+            const tagExec = await exec.getExecOutput('git', ['describe', '--tags', '--abbrev=0', '--always']);
             let tag = tagExec.stdout || tagExec.stderr;
             tag = tag.trim().replace('v', '');
             return tag;
@@ -39,7 +39,7 @@ jobs:
       - name: debug result
         run: echo ${{ steps.dockerTag.outputs.result}}
       - name: debug git
-        run: git describe --tags --abbrev=0
+        run: git describe --tags --abbrev=0 --always
       -
         name: Set up QEMU
         uses: docker/setup-qemu-action@v1
