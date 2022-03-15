@@ -20,6 +20,9 @@ jobs:
         name: Checkout
         uses: actions/checkout@v2
 
+      - name: git tag
+        run: git fetch --tags;  git fetch --prune --unshallow || true
+
       - name: Extract tag name
         id: dockerTag
         uses: actions/github-script@v6
@@ -27,7 +30,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           result-encoding: string
           script: |
-            const tagExec = await exec.getExecOutput('git', ['describe', '--tags', '--abbrev=0', '--always']);
+            const tagExec = await exec.getExecOutput('git', ['describe', '--tags', '--abbrev=0']);
             let tag = tagExec.stdout || tagExec.stderr;
             tag = tag.trim().replace('v', '');
             return tag;
@@ -39,7 +42,7 @@ jobs:
       - name: debug result
         run: echo ${{ steps.dockerTag.outputs.result}}
       - name: debug git
-        run: git describe --tags --abbrev=0 --always
+        run: git describe --tags --abbrev=0
       -
         name: Set up QEMU
         uses: docker/setup-qemu-action@v1
