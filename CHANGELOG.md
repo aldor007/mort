@@ -1,3 +1,10 @@
+## [0.18.1](https://github.com/aldor007/mort/compare/v0.18.0...v0.18.1) (2022-03-15)
+
+
+### Bug Fixes
+
+* **redis:** fix handling unable to acquire redis lock ([7afdf6f](https://github.com/aldor007/mort/commit/7afdf6f089d44e01229d8f2913eef8320e4a8263))
+
 # [0.18.0](https://github.com/aldor007/mort/compare/v0.17.0...v0.18.0) (2022-03-15)
 
 
