@@ -12,11 +12,6 @@ permissions:
 
 jobs:
   benchmark:
-    container:
-      image: ghcr.io/aldor007/mort-base:latest
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GHR_TOKEN }}
     name: Performance regression check
     runs-on: ubuntu-latest
     steps:
@@ -24,6 +19,8 @@ jobs:
       - uses: actions/setup-go@v2
         with:
           go-version: 1.16
+      - name: install deps
+        run: ./scripts/install-deps.sh
       - name: install
         run: go mod vendor && go mod download
       - name: Benchmark
