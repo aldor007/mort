@@ -1,3 +1,10 @@
+# [0.18.0](https://github.com/aldor007/mort/compare/v0.17.0...v0.18.0) (2022-03-15)
+
+
+### Features
+
+* **redis:** add redis lock strategy ([c26fd20](https://github.com/aldor007/mort/commit/c26fd2035a3b5c1d6f7afb9717ad8bd25349fd23))
+
 # [0.17.0](https://github.com/aldor007/mort/compare/v0.16.3...v0.17.0) (2022-03-15)
 
 
