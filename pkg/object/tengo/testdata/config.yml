@@ -170,3 +170,52 @@ buckets:
             basic:
                 kind: "local-meta"
                 rootPath: "/tmp/mort/"
+    preset-tengo:
+        keys:
+          - accessKey: "acc"
+            secretAccessKey: "sec"
+        transform:
+            kind: "tengo"
+            path: "\\/(?P<presetName>[a-z0-9_]+)\\/(?P<parent>.*)"
+            tengoPath: 'preset.tengo'
+            parentBucket: "preset-tengo"
+            presets:
+                small:
+                    quality: 75
+                    filters:
+                        thumbnail:
+                            width: 150
+                blur:
+                    quality: 80
+                    filters:
+                        thumbnail:
+                          width: 700
+                        blur:
+                          sigma: 5.1
+                webp:
+                    quality: 100
+                    format: webp
+                    filters:
+                        thumbnail:
+                          width: 1000
+                watermark:
+                    quality: 100
+                    filters:
+                        blur:
+                          sigma: 5.1
+                        thumbnail:
+                            width: 1300
+                        watermark:
+                            image: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Imgur_logo.svg/150px-Imgur_logo.svg.png"
+                            position: "center-center"
+                            opacity: 0.1
+        storages:
+            basic:
+                kind: "http"
+                url: "https://i.imgur.com/<item>"
+                headers:
+                  "x--key": "sec"
+            transform:
+                kind: "local-meta"
+                rootPath: "/tmp/mort/"
+                pathPrefix: "transforms"

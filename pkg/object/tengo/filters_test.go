@@ -1,4 +1,3 @@
-
 package tengo_test
 
 import (
@@ -31,14 +30,14 @@ func TestFiltersTengoGetEmpty(t *testing.T) {
 
 	tengoObject := tengo.Filters{Value: c}
 
-	valuesUndefine := []string{"thumbnail", "t","crop", "extract", "resizeCropAuto", "blur", "rotate", "watermark"}
+	valuesUndefine := []string{"thumbnail", "t", "crop", "extract", "resizeCropAuto", "blur", "rotate", "watermark"}
 
 	for _, v := range valuesUndefine {
 		res, err := tengoObject.IndexGet(&tengoLib.String{Value: v})
 		assert.Nil(t, err)
 		assert.Equal(t, res, tengoLib.UndefinedValue)
 	}
-	valuesFalse:= []string{"strip", "grayscale", "autoRotate", "interlace"}
+	valuesFalse := []string{"strip", "grayscale", "autoRotate", "interlace"}
 
 	for _, v := range valuesFalse {
 		res, err := tengoObject.IndexGet(&tengoLib.String{Value: v})
@@ -51,42 +50,70 @@ func TestFiltersTengoGetEmpty(t *testing.T) {
 func TestFiltersTengoGet(t *testing.T) {
 
 	c := config.Filters{
-		Thumbnail:  &struct{Width int "yaml:\"width\""; Height int "yaml:\"height\""; Mode string "yaml:\"mode\""; PreserveAspectRatio bool "yaml:\"preserveAspectRatio\""; Fill bool "yaml:\"fill\""}{
+		Thumbnail: &struct {
+			Width               int    "yaml:\"width\""
+			Height              int    "yaml:\"height\""
+			Mode                string "yaml:\"mode\""
+			PreserveAspectRatio bool   "yaml:\"preserveAspectRatio\""
+			Fill                bool   "yaml:\"fill\""
+		}{
 			Width:  100,
 			Height: 100,
 		},
-		Crop: &struct{Width int "yaml:\"width\""; Height int "yaml:\"height\""; Gravity string "yaml:\"gravity\""; Mode string "yaml:\"mode\""; Embed bool "yaml:\"embed\""}{
-			Width: 111,
-			Height: 111,
+		Crop: &struct {
+			Width   int    "yaml:\"width\""
+			Height  int    "yaml:\"height\""
+			Gravity string "yaml:\"gravity\""
+			Mode    string "yaml:\"mode\""
+			Embed   bool   "yaml:\"embed\""
+		}{
+			Width:   111,
+			Height:  111,
 			Gravity: "aaa",
 		},
-		Extract: &struct{Width int "yaml:\"width\""; Height int "yaml:\"height\""; Top int "yaml:\"top\""; Left int "yaml:\"left\""}{
-			Width: 222,
+		Extract: &struct {
+			Width  int "yaml:\"width\""
+			Height int "yaml:\"height\""
+			Top    int "yaml:\"top\""
+			Left   int "yaml:\"left\""
+		}{
+			Width:  222,
 			Height: 222,
-			Top: 111,
-			Left: 111,
+			Top:    111,
+			Left:   111,
 		},
-		ResizeCropAuto: &struct{Width int "yaml:\"width\""; Height int "yaml:\"height\""}{
-			Width: 333,
+		ResizeCropAuto: &struct {
+			Width  int "yaml:\"width\""
+			Height int "yaml:\"height\""
+		}{
+			Width:  333,
 			Height: 333,
 		},
-		Blur: &struct{Sigma float64 "yaml:\"sigma\""; MinAmpl float64 "yaml:\"minAmpl\""}{
-			Sigma: 1.1,
+		Blur: &struct {
+			Sigma   float64 "yaml:\"sigma\""
+			MinAmpl float64 "yaml:\"minAmpl\""
+		}{
+			Sigma:   1.1,
 			MinAmpl: 1.2,
 		},
-		Watermark: &struct{Image string "yaml:\"image\""; Position string "yaml:\"position\""; Opacity float32 "yaml:\"opacity\""}{
-			Image: "aaa.png",
+		Watermark: &struct {
+			Image    string  "yaml:\"image\""
+			Position string  "yaml:\"position\""
+			Opacity  float32 "yaml:\"opacity\""
+		}{
+			Image:    "aaa.png",
 			Position: "top-left",
-			Opacity: 2.2,
+			Opacity:  2.2,
 		},
-		Rotate: &struct{Angle int "yaml:\"angle\""}{
+		Rotate: &struct {
+			Angle int "yaml:\"angle\""
+		}{
 			Angle: 289,
 		},
-		Interlace: true,
-		Grayscale: true,
+		Interlace:  true,
+		Grayscale:  true,
 		AutoRotate: true,
-		Strip: true,
-
+		Strip:      true,
 	}
 
 	tengoObject := tengo.Filters{Value: c}

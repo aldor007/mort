@@ -1,10 +1,13 @@
 package tengo
 
 import (
-	"github.com/aldor007/mort/pkg/config"
+	"errors"
 	"net/url"
 
+	"github.com/aldor007/mort/pkg/config"
+
 	"github.com/aldor007/mort/pkg/object"
+	tengoLib "github.com/d5/tengo/v2"
 )
 
 func init() {
@@ -33,6 +36,10 @@ func decodeUsingTengo(url *url.URL, bucketConfig config.Bucket, obj *object.File
 	}
 
 	parentTengo := t.Get("parent")
+	errorTengo := t.Get("err")
+	if errorTengo.Object() != tengoLib.UndefinedValue {
+		return "", errors.New(errorTengo.String())
+	}
 	parent := parentTengo.String()
 
 	return parent, err

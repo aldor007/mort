@@ -1,0 +1,107 @@
+fmt := import("fmt")
+text := import("text")
+presetToTransform := func(obj, preset) {
+	filters := preset.filters
+
+	if filters.thumbnial {
+		err := obj.transforms.resize(filters.thumbnial.Width, filters.thumbnial.Height, filters.thumbnial.mode == "outbound", filters.thumbnial.preserveAspectRatio, filters.thumbnial.fill)
+		if err != undefined {
+			return err
+		}
+	}
+
+	if filters.crop {
+		err := obj.transforms.crop(filters.crop.width, filters.crop.height, filters.crop.gravity, filters.crop.mode == "outbound", filters.crop.embed)
+		if err != undefined {
+			return err
+		}
+	}
+	if filters.watermark {
+		err := obj.transforms.watermark(filters.watermark.image, filters.watermark.position, filters.watermark.opacity)
+		if err != undefined {
+			return err
+		}
+	}
+	if filters.blur {
+		err := obj.transforms.blur(filters.blur.sigma, filters.blur.minAmpl)
+		if err != undefined {
+			return err
+		}
+	}
+
+	if filters.extract {
+		err := obj.transforms.extract(filters.extract.top, filters.extract.left, filters.extract.width, filters.extract.height)
+		if err != undefined {
+			return err
+		}
+	}
+
+	if filters.resizecropAuto != undefined {
+		err := obj.transforms.resizeCropAuto(filters.resizecropAuto.Width, filters.ResizecropAuto.Height)
+		if err != undefined {
+			return err
+		}
+	}
+
+	obj.transforms.quality(preset.quality)
+
+	if filters.interlace == true {
+		err := obj.transforms.interlace()
+		if err != undefined {
+			return err
+		}
+	}
+
+	if filters.strip == true {
+		err := obj.transforms.stripMetadata()
+		if err != undefined {
+			return err
+		}
+	}
+
+	if preset.format != "" {
+		err := obj.transforms.format(preset.format)
+		if err != undefined {
+			return err
+		}
+	}
+
+
+	if filters.grayscale {
+		obj.transforms.grayscale()
+	}
+
+	if filters.rotate != undefined {
+		obj.transforms.rotate(filters.rotate.angle)
+	}
+}
+
+parse := func(reqUrl, bucketConfig, obj) {
+	trans := bucketConfig.transform
+	matches := trans.pathRegexp(obj.key)
+	if len(matches) == 0 {
+		return ["", undefined]
+	}
+
+
+	presetName := matches["presetName"]
+	parent := matches["parent"]
+
+	if ok := trans.presets[presetName]; ok == undefined {
+		return ["", error("unknown preset " + presetName)]
+	}
+
+	err := presetToTransform(obj, trans.presets[presetName])
+
+	if trans.parentBucket != "" {
+		parent = "/" + trans.parentBucket + "/" + parent
+	} else if !text.has_prefix(parent, "/") {
+		parent = "/" + parent
+	}
+
+	return [parent, err]
+}
+
+result := parse(url, bucketConfig, obj)
+parent := result[0]
+err := result[1]

@@ -69,6 +69,7 @@ parse := func(reqUrl, bucketConfigF, obj) {
 }
 
 parent := parse(url, bucketConfig, obj)
+err := undefined
 ```
 
 Above script will work for URL http://localhost:8084/tengo/udXmD2T,w100,h100.jpeg
@@ -79,3 +80,7 @@ Mort is injecting variables inside of tengo script
 * `bucketConfig` - mort bucket configuration
 * `obj` - mort object.FileObject
 ** `obj.transforms` - mort transform.Transforms object on which you can execute image manipulations
+
+Output variables
+* `parent` - path for parent object
+* `err` - error if occurred

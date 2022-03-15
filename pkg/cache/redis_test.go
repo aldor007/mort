@@ -5,9 +5,9 @@ import (
 
 	"github.com/aldor007/mort/pkg/object"
 	"github.com/aldor007/mort/pkg/response"
-	"github.com/stretchr/testify/assert"
-	"github.com/go-redis/redismock/v8"
 	redisCache "github.com/go-redis/cache/v8"
+	"github.com/go-redis/redismock/v8"
+	"github.com/stretchr/testify/assert"
 	"time"
 )
 
@@ -16,8 +16,8 @@ func TestRedisCache_Set(t *testing.T) {
 	db, mock := redismock.NewClientMock()
 
 	i := RedisCache{
-		client:  redisCache.New(&redisCache.Options{
-		Redis:      db,
+		client: redisCache.New(&redisCache.Options{
+			Redis: db,
 		}),
 	}
 
@@ -25,7 +25,7 @@ func TestRedisCache_Set(t *testing.T) {
 	obj.Key = "cacheKey"
 	res := response.NewString(200, "test")
 
-	mock.ExpectSet("mort-v1:" + obj.GetResponseCacheKey(), res, time.Duration(res.GetTTL()))
+	mock.ExpectSet("mort-v1:"+obj.GetResponseCacheKey(), res, time.Duration(res.GetTTL()))
 	err := i.Set(&obj, res)
 	assert.Nil(t, err)
 
@@ -35,8 +35,8 @@ func TestRedisCache_Delete(t *testing.T) {
 	db, mock := redismock.NewClientMock()
 
 	i := RedisCache{
-		client:  redisCache.New(&redisCache.Options{
-		Redis:      db,
+		client: redisCache.New(&redisCache.Options{
+			Redis: db,
 		}),
 	}
 
@@ -54,8 +54,8 @@ func TestRedisCache_Get(t *testing.T) {
 	db, mock := redismock.NewClientMock()
 
 	i := RedisCache{
-		client:  redisCache.New(&redisCache.Options{
-		Redis:      db,
+		client: redisCache.New(&redisCache.Options{
+			Redis: db,
 		}),
 	}
 

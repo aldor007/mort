@@ -1,9 +1,12 @@
 package tengo
 
 import (
+	// "encoding/json"
+
 	"github.com/aldor007/mort/pkg/config"
 	tengoLib "github.com/d5/tengo/v2"
 	"github.com/d5/tengo/v2/token"
+	"gopkg.in/yaml.v2"
 )
 
 // Preset struct create Preset struct inside of tengo VM
@@ -14,7 +17,8 @@ type Preset struct {
 
 // String return empty string
 func (o *Preset) String() string {
-	return ""
+	buf, _ := yaml.Marshal(&o.Value)
+	return string(buf)
 }
 
 // BinaryOp not implemented
@@ -24,7 +28,7 @@ func (o *Preset) BinaryOp(op token.Token, rhs tengoLib.Object) (tengoLib.Object,
 
 // IsFalsy return always true
 func (o *Preset) IsFalsy() bool {
-	return true
+	return false
 }
 
 // Equals returns false

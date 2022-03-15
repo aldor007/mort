@@ -52,9 +52,9 @@ type Filters struct {
 
 // Preset describe properties of transform preset
 type Preset struct {
-	Quality int     `yaml:"quality"`
-	Format  string  `yaml:"format"`
-	Filters Filters `yaml:"filters"`
+	Quality int     `yaml:"quality" json:"quality"`
+	Format  string  `yaml:"format" json:"format"`
+	Filters Filters `yaml:"filters" json:"filters"`
 }
 
 // Transform describe transform for bucket
