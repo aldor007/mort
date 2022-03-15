@@ -23,7 +23,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const tag = await exec.getExecOutput('git', ['tag', '--points-at', 'HEAD'])
-            return tag.trim().replace('v', '');
+            return tag.stdout.trim().replace('v', '');
       - name: Get current date
         id: date
         run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
