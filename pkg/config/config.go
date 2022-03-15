@@ -299,10 +299,6 @@ func (c *Config) validateServer() error {
 		c.Server.LockTimeout = 30
 	}
 
-	if c.Server.QueueLen == 0 {
-		c.Server.QueueLen = 5
-	}
-
 	if c.Server.Cache.MaxCacheItemSize == 0 {
 		c.Server.Cache.MaxCacheItemSize = 5 * 2 << 20
 	} else {

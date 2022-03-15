@@ -6,6 +6,11 @@ server:
         - "localhost:6379"
       maxCacheItemSizeMB: 50
       clientConfig:
+  lock:
+      type: "redis"
+      address:
+        - "localhost:6379"
+      clientConfig:
 
   listens:
     - ":8084"

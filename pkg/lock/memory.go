@@ -1,6 +1,7 @@
 package lock
 
 import (
+	"context"
 	"sync"
 
 	"github.com/aldor007/mort/pkg/monitoring"
@@ -42,7 +43,7 @@ func notifyListeners(lock lockData, respFactory func() (*response.Response, bool
 }
 
 // NotifyAndRelease tries notify all waiting goroutines about response
-func (m *MemoryLock) NotifyAndRelease(key string, originalResponse *response.Response) {
+func (m *MemoryLock) NotifyAndRelease(_ context.Context, key string, originalResponse *response.Response) {
 	m.lock.Lock()
 	lock, ok := m.internal[key]
 	if !ok {
@@ -62,7 +63,7 @@ func (m *MemoryLock) NotifyAndRelease(key string, originalResponse *response.Res
 	// Current synchronous notification is simpler compared to asynchronous implementation.
 	// The asynchronous implementation might be tricky since the response in not buffered mode must be
 	// protected from being read before it is copied. Otherwise CopyWithStream in a worst case will deliver partial body
-	// since it can read in parallel with HTTP handler. To prevent such behaviour extra temporary copy of response
+	// since it can read in parallel with HTTP handler. To prevent such behavior extra temporary copy of response
 	// must be created before returning from this method. Of course such creation must
 	// also take into account whether the originalResponse is buffered or not.
 	// The time spend on notifying listeners is negligible compared to the total time of image processing,
@@ -79,7 +80,7 @@ func (m *MemoryLock) NotifyAndRelease(key string, originalResponse *response.Res
 }
 
 // Lock create unique entry in memory map
-func (m *MemoryLock) Lock(key string) (LockResult, bool) {
+func (m *MemoryLock) Lock(_ context.Context, key string) (LockResult, bool) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	lock, ok := m.internal[key]
@@ -95,7 +96,7 @@ func (m *MemoryLock) Lock(key string) (LockResult, bool) {
 }
 
 // Release remove entry from memory map
-func (m *MemoryLock) Release(key string) {
+func (m *MemoryLock) Release(_ context.Context, key string) {
 	m.lock.RLock()
 	_, ok := m.internal[key]
 	m.lock.RUnlock()

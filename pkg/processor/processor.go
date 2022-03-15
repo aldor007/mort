@@ -122,9 +122,9 @@ func (r *RequestProcessor) replyWithError(obj *object.FileObject, sc int, err er
 	}
 
 	go func() {
-		lockData, locked := r.collapse.Lock(errorObject.Key)
+		lockData, locked := r.collapse.Lock(obj.Ctx, errorObject.Key)
 		if locked {
-			defer r.collapse.Release(errorObject.Key)
+			defer r.collapse.Release(obj.Ctx, errorObject.Key)
 			monitoring.Log().Info("Lock acquired for error response", obj.LogData()...)
 			parent := response.NewBuf(200, r.serverConfig.Placeholder.Buf)
 			transformsTab := []transforms.Transforms{obj.Transforms}
@@ -201,12 +201,17 @@ func handlePUT(req *http.Request, obj *object.FileObject) *response.Response {
 
 func (r *RequestProcessor) collapseGET(req *http.Request, obj *object.FileObject) *response.Response {
 	ctx := obj.Ctx
-	lockResult, locked := r.collapse.Lock(obj.Key)
+	lockResult, locked := r.collapse.Lock(ctx, obj.Key)
 	if locked {
 		monitoring.Log().Info("Lock acquired", obj.LogData()...)
 		res := r.handleGET(req, obj)
-		r.collapse.NotifyAndRelease(obj.Key, res)
+		r.collapse.NotifyAndRelease(ctx, obj.Key, res)
 		return res
+	}
+
+	if lockResult.Error != nil {
+		monitoring.Log().Warn("Error acquiring lock", obj.LogData()...)
+		return r.replyWithError(obj, 500, lockResult.Error)
 	}
 
 	monitoring.Report().Inc("collapsed_count")

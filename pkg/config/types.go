@@ -155,15 +155,21 @@ type CacheCfg struct {
 	ClientConfig     map[string]string `yaml:"clientConfig"`
 }
 
+// LockCfg configure redis lock
+type LockCfg struct {
+	Type         string            `yaml:"type"`
+	Address      []string          `yaml:"address"`
+	ClientConfig map[string]string `yaml:"clientConfig"`
+}
+
 // Server configure HTTP server
 type Server struct {
-	LogLevel       string `yaml:"logLevel"`
-	InternalListen string `yaml:"internalListen"`
-	SingleListen   string `yaml:"listen"`
-	RequestTimeout int    `yaml:"requestTimeout"`
-	LockTimeout    int    `yaml:"lockTimeout"`
-	// Unused, intention unknown
-	QueueLen       int                    `yaml:"queueLen"`
+	LogLevel       string                 `yaml:"logLevel"`
+	InternalListen string                 `yaml:"internalListen"`
+	SingleListen   string                 `yaml:"listen"`
+	RequestTimeout int                    `yaml:"requestTimeout"`
+	LockTimeout    int                    `yaml:"lockTimeout"`
+	Lock           *LockCfg               `yaml:"redisLock"`
 	Listen         []string               `yaml:"listens"`
 	Monitoring     string                 `yaml:"monitoring"`
 	PlaceholderStr string                 `yaml:"placeholder"`

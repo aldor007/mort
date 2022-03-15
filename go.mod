@@ -6,11 +6,12 @@ require (
 	github.com/aldor007/go-aws-auth v0.0.0-20180623204207-00898dfb9272
 	github.com/aldor007/stow v1.1.0
 	github.com/aws/aws-sdk-go v1.38.57 // indirect
+	github.com/bsm/redislock v0.7.2
 	github.com/d5/tengo/v2 v2.10.1
 	github.com/djherbis/stream v1.3.1
 	github.com/go-chi/chi v1.5.2
 	github.com/go-redis/cache/v8 v8.3.1-0.20210129151214-1cdfea0b552b
-	github.com/go-redis/redis/v8 v8.8.0
+	github.com/go-redis/redis/v8 v8.11.4
 	github.com/go-redis/redismock/v8 v8.0.6
 	github.com/google/brotli/go/cbrotli v0.0.0-20210127140805-63be8a994019
 	github.com/h2non/bimg v1.1.6-0.20210807160419-b29a57356338
@@ -25,7 +26,7 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/vmihailenco/msgpack v4.0.4+incompatible
 	go.uber.org/zap v1.16.0
-	golang.org/x/net v0.0.0-20210119194325-5f4716e94777
+	golang.org/x/net v0.0.0-20210428140749-89ef3d95e781
 	gopkg.in/h2non/gock.v1 v1.0.16
 	gopkg.in/kothar/go-backblaze.v0 v0.0.0-20210124194846-35409b867216 // indirect
 	gopkg.in/yaml.v2 v2.4.0

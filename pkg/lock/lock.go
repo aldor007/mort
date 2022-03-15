@@ -1,23 +1,27 @@
 package lock
 
 import (
+	"context"
+
+	"github.com/aldor007/mort/pkg/config"
 	"github.com/aldor007/mort/pkg/response"
 )
 
 // Lock is responding for collapsing request for same object
 type Lock interface {
 	// Lock try  get a lock for given key
-	Lock(key string) (observer LockResult, acquired bool)
+	Lock(ctx context.Context, key string) (observer LockResult, acquired bool)
 	// Release remove lock for given key
-	Release(key string)
+	Release(ctx context.Context, key string)
 	// NotifyAndRelease remove lock for given key and notify all clients waiting for result
-	NotifyAndRelease(key string, res *response.Response)
+	NotifyAndRelease(ctx context.Context, key string, res *response.Response)
 }
 
 // LockResult contain struct
 type LockResult struct {
 	ResponseChan chan *response.Response // channel on which you get response
 	Cancel       chan bool               // channel for notify about cancel of waiting
+	Error        error                   // error when creating error
 }
 
 type lockData struct {
@@ -44,16 +48,30 @@ type NopLock struct {
 }
 
 // Lock always return that lock was acquired
-func (l *NopLock) Lock(_ string) (LockResult, bool) {
+func (l *NopLock) Lock(_ context.Context, _ string) (LockResult, bool) {
 	return LockResult{}, true
 }
 
 // Release do nothing
-func (l *NopLock) Release(_ string) {
+func (l *NopLock) Release(_ context.Context, _ string) {
 
 }
 
 // NotifyAndRelease do nothing
-func (l *NopLock) NotifyAndRelease(_ string, _ *response.Response) {
+func (l *NopLock) NotifyAndRelease(_ context.Context, _ string, _ *response.Response) {
 
+}
+
+func Create(lockCfg *config.LockCfg) Lock {
+	if lockCfg == nil {
+		return NewMemoryLock()
+	}
+	switch lockCfg.Type {
+	case "redis":
+		return NewRedisLock(lockCfg.Address, lockCfg.ClientConfig)
+	case "redis-cluster":
+		return NewRedisCluster(lockCfg.Address, lockCfg.ClientConfig)
+	default:
+		return NewMemoryLock()
+	}
 }

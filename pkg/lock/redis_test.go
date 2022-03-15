@@ -7,46 +7,61 @@ import (
 	"time"
 
 	"github.com/aldor007/mort/pkg/response"
+	"github.com/bsm/redislock"
+	"github.com/go-redis/redismock/v8"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewMemoryLock(t *testing.T) {
-	l := NewMemoryLock()
+func TestNewRedisLock(t *testing.T) {
+	l := NewRedisLock([]string{"1.1.1.1:1234"}, nil)
 
-	assert.NotNil(t, l, "New memory should return not nil")
+	assert.NotNil(t, l, "New Redis should return not nil")
 }
 
-func TestMemoryLock_Lock(t *testing.T) {
-	l := NewMemoryLock()
+func TestRedisLock_Lock(t *testing.T) {
+	l := NewRedisLock([]string{"1.1.1.1:1234"}, nil)
+	client, mock := redismock.NewClientMock()
+	l.client = redislock.New(client)
 	key := "klucz"
+	mock.Regexp().ExpectSetNX(key, `[a-zA-Z0-9]+`, 60*time.Second).SetVal(true)
 	ctx := context.Background()
 	c, acquired := l.Lock(ctx, key)
 
 	assert.True(t, acquired, "Should acquire lock")
 	assert.Nil(t, c.ResponseChan, "shouldn't return channel")
+	assert.Nil(t, c.Error, "error should be nil")
 
 	resChan, lock := l.Lock(ctx, key)
 
 	assert.False(t, lock, "Shouldn't acquire lock")
 	assert.NotNil(t, resChan, "should return channel")
 
+	mock.ClearExpect()
+	mock.Regexp().ExpectSetNX(key, `[a-zA-Z0-9]+`, 60*time.Second).SetVal(true)
 	l.Release(ctx, key)
 
 	c, acquired = l.Lock(ctx, key)
 
 	assert.True(t, acquired, "Should acquire lock after release")
 	assert.Nil(t, c.ResponseChan, "shouldn't return channel after release")
+	assert.Nil(t, c.Error, "error should be nil")
 }
 
-func TestMemoryLock_NotifyAndReleaseWhenError(t *testing.T) {
-	l := NewMemoryLock()
+func TestRedisLock_NotifyAndReleaseWhenError(t *testing.T) {
+	l := NewRedisLock([]string{"1.1.1.1:1234"}, nil)
+	client, mock := redismock.NewClientMock()
+	l.client = redislock.New(client)
 	key := "kluczi2"
 	ctx := context.Background()
+	mock.Regexp().ExpectSetNX(key, `[a-zA-Z0-9]+`, 60*time.Second).SetVal(true)
 	c, acquired := l.Lock(ctx, key)
 
 	assert.True(t, acquired, "Should acquire lock")
 	assert.Nil(t, c.ResponseChan, "shouldn't return channel")
+	assert.Nil(t, c.Error, "error should be nil")
 
+	mock.ClearExpect()
+	mock.Regexp().ExpectSetNX(key, `[a-zA-Z0-9]+`, 60*time.Second).SetVal(true)
 	result, lock := l.Lock(ctx, key)
 
 	assert.False(t, lock, "Shouldn't acquire lock")
@@ -67,15 +82,21 @@ func TestMemoryLock_NotifyAndReleaseWhenError(t *testing.T) {
 	}
 }
 
-func TestMemoryLock_NotifyAndRelease(t *testing.T) {
-	l := NewMemoryLock()
+func TestRedisLock_NotifyAndRelease(t *testing.T) {
+	l := NewRedisLock([]string{"1.1.1.1:1234"}, nil)
+	client, mock := redismock.NewClientMock()
+	l.client = redislock.New(client)
 	key := "kluczi22"
 	ctx := context.Background()
+	mock.ClearExpect()
+	mock.Regexp().ExpectSetNX(key, `[a-zA-Z0-9]+`, 60*time.Second).SetVal(true)
 	c, acquired := l.Lock(ctx, key)
 
 	assert.True(t, acquired, "Should acquire lock")
 	assert.Nil(t, c.ResponseChan, "shouldn't return channel")
 
+	mock.ClearExpect()
+	mock.Regexp().ExpectSetNX(key, `[a-zA-Z0-9]+`, 60*time.Second).SetVal(true)
 	result, lock := l.Lock(ctx, key)
 
 	assert.False(t, lock, "Shouldn't acquire lock")
@@ -87,7 +108,7 @@ func TestMemoryLock_NotifyAndRelease(t *testing.T) {
 	timer := time.NewTimer(time.Second * 2)
 	select {
 	case <-timer.C:
-		t.Fatalf("timeout waitgin for lock")
+		t.Fatalf("timeout waiting for lock")
 		return
 	case res := <-result.ResponseChan:
 		assert.NotNil(t, res, "Response should't be nil")
@@ -101,10 +122,14 @@ func TestMemoryLock_NotifyAndRelease(t *testing.T) {
 	}
 }
 
-func TestMemoryLock_NotifyAndRelease2(t *testing.T) {
-	l := NewMemoryLock()
+func TestRedisLock_NotifyAndRelease2(t *testing.T) {
+	l := NewRedisCluster([]string{"1.1.1.1:1234"}, nil)
+	client, mock := redismock.NewClientMock()
+	l.client = redislock.New(client)
 	key := "kluczi222"
 	ctx := context.Background()
+	mock.ClearExpect()
+	mock.Regexp().ExpectSetNX(key, `[a-zA-Z0-9]+`, 60*time.Second).SetVal(true)
 	c, acquired := l.Lock(ctx, key)
 
 	assert.True(t, acquired, "Should acquire lock")
@@ -112,43 +137,4 @@ func TestMemoryLock_NotifyAndRelease2(t *testing.T) {
 
 	l.NotifyAndRelease(ctx, "no-key", response.NewError(400, errors.New("invalid transform")))
 	l.NotifyAndRelease(ctx, key, response.NewNoContent(200))
-}
-
-func BenchmarkMemoryLock_NotifyAndRelease(b *testing.B) {
-	l := NewMemoryLock()
-	key := "aaa"
-	ctx := context.Background()
-	buf := make([]byte, 10)
-	l.Lock(ctx, key)
-	go time.AfterFunc(time.Millisecond*time.Duration(500), func() {
-		l.NotifyAndRelease(ctx, key, response.NewBuf(200, buf))
-	})
-
-	for i := 0; i < b.N; i++ {
-		result, acquired := l.Lock(ctx, key)
-		multi := 500 % (i + 1)
-		if acquired {
-			go time.AfterFunc(time.Millisecond*time.Duration(multi), func() {
-				l.NotifyAndRelease(ctx, key, response.NewBuf(200, buf))
-			})
-		} else {
-			go func(r LockResult) {
-				timer := time.NewTimer(time.Second * 1)
-				for {
-					select {
-					case <-r.ResponseChan:
-						return
-					case <-timer.C:
-						panic("timeout waiting for lock")
-					default:
-
-					}
-				}
-			}(result)
-
-			time.Sleep(time.Millisecond * 10)
-
-		}
-
-	}
 }

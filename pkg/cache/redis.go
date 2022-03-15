@@ -65,6 +65,7 @@ func NewRedisCluster(redisAddress []string, clientConfig map[string]string) *Red
 
 	return &RedisCache{cache}
 }
+
 func (c *RedisCache) getKey(obj *object.FileObject) string {
 	return "mort-v1:" + obj.GetResponseCacheKey()
 }
