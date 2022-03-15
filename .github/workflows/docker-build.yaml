@@ -16,18 +16,20 @@ jobs:
         name: Checkout
         uses: actions/checkout@v2
 
-      # - name: install git
-      #   run: apt-get update && apt-get install git -y
+      - name: git tag
+        run: git fetch --tags;  git fetch --prune --unshallow || true
+
       - name: Extract tag name
-        id: tag
+        id: dockerTag
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           result-encoding: string
           script: |
-            const tagExec = await exec.getExecOutput('git', ['tag', '--points-at', 'HEAD'])
-            const tag = tagExec.stdout || tagExec.stderr
-            return tag.trim().replace('v', '');
+            const tagExec = await exec.getExecOutput('git', ['describe', '--tags', '--abbrev=0']);
+            let tag = tagExec.stdout || tagExec.stderr;
+            tag = tag.trim().replace('v', '');
+            return tag;
       - name: Get current date
         id: date
         run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
@@ -52,8 +54,8 @@ jobs:
           file: ./Dockerfile
           platforms: linux/arm64,linux/amd64
           push: true
-          tags: ghcr.io/aldor007/mort:latest, ghcr.io/aldor007/mort:${{ steps.tag.outputs.tag }}
-          cache-from: type=registry,ref=ghcr.io/aldor007/mort:latest
+          tags: ghcr.io/aldor007/mort:latest, ghcr.io/aldor007/mort:${{ steps.dockerTag.outputs.result}}
+          cache-from: type=registry,ref=ghcr.io/aldor007/mort-base:latest
           cache-to: type=inline
-          build-args: TAG=${{ steps.tag.outputs.result }}, COMMIT=$GITHUB_SHA, DATE=${{ steps.date.outputs.date }}
+          build-args: TAG=${{ steps.dockerTag.outputs.result }}, COMMIT=$GITHUB_SHA, DATE=${{ steps.date.outputs.date }}
 
