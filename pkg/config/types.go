@@ -87,19 +87,36 @@ func (t *Transform) ForParser() *Transform {
 
 // Storage contains information about kind of used storage
 type Storage struct {
-	RootPath        string            `yaml:"rootPath,omitempty"`        // root path for local-* storage
-	Kind            string            `yaml:"kind"`                      // type of storage from list ("local", "local-meta", "s3", "http", "b2","noop")
-	Url             string            `yaml:"url,omitempty"`             // Url for http storage
-	Headers         map[string]string `yaml:"headers,omitempty"`         // request headers for http storage
-	AccessKey       string            `yaml:"accessKey,omitempty"`       // access key for s3 storage
-	SecretAccessKey string            `yaml:"secretAccessKey,omitempty"` // SecretAccessKey for s3 storage
-	Region          string            `yaml:"region,omitempty"`          // region for s3 storage
-	Endpoint        string            `yaml:"endpoint,omitempty"`        // endpoint for s3 storage
-	PathPrefix      string            `yaml:"pathPrefix,omitempty"`      // prefix in path for all storage
-	Bucket          string            `yaml:"bucket"`
-	Account         string            `yaml:"account"` // account name for b2
-	Key             string            `yaml:"key"`     // key for b2
-	Hash            string            // unique hash for given storage
+	RootPath           string            `yaml:"rootPath,omitempty"`        // root path for local-* storage
+	Kind               string            `yaml:"kind"`                      // type of storage from list ("local", "local-meta", "s3", "http", "b2","noop")
+	Url                string            `yaml:"url,omitempty"`             // Url for http storage
+	Headers            map[string]string `yaml:"headers,omitempty"`         // request headers for http storage
+	AccessKey          string            `yaml:"accessKey,omitempty"`       // access key for s3 storage
+	SecretAccessKey    string            `yaml:"secretAccessKey,omitempty"` // SecretAccessKey for s3 storage
+	Region             string            `yaml:"region,omitempty"`          // region for s3 storage
+	Endpoint           string            `yaml:"endpoint,omitempty"`        // endpoint for s3 storage
+	PathPrefix         string            `yaml:"pathPrefix,omitempty"`      // prefix in path for all storage
+	Bucket             string            `yaml:"bucket"`
+	B2AccountID        string            `yaml:"b2Account"`                    // account name for b2
+	B2ApplicationKey   string            `yaml:"b2ApplicationKey"`             // key for b2
+	B2ApplicationKeyID string            `yaml:"b2ApplicationKeyId"`           // key for b2
+	GoogleConfigJSON   string            `yaml:"googleConfigJson,omitempty"`   // google config json
+	GoogleProjectID    string            `yaml:"googleProjectId,omitempty"`    // google project id
+	GoogleScopes       string            `yaml:"googleScopes,omitempty"`       // google  scopes id
+	OracleUsername     string            `yaml:"oracleUsername,omitempty"`     // oracle user name
+	OraclePassword     string            `yaml:"oraclePassword,omitempty"`     // oracle password
+	OracleAuthEndpoint string            `yaml:"oracleAuthEndpoint,omitempty"` // oracle auth endpoint
+	SFTPHost           string            `yaml:"sftpHost"`                     // host for sftp storage
+	SFTPPort           string            `yaml:"sftpPort"`                     // port for sftp storage
+	SFTPUsername       string            `yaml:"sftpUsername"`                 // username for sftp storage
+	SFTPPassword       string            `yaml:"sftpPassword"`                 // password for sftp storage
+	SFTPPrivateKey     string            `yaml:"sftpPrivateKey"`               // private key for sftp
+	SFTPPrivateKeyPass string            `yaml:"sftpPrivateKeypassphrase"`     // password for sftp key
+	SFTPHostPublicKey  string            `yaml:"sftpHostPublicKey"`            // sft pubic host key
+	SFTPHostBasePath   string            `yaml:"sftpBasePath"`                 // base path for sftp storage
+	AzureAccount       string            `yaml:"azureAccount,omitempty"`       // azure account name
+	AzureKey           string            `yaml:"azureKey,omitempty"`           // azure key
+	Hash               string            // unique hash for given storage
 }
 
 // StorageTypes contains map of storage for bucket

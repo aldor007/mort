@@ -7,9 +7,11 @@ import (
 
 	//"github.com/aldor007/mort/pkg/uri"
 	"context"
+	"errors"
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -29,6 +31,7 @@ type FileObject struct {
 	Debug          bool                  // flag for debug requests
 	Ctx            context.Context       // context of request
 	Range          string                // HTTP range in request
+	RangeData      httpRange             // start, end for HTTP range
 }
 
 // NewFileObjectFromPath create new instance of FileObject
@@ -112,6 +115,10 @@ func (o *FileObject) AppendToKey(str string) {
 func (o *FileObject) FillWithRequest(req *http.Request, ctx context.Context) {
 	o.Ctx = ctx
 	o.Range = req.Header.Get("Range")
+	if o.Range != "" {
+		o.RangeData, _ = parseRange(o.Range)
+	}
+
 }
 
 func (o *FileObject) GetResponseCacheKey() string {
@@ -152,4 +159,47 @@ func (obj *FileObject) LogData(fields ...zapcore.Field) []zapcore.Field {
 
 	return append(result, fields...)
 
+}
+
+type httpRange struct {
+	Start uint64
+	End   uint64
+}
+
+func parseRange(s string) (httpRange, error) {
+	var httpRangeData httpRange
+	if s == "" {
+		return httpRangeData, nil // header not present
+	}
+	const b = "bytes="
+	if !strings.HasPrefix(s, b) {
+		return httpRangeData, errors.New("invalid range")
+	}
+	rangeArr := strings.Split(s[len(b):], ",")
+	if len(rangeArr) != 1 {
+		return httpRangeData, errors.New("multi range not implemted")
+	}
+	ra := strings.TrimSpace(rangeArr[0])
+	i := strings.Index(ra, "-")
+	if i < 0 {
+		return httpRangeData, errors.New("invalid range")
+	}
+	start, end := strings.TrimSpace(ra[:i]), strings.TrimSpace(ra[i+1:])
+	if start != "" {
+		i, err := strconv.ParseInt(start, 10, 64)
+		if err != nil || i < 0 {
+			return httpRangeData, errors.New("invalid range")
+		}
+		httpRangeData.Start = uint64(i)
+	}
+
+	if end != "" {
+		i, err := strconv.ParseInt(end, 10, 64)
+		if err != nil || i < 0 {
+			return httpRangeData, errors.New("invalid range")
+		}
+		httpRangeData.End = uint64(i)
+
+	}
+	return httpRangeData, nil
 }

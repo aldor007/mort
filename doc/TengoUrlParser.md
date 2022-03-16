@@ -76,11 +76,14 @@ Above script will work for URL http://localhost:8084/tengo/udXmD2T,w100,h100.jpe
 
 
 Mort is injecting variables inside of tengo script
-* `url` golang net.URL struct
-* `bucketConfig` - mort bucket configuration
-* `obj` - mort object.FileObject
-** `obj.transforms` - mort transform.Transforms object on which you can execute image manipulations
+* `url` golang net.URL struct [url](doc/tengo/url.md)
+* `bucketConfig` - mort bucket configuration [bucketConfig](doc/tengo/bucketconfig.md)
+* `obj` - mort object.FileObject [fileobject](doc/tengo/fileobject.md)
 
 Output variables
-* `parent` - path for parent object
+
+* `parent` - path for parent object, string
 * `err` - error if occurred
+
+
+More advance example of tengo script https://github.com/aldor007/mort/blob/master/pkg/object/tengo/testdata/preset.tengo

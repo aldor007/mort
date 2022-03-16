@@ -1,0 +1,28 @@
+buckets:
+  azure:
+    storages:
+      basic:
+        kind: "azure"
+        azureAccount: "account"
+        azureKey: "key-for-azure"
+  oracle:
+    storages:
+      basic:
+        kind: "oracle"
+        oracleUsername: "oracle"
+        oraclePassword: "password"
+  b2:
+    storages:
+      basic:
+        kind: "b2"
+        b2Account: "aaa"
+        b2ApplicationKeyId: "key"
+  google:
+    storages:
+      basic:
+        kind: "google"
+        googleConfigJson: |
+          {"no-idea": "value"}
+        googleProjectId: "id"
+        googleScopes: "a, b"
+

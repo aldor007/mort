@@ -481,6 +481,22 @@ func TestObjectCacheKeyPreset(t *testing.T) {
 	assert.Equal(t, "bucket/6ca/hei/height-bucket-parent.jpg-6ca0dabe9909875abytes=1-10", obj.GetResponseCacheKey())
 }
 
+func TestParseRange(t *testing.T) {
+	_, err := parseRange("bytaes=0-5242879")
+	assert.NotNil(t, err, "invald range")
+
+	_, err = parseRange("")
+	assert.Nil(t, err, "invald range")
+
+	_, err = parseRange("bytes=")
+	assert.NotNil(t, err, "invald range")
+
+	r, err := parseRange("bytes=1-22")
+	assert.Nil(t, err, "invald range")
+	assert.Equal(t, r.Start, uint64(1))
+	assert.Equal(t, r.End, uint64(22))
+}
+
 func BenchmarkNewFileObject(b *testing.B) {
 
 	benchmarks := []struct {

@@ -36,7 +36,7 @@ var instance *Config
 var once sync.Once
 
 // storageKinds is list of available storage kinds
-var storageKinds = []string{"local", "local-meta", "s3", "http", "b2", "noop"}
+var storageKinds = []string{"local", "local-meta", "s3", "http", "b2", "noop", "google", "azure", "sftp", "oracle"}
 
 // transformKind is list of available kinds of transforms
 var transformKinds = []string{"query", "presets", "presets-query", "tengo"}

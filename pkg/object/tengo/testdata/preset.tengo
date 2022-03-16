@@ -4,7 +4,7 @@ presetToTransform := func(obj, preset) {
 	filters := preset.filters
 
 	if filters.thumbnial {
-		err := obj.transforms.resize(filters.thumbnial.Width, filters.thumbnial.Height, filters.thumbnial.mode == "outbound", filters.thumbnial.preserveAspectRatio, filters.thumbnial.fill)
+		err := obj.transforms.resize(filters.thumbnial.width, filters.thumbnial.height, filters.thumbnial.mode == "outbound", filters.thumbnial.preserveAspectRatio, filters.thumbnial.fill)
 		if err != undefined {
 			return err
 		}

@@ -187,9 +187,9 @@ Other options:
 kind: "cloudinary"
 ```
 Like for "presets", you also have to define a matching regexp for request path (path without bucket name). In this regexp you have to add two matching groups - transformations and parent.
-* 
+*
 * transformations captures the part of path with transformation definiton in a Cloudinary format.
-* parent is an image identifier stored in a Basic storage 
+* parent is an image identifier stored in a Basic storage
 
 Example usage:
 ```yaml
@@ -199,7 +199,7 @@ Currently a set of supported transformation is limited to following:
  - c_fit
  - c_fill
 
-Configuring cloudinary transform automatically enables upload support. 
+Configuring cloudinary transform automatically enables upload support.
 
 ### Storage
 
@@ -211,6 +211,11 @@ List of storage adapters:
 * noop - adapter that don't save image and always return that object doen't exists
 * http - adapter that call remote storage using HTTP protocol
 * s3 - adapter for Amazon S3 compatible service
+* azure - adapter for Azure Blob Storage
+* b2 - adapter for Black Base
+* google - adapter for google storage
+* oracle - adapter for oracle storage
+* sftp - adapter for sftp
 
 #### local-meta
 
@@ -269,3 +274,49 @@ Example definition
 **region** = region of s3 service
 
 **bucket** - bucket used for storage, when empty name of bucket will be used
+
+#### azure
+
+Example config
+
+```yaml
+    kind: "azure"
+    azureAccount: "account"
+    azureKey: "key-for-azure"
+```
+
+#### sftp
+
+```yaml
+    kind: "sftp"
+    sftpHost: "sftp.dev"
+    sftpPort: 22
+    sftpUsername: "sftp"
+    sftpPassword: "pass"
+```
+
+#### oracle
+
+```yaml
+  kind: "oracle"
+  oracleUsername: "oracle"
+  oraclePassword: "password"
+```
+#### b2
+
+```yaml
+    kind: "b2"
+    b2Account: "aaa"
+    b2ApplicationKeyId: "key"
+```
+
+### google
+
+```yaml
+  kind: "google"
+  googleConfigJson: |
+    {"no-idea": "value"}
+  googleProjectId: "id"
+  googleScopes: "a, b"
+```
+

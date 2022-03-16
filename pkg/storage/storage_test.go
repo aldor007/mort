@@ -138,19 +138,19 @@ func TestHeadS3BucketError(t *testing.T) {
 
 	res := Head(obj)
 
-	assert.Equal(t, res.StatusCode, 503)
+	assert.Equal(t, res.StatusCode, 500)
 
 	res = Get(obj)
 
-	assert.Equal(t, res.StatusCode, 503)
+	assert.Equal(t, res.StatusCode, 500)
 
 	res = List(obj, 100, "", "", "")
 
-	assert.Equal(t, res.StatusCode, 503)
+	assert.Equal(t, res.StatusCode, 500)
 
 	res = Delete(obj)
 
-	assert.Equal(t, res.StatusCode, 503)
+	assert.Equal(t, res.StatusCode, 500)
 }
 
 func TestHeadHTTPBucketError(t *testing.T) {
@@ -232,12 +232,24 @@ func TestPrepareMetaData(t *testing.T) {
 	assert.Equal(t, meta["content-type"], "text/html")
 }
 
+func TestGetClientAllStorage(t *testing.T) {
+	mortConfig := config.Config{}
+	mortConfig.Load("testdata/all-storages.yml")
+	storages := []string{"local", "http", "s3", "local-meta", "b2", "google", "oracle", "azure"}
+	for _, storage := range storages {
+		obj, _ := object.NewFileObjectFromPath(fmt.Sprintf("/%s/file", storage), &mortConfig)
+		getClient(obj)
+
+	}
+}
+
 func BenchmarkGet(b *testing.B) {
 	mortConfig := config.Config{}
-	mortConfig.Load("testdata/config.yml")
+	mortConfig.Load("testdata/all-storages.yml")
 	obj, _ := object.NewFileObjectFromPath("/bucket/file", &mortConfig)
 	for i := 0; i < b.N; i++ {
 		Get(obj)
+
 	}
 }
 

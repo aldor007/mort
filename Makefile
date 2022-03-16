@@ -2,7 +2,7 @@
 install:
 	dep ensure
 
-unit:
+unit: format
 	@(go list ./... | grep -v "vendor/" | xargs -n1 go test -race  -cover)
 
 unit-bench:

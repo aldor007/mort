@@ -4,10 +4,6 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	"github.com/aldor007/stow"
-	httpStorage "github.com/aldor007/stow/http"
-	fileStorage "github.com/aldor007/stow/local"
-	metaStorage "github.com/aldor007/stow/local-meta"
 	"io"
 	"mime"
 	"net/http"
@@ -15,6 +11,15 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/aldor007/stow"
+	azureStorage "github.com/aldor007/stow/azure"
+	googleStorage "github.com/aldor007/stow/google"
+	httpStorage "github.com/aldor007/stow/http"
+	fileStorage "github.com/aldor007/stow/local"
+	metaStorage "github.com/aldor007/stow/local-meta"
+	oracleStorage "github.com/aldor007/stow/oracle"
+	sftpStorage "github.com/aldor007/stow/sftp"
 
 	"github.com/aldor007/mort/pkg/monitoring"
 	"github.com/aldor007/mort/pkg/object"
@@ -88,9 +93,9 @@ func Get(obj *object.FileObject) *response.Response {
 	resData.item = item
 	var responseStream io.ReadCloser
 	if instance.client.HasRanges() && obj.Range != "" {
-		params := make(map[string]interface{}, 1)
-		params["range"] = obj.Range
-		responseStream, err = item.OpenParams(params)
+		var stowRanger stow.ItemRanger
+		stowRanger = item.(stow.ItemRanger)
+		responseStream, err = stowRanger.OpenRange(obj.RangeData.Start, obj.RangeData.End)
 		resData.statusCode = 206
 	} else {
 		responseStream, err = item.Open()
@@ -356,8 +361,37 @@ func getClient(obj *object.FileObject) (storageClient, error) {
 		}
 	case "b2":
 		config = stow.ConfigMap{
-			b2Storage.ConfigAccountID:      storageCfg.Account,
-			b2Storage.ConfigApplicationKey: storageCfg.Key,
+			b2Storage.ConfigAccountID:      storageCfg.B2AccountID,
+			b2Storage.ConfigApplicationKey: storageCfg.B2ApplicationKey,
+			b2Storage.ConfigKeyID:          storageCfg.B2ApplicationKeyID,
+		}
+	case "google":
+		config = stow.ConfigMap{
+			googleStorage.ConfigJSON:      storageCfg.GoogleConfigJSON,
+			googleStorage.ConfigProjectId: storageCfg.GoogleProjectID,
+			googleStorage.ConfigScopes:    storageCfg.GoogleScopes,
+		}
+	case "oracle":
+		config = stow.ConfigMap{
+			oracleStorage.ConfigUsername:     storageCfg.OracleUsername,
+			oracleStorage.ConfigPassword:     storageCfg.OraclePassword,
+			oracleStorage.ConfigAuthEndpoint: storageCfg.OracleAuthEndpoint,
+		}
+	case "sftp":
+		config = stow.ConfigMap{
+			sftpStorage.ConfigHost:                 storageCfg.SFTPHost,
+			sftpStorage.ConfigPort:                 storageCfg.SFTPPort,
+			sftpStorage.ConfigUsername:             storageCfg.SFTPUsername,
+			sftpStorage.ConfigPassword:             storageCfg.SFTPPassword,
+			sftpStorage.ConfigPrivateKey:           storageCfg.SFTPPrivateKey,
+			sftpStorage.ConfigPrivateKeyPassphrase: storageCfg.SFTPPrivateKeyPass,
+			sftpStorage.ConfigHostPublicKey:        storageCfg.SFTPHostPublicKey,
+			sftpStorage.ConfigBasePath:             storageCfg.SFTPHostBasePath,
+		}
+	case "azure":
+		config = stow.ConfigMap{
+			azureStorage.ConfigAccount: storageCfg.AzureAccount,
+			azureStorage.ConfigKey:     storageCfg.AzureKey,
 		}
 
 	}
@@ -432,7 +466,7 @@ func prepareResponse(obj *object.FileObject, resData responseData) *response.Res
 	}
 
 	if resData.statusCode == http.StatusPartialContent {
-		contentRange, err := item.ContentRange()
+		contentRange, err := stow.GetContentRange(item, obj.RangeData.Start, obj.RangeData.End)
 		if err != nil {
 			monitoring.Log().Warn("Storage/prepareResponse read content range data error fallback to normal response", obj.LogData(zap.Int("statusCode", 500), zap.Error(err))...)
 			res.StatusCode = http.StatusOK
