@@ -1,3 +1,10 @@
+## [0.19.2](https://github.com/aldor007/mort/compare/v0.19.1...v0.19.2) (2022-03-16)
+
+
+### Bug Fixes
+
+* **lock:** fix redis lock config key name ([a96097d](https://github.com/aldor007/mort/commit/a96097d5fd5367ff640fb5e930632cd87f8d3abd))
+
 ## [0.19.1](https://github.com/aldor007/mort/compare/v0.19.0...v0.19.1) (2022-03-16)
 
 
