@@ -4,7 +4,9 @@ import (
 	"context"
 
 	"github.com/aldor007/mort/pkg/config"
+	"github.com/aldor007/mort/pkg/monitoring"
 	"github.com/aldor007/mort/pkg/response"
+	"go.uber.org/zap"
 )
 
 // Lock is responding for collapsing request for same object
@@ -64,14 +66,17 @@ func (l *NopLock) NotifyAndRelease(_ context.Context, _ string, _ *response.Resp
 
 func Create(lockCfg *config.LockCfg, lockTimeout int) Lock {
 	if lockCfg == nil {
+		monitoring.Log().Info("Creating memory lock")
 		return NewMemoryLock()
 	}
 	switch lockCfg.Type {
 	case "redis":
+		monitoring.Log().Info("Creating redis lock", zap.Strings("addr", lockCfg.Address), zap.Int("lockTimeout", lockTimeout))
 		r := NewRedisLock(lockCfg.Address, lockCfg.ClientConfig)
 		r.LockTimeout = lockTimeout
 		return r
 	case "redis-cluster":
+		monitoring.Log().Info("Creating redis-cluster lock", zap.Strings("addr", lockCfg.Address), zap.Int("lockTimeout", lockTimeout))
 		r := NewRedisCluster(lockCfg.Address, lockCfg.ClientConfig)
 		r.LockTimeout = lockTimeout
 		return r
