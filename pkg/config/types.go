@@ -169,7 +169,7 @@ type Server struct {
 	SingleListen   string                 `yaml:"listen"`
 	RequestTimeout int                    `yaml:"requestTimeout"`
 	LockTimeout    int                    `yaml:"lockTimeout"`
-	Lock           *LockCfg               `yaml:"redisLock"`
+	Lock           *LockCfg               `yaml:"lock"`
 	Listen         []string               `yaml:"listens"`
 	Monitoring     string                 `yaml:"monitoring"`
 	PlaceholderStr string                 `yaml:"placeholder"`

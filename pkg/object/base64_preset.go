@@ -2,7 +2,6 @@ package object
 
 import (
 	"encoding/base64"
-	"fmt"
 	"github.com/aldor007/mort/pkg/config"
 	"path"
 	"strings"
@@ -35,7 +34,7 @@ func decodeBase64Preset(u *url.URL, bucketConfig config.Bucket, obj *FileObject)
 	}
 
 	parent := subMatchMap["parent"]
-	fmt.Println(parent)
+
 	decoded, err := base64.RawStdEncoding.DecodeString(parent)
 	if err != nil {
 		return "", err
