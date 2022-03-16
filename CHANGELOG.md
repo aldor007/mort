@@ -1,3 +1,10 @@
+# [0.19.0](https://github.com/aldor007/mort/compare/v0.18.2...v0.19.0) (2022-03-16)
+
+
+### Features
+
+* **lock:** use redis pubsub for redislock strategy and refactor logs ([b54e597](https://github.com/aldor007/mort/commit/b54e597b3fe20ea122ef5a8405ab61c1aa344461))
+
 ## [0.18.2](https://github.com/aldor007/mort/compare/v0.18.1...v0.18.2) (2022-03-15)
 
 
