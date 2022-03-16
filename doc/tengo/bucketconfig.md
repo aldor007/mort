@@ -51,7 +51,7 @@ It is tengo representation of mort preset configuration. Each property is lowerc
 
 * `quality` - int, quality of image
 * `format` - string, format of image
-* `filters` - filters used for image transformation. More about it [here](doc/Image-Operations.md) please take a look on "preset" type
+* `filters` - filters used for image transformation. More about it [here](/doc/Image-Operations.md) please take a look on "preset" type
 
 Example usage
 
