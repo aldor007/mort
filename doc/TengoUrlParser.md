@@ -76,9 +76,9 @@ Above script will work for URL http://localhost:8084/tengo/udXmD2T,w100,h100.jpe
 
 
 Mort is injecting variables inside of tengo script
-* `url` golang net.URL struct [url](doc/tengo/url.md)
-* `bucketConfig` - mort bucket configuration [bucketConfig](doc/tengo/bucketconfig.md)
-* `obj` - mort object.FileObject [fileobject](doc/tengo/fileobject.md)
+* `url` golang net.URL struct [url](tengo/url.md)
+* `bucketConfig` - mort bucket configuration [bucketConfig](tengo/bucketconfig.md)
+* `obj` - mort object.FileObject [fileobject](tengo/fileobject.md)
 
 Output variables
 
