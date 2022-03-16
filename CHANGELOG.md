@@ -1,3 +1,10 @@
+# [0.20.0](https://github.com/aldor007/mort/compare/v0.19.2...v0.20.0) (2022-03-16)
+
+
+### Features
+
+* **storage:** handle more storage, update stow ([e55ac87](https://github.com/aldor007/mort/commit/e55ac87395a8aec8f60158134a79aac3d70c19cb))
+
 ## [0.19.2](https://github.com/aldor007/mort/compare/v0.19.1...v0.19.2) (2022-03-16)
 
 
