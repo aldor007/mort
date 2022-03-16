@@ -1,3 +1,10 @@
+## [0.19.1](https://github.com/aldor007/mort/compare/v0.19.0...v0.19.1) (2022-03-16)
+
+
+### Bug Fixes
+
+* **logs:** add logs about cache and lock strategy ([59e7965](https://github.com/aldor007/mort/commit/59e7965a737180e243ac04be350f881defae3713))
+
 # [0.19.0](https://github.com/aldor007/mort/compare/v0.18.2...v0.19.0) (2022-03-16)
 
 
