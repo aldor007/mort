@@ -225,7 +225,7 @@ func (r *RequestProcessor) collapseGET(req *http.Request, obj *object.FileObject
 			lockResult.Cancel <- true
 			return r.replyWithError(obj, 504, errContextCancel)
 		case res, ok := <-lockResult.ResponseChan:
-			if !ok {
+			if !ok || res == nil {
 				return r.handleGET(req, obj)
 			}
 			return res
@@ -361,8 +361,6 @@ func (r *RequestProcessor) handleNotFound(obj, parentObj *object.FileObject, tra
 	}
 	parentRes.Close()
 	if parentRes.StatusCode != 200 || !parentRes.IsImage() {
-		// monitoring.Log().Warn("Not performing transforms", obj.LogData(zap.Int("parent.sc", parentRes.StatusCode),
-		// 	zap.String("parent.ContentType", parentRes.Headers.Get(response.HeaderContentType)), zap.Error(parentRes.Error()))...)
 		return res
 	}
 	parentRes = storage.Get(parentObj)

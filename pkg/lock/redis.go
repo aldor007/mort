@@ -23,13 +23,29 @@ func parseAddress(addrs []string) map[string]string {
 	return mp
 }
 
+type rediser interface {
+	SetNX(ctx context.Context, key string, value interface{}, expiration time.Duration) *goRedis.BoolCmd
+	Eval(ctx context.Context, script string, keys []string, args ...interface{}) *goRedis.Cmd
+	EvalSha(ctx context.Context, sha1 string, keys []string, args ...interface{}) *goRedis.Cmd
+	ScriptExists(ctx context.Context, scripts ...string) *goRedis.BoolSliceCmd
+	ScriptLoad(ctx context.Context, script string) *goRedis.StringCmd
+	Subscribe(ctx context.Context, channels ...string) *goRedis.PubSub
+	Publish(ctx context.Context, channel string, message interface{}) *goRedis.IntCmd
+}
+
+type internalLockRedis struct {
+	lock   *redislock.Lock
+	pubsub *goRedis.PubSub
+}
+
 // RedisLock is in Redis lock for single mort instance
 type RedisLock struct {
 	client      *redislock.Client
 	memoryLock  *MemoryLock
-	locks       map[string]*redislock.Lock
+	locks       map[string]internalLockRedis
 	lock        sync.RWMutex
 	LockTimeout int
+	redisClient rediser
 }
 
 // NewRedis create connection to redis and update it config from clientConfig map
@@ -46,7 +62,7 @@ func NewRedisLock(redisAddress []string, clientConfig map[string]string) *RedisL
 
 	locker := redislock.New(ring)
 
-	return &RedisLock{client: locker, memoryLock: NewMemoryLock(), locks: make(map[string]*redislock.Lock), LockTimeout: 60}
+	return &RedisLock{client: locker, memoryLock: NewMemoryLock(), locks: make(map[string]internalLockRedis), LockTimeout: 60, redisClient: ring}
 }
 
 func NewRedisCluster(redisAddress []string, clientConfig map[string]string) *RedisLock {
@@ -61,7 +77,7 @@ func NewRedisCluster(redisAddress []string, clientConfig map[string]string) *Red
 
 	locker := redislock.New(ring)
 
-	return &RedisLock{client: locker, memoryLock: NewMemoryLock(), locks: make(map[string]*redislock.Lock), LockTimeout: 60}
+	return &RedisLock{client: locker, memoryLock: NewMemoryLock(), locks: make(map[string]internalLockRedis), LockTimeout: 60, redisClient: ring}
 }
 
 // NotifyAndRelease tries notify all waiting goroutines about response
@@ -70,8 +86,12 @@ func (m *RedisLock) NotifyAndRelease(ctx context.Context, key string, originalRe
 	defer m.lock.Unlock()
 	lock, ok := m.locks[key]
 	if ok {
-		lock.Release(ctx)
+		lock.lock.Release(ctx)
 		delete(m.locks, key)
+		if lock.pubsub != nil {
+			m.redisClient.Publish(ctx, key, 1)
+			lock.pubsub.Close()
+		}
 	}
 
 	m.memoryLock.NotifyAndRelease(ctx, key, originalResponse)
@@ -83,19 +103,34 @@ func (m *RedisLock) Lock(ctx context.Context, key string) (result LockResult, ok
 	defer m.lock.Unlock()
 	lock, ok := m.locks[key]
 	if ok {
-		lock.Refresh(ctx, time.Millisecond*500, nil)
+		lock.lock.Refresh(ctx, time.Second*time.Duration(m.LockTimeout/2), nil)
 	} else {
 		lock, err := m.client.Obtain(ctx, key, time.Duration(m.LockTimeout)*time.Second, nil)
+		pubsub := m.redisClient.Subscribe(ctx, key)
+		lockData := internalLockRedis{lock: lock, pubsub: pubsub}
+
 		if err == redislock.ErrNotObtained {
-			result, ok = m.memoryLock.Lock(ctx, key)
+			result, ok = m.memoryLock.forceLockAndAddWatch(ctx, key)
 			ok = false
+			// Go channel which receives messages.
+			ch := pubsub.Channel()
+
+			go func() {
+				for {
+					select {
+					case <-ch:
+						m.NotifyAndRelease(ctx, key, nil)
+					}
+				}
+			}()
+
 			return
 
 		} else if err != nil {
 			result.Error = err
 			return
 		}
-		m.locks[key] = lock
+		m.locks[key] = lockData
 
 	}
 	return m.memoryLock.Lock(ctx, key)
@@ -107,7 +142,10 @@ func (m *RedisLock) Release(ctx context.Context, key string) {
 	defer m.lock.Unlock()
 	lock, ok := m.locks[key]
 	if ok {
-		lock.Release(ctx)
+		lock.lock.Release(ctx)
+		if lock.pubsub != nil {
+			lock.pubsub.Close()
+		}
 		delete(m.locks, key)
 		m.memoryLock.Release(ctx, key)
 	}

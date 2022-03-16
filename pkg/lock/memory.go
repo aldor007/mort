@@ -69,7 +69,9 @@ func (m *MemoryLock) NotifyAndRelease(_ context.Context, key string, originalRes
 	// The time spend on notifying listeners is negligible compared to the total time of image processing,
 	// so making this process asynchronous makes almost no sense.
 	notifyListeners(lock, func() (*response.Response, bool) {
-		if originalResponse.IsBuffered() {
+		if originalResponse == nil {
+			return nil, false
+		} else if originalResponse.IsBuffered() {
 			res, err := originalResponse.Copy()
 			return res, err == nil
 		} else {
@@ -88,6 +90,22 @@ func (m *MemoryLock) Lock(_ context.Context, key string) (LockResult, bool) {
 	if !ok {
 		lock = lockData{}
 		lock.notifyQueue = make([]LockResult, 0, 5)
+	} else {
+		result = lock.AddWatcher()
+	}
+	m.internal[key] = lock
+	return result, !ok
+}
+
+func (m *MemoryLock) forceLockAndAddWatch(_ context.Context, key string) (LockResult, bool) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	lock, ok := m.internal[key]
+	result := LockResult{}
+	if !ok {
+		lock = lockData{}
+		lock.notifyQueue = make([]LockResult, 0, 5)
+		result = lock.AddWatcher()
 	} else {
 		result = lock.AddWatcher()
 	}

@@ -248,6 +248,7 @@ func main() {
 			res.SetDebug(obj)
 			if debug {
 				res.Set("X-Mort-Version", version)
+				monitoring.Log().Info("Mort processing object", obj.LogData()...)
 			}
 
 			// FIXME
@@ -255,9 +256,8 @@ func main() {
 			res.Set("Access-Control-Expose-Headers", "Content-Type, X-Amz-Public-Width, X-Amz-Public-Height")
 			res.Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, HEAD")
 			res.Set("Access-Control-Allow-Origin", "*")
-			defer monitoring.Log().Sync() // flushes buffer, if any
 			if res.HasError() {
-				monitoring.Log().Error("Mort process error", zap.String("obj.Key", obj.Key), zap.Error(res.Error()))
+				monitoring.Log().Error("Mort process error", obj.LogData(zap.Int("res.status", res.StatusCode), zap.String("req.url", req.URL.String()), zap.Error(res.Error()))...)
 			}
 
 			res.SendContent(req, resWriter)
@@ -313,5 +313,6 @@ func main() {
 	}
 
 	wg.Wait()
+	defer monitoring.Log().Sync() // flushes buffer, if any
 	fmt.Println("Bye...")
 }

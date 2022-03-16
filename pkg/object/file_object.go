@@ -60,7 +60,6 @@ func newFileObjectFromPath(path string, mortConfig *config.Config, allowChangeKe
 
 	err := Parse(obj.Uri, mortConfig, &obj)
 
-	monitoring.Log().Info("FileObject", obj.LogData()...)
 	return &obj, err
 }
 
@@ -81,7 +80,7 @@ func NewFileObject(uri *url.URL, mortConfig *config.Config) (*FileObject, error)
 	case err != nil:
 		monitoring.Log().Error("FileObject", append(obj.LogData(), zap.Error(err))...)
 	}
-	monitoring.Log().Info("FileObject", obj.LogData()...)
+
 	return &obj, err
 }
 
@@ -144,7 +143,11 @@ func (obj *FileObject) LogData(fields ...zapcore.Field) []zapcore.Field {
 		zap.Bool("obj.HasTransforms", obj.HasTransform()), zap.Bool("obj.HasParent", obj.HasParent())}
 
 	if obj.HasParent() {
-		result = append(result, zap.String("parent.Key", obj.Parent.Key), zap.String("parent.Path", obj.Parent.Uri.Path))
+		result = append(result, zap.String("parent.Key", obj.Parent.Key), zap.String("parent.Path", obj.Parent.Uri.Path), zap.String("parent.Storage", obj.Parent.Storage.Kind))
+	}
+
+	if obj.Range != "" {
+		result = append(result, zap.String("obj.Range", obj.Range))
 	}
 
 	return append(result, fields...)

@@ -5,6 +5,7 @@ go 1.16
 require (
 	github.com/aldor007/go-aws-auth v0.0.0-20180623204207-00898dfb9272
 	github.com/aldor007/stow v1.1.0
+	github.com/alicebob/miniredis/v2 v2.18.0
 	github.com/aws/aws-sdk-go v1.38.57 // indirect
 	github.com/bsm/redislock v0.7.2
 	github.com/d5/tengo/v2 v2.10.1
