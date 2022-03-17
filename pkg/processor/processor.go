@@ -131,7 +131,7 @@ func (r *RequestProcessor) replyWithError(obj *object.FileObject, sc int, err er
 	}
 
 	go func() {
-		lockData, locked := r.collapse.Lock(obj.Ctx, errorObject.Key)
+		_, locked := r.collapse.Lock(obj.Ctx, errorObject.Key)
 		if locked {
 			defer r.collapse.Release(obj.Ctx, errorObject.Key)
 			monitoring.Log().Info("Lock acquired for error response", obj.LogData()...)
@@ -144,9 +144,6 @@ func (r *RequestProcessor) replyWithError(obj *object.FileObject, sc int, err er
 				res.StatusCode = sc
 				r.responseCache.Set(errorObject, updateHeaders(errorObject, res))
 			}
-		} else {
-			lockData.Cancel <- true
-
 		}
 	}()
 
@@ -194,7 +191,7 @@ func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *r
 		if obj.Key == "" {
 			return handleS3Get(req, obj)
 		}
-		
+
 		if obj.HasTransform() {
 			return get()
 		}
