@@ -1,3 +1,10 @@
+## [0.21.3](https://github.com/aldor007/mort/compare/v0.21.2...v0.21.3) (2022-03-17)
+
+
+### Bug Fixes
+
+* **response:** return content-length in reponse ([a9bf75a](https://github.com/aldor007/mort/commit/a9bf75aac059c86b4fbd9d4b48bd49bca11a523a))
+
 ## [0.21.2](https://github.com/aldor007/mort/compare/v0.21.1...v0.21.2) (2022-03-17)
 
 
