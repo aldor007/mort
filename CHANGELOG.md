@@ -1,3 +1,10 @@
+## [0.21.1](https://github.com/aldor007/mort/compare/v0.21.0...v0.21.1) (2022-03-17)
+
+
+### Bug Fixes
+
+* remove processTimeout for non image request ([8089314](https://github.com/aldor007/mort/commit/8089314ded17682919573680b992c6f9b05a3df5))
+
 # [0.21.0](https://github.com/aldor007/mort/compare/v0.20.0...v0.21.0) (2022-03-17)
 
 
