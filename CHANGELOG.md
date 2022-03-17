@@ -1,3 +1,10 @@
+## [0.21.2](https://github.com/aldor007/mort/compare/v0.21.1...v0.21.2) (2022-03-17)
+
+
+### Bug Fixes
+
+* **timeout:** increase server read and write timeout - issue with big file download ([d6fec5f](https://github.com/aldor007/mort/commit/d6fec5f7842f3da140574206e2a19ae2157c1e11))
+
 ## [0.21.1](https://github.com/aldor007/mort/compare/v0.21.0...v0.21.1) (2022-03-17)
 
 
