@@ -156,9 +156,7 @@ func (r *RequestProcessor) replyWithError(obj *object.FileObject, sc int, err er
 }
 
 func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *response.Response {
-
-	switch req.Method {
-	case "GET", "HEAD":
+	get := func() *response.Response {
 		if obj.Key == "" {
 			return handleS3Get(req, obj)
 		}
@@ -190,6 +188,19 @@ func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *r
 		}
 
 		return res
+	}
+	switch req.Method {
+	case "HEAD":
+		if obj.Key == "" {
+			return handleS3Get(req, obj)
+		}
+		
+		if obj.HasTransform() {
+			return get()
+		}
+		return updateHeaders(obj, storage.Head(obj))
+	case "GET":
+		return get()
 	case "PUT":
 		go r.responseCache.Delete(obj)
 		return handlePUT(req, obj)

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"strconv"
 
 	"github.com/aldor007/mort/pkg/helpers"
 	"github.com/aldor007/mort/pkg/monitoring"
@@ -230,13 +231,18 @@ func (r *Response) Send(w http.ResponseWriter) error {
 	}
 
 	defer r.Close()
-	w.WriteHeader(r.StatusCode)
 
 	var resStream io.ReadCloser
 	if r.ContentLength == 0 {
+		w.WriteHeader(r.StatusCode)
 		return nil
 	}
 
+	if r.ContentLength > 0 {
+		w.Header().Set("content-length", strconv.FormatInt(r.ContentLength, 10))
+	}
+
+	w.WriteHeader(r.StatusCode)
 	resStream = r.Stream()
 	if resStream == nil {
 		return nil

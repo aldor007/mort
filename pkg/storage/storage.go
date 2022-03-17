@@ -135,6 +135,7 @@ func Head(obj *object.FileObject) *response.Response {
 	}
 	resData := newResponseData()
 	resData.item = item
+	resData.statusCode = 200
 	return prepareResponse(obj, resData)
 }
 
