@@ -1,6 +1,9 @@
 package object
 
 import (
+	"fmt"
+	"math"
+
 	"github.com/aldor007/mort/pkg/config"
 	"github.com/aldor007/mort/pkg/monitoring"
 	"github.com/aldor007/mort/pkg/transforms"
@@ -116,9 +119,13 @@ func (o *FileObject) FillWithRequest(req *http.Request, ctx context.Context) {
 	o.Ctx = ctx
 	o.Range = req.Header.Get("Range")
 	if o.Range != "" {
-		o.RangeData, _ = parseRange(o.Range)
+		var err error
+		o.RangeData, err = parseRange(o.Range)
+		if err != nil {
+			monitoring.Log().Error("FileObject unable to parse range", append(o.LogData(), zap.Error(err))...)
+			o.Range = ""
+		}
 	}
-
 }
 
 func (o *FileObject) GetResponseCacheKey() string {
@@ -171,35 +178,59 @@ func parseRange(s string) (httpRange, error) {
 	if s == "" {
 		return httpRangeData, nil // header not present
 	}
-	const b = "bytes="
-	if !strings.HasPrefix(s, b) {
+
+	if !strings.HasPrefix(s, "bytes=") {
 		return httpRangeData, errors.New("invalid range")
 	}
-	rangeArr := strings.Split(s[len(b):], ",")
-	if len(rangeArr) != 1 {
-		return httpRangeData, errors.New("multi range not implemted")
-	}
-	ra := strings.TrimSpace(rangeArr[0])
-	i := strings.Index(ra, "-")
-	if i < 0 {
+	if strings.Index(s, "-") == -1 {
 		return httpRangeData, errors.New("invalid range")
 	}
-	start, end := strings.TrimSpace(ra[:i]), strings.TrimSpace(ra[i+1:])
-	if start != "" {
-		i, err := strconv.ParseInt(start, 10, 64)
-		if err != nil || i < 0 {
+	var minStart uint64
+	minStart = math.MaxUint64
+	maxEnd := uint64(0)
+	rangesArr := strings.Split(s[6:], ",")
+	fmt.Println("RRR", rangesArr)
+	for _, ra := range rangesArr {
+		ra = strings.TrimSpace(ra)
+		if ra == "" {
+			continue
+		}
+		i := strings.Index(ra, "-")
+		if i < 0 {
 			return httpRangeData, errors.New("invalid range")
 		}
-		httpRangeData.Start = uint64(i)
-	}
+		start, end := strings.TrimSpace(ra[:i]), strings.TrimSpace(ra[i+1:])
+		if start != "" {
+			// If no start is specified, end specifies the
+			// range start relative to the end of the file.
+			i, err := strconv.ParseUint(start, 10, 64)
+			fmt.Println("sssstart", i)
+			if err != nil {
+				return httpRangeData, errors.New("invalid range")
+			}
+			if i < minStart {
+				minStart = i
+			}
 
-	if end != "" {
-		i, err := strconv.ParseInt(end, 10, 64)
-		if err != nil || i < 0 {
-			return httpRangeData, errors.New("invalid range")
+			if i > maxEnd {
+				maxEnd = i
+			}
 		}
-		httpRangeData.End = uint64(i)
+		if end != "" {
+			// If no start is specified, end specifies the
+			// range start relative to the end of the file.
+			i, err := strconv.ParseUint(end, 10, 64)
+			if err != nil {
+				return httpRangeData, errors.New("invalid range")
+			}
 
+			if i > maxEnd {
+				maxEnd = i
+			}
+		}
 	}
+	httpRangeData.Start = uint64(minStart)
+	httpRangeData.End = uint64(maxEnd)
+
 	return httpRangeData, nil
 }

@@ -495,6 +495,11 @@ func TestParseRange(t *testing.T) {
 	assert.Nil(t, err, "invald range")
 	assert.Equal(t, r.Start, uint64(1))
 	assert.Equal(t, r.End, uint64(22))
+
+	r, err = parseRange("bytes=1-22, 2000-6576, 19000-")
+	assert.Nil(t, err, "invald range")
+	assert.Equal(t, r.Start, uint64(1))
+	assert.Equal(t, r.End, uint64(19000))
 }
 
 func BenchmarkNewFileObject(b *testing.B) {

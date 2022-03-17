@@ -1,5 +1,6 @@
 server:
   logLevel: "debug"
+  accessLogs: true
   cache:
       type: "redis"
       address:
