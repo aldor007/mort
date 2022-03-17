@@ -31,6 +31,7 @@ run-test-server:
 	mkdir -p /tmp/mort-tests/remote
 	mkdir -p /tmp/mort-tests/remote-query
 	mkdir -p /tmp/mort-tests/local
+	fallocate -l 1G /tmp/mort-tests/local/big.img
 	go run cmd/mort/mort.go -config ./tests-int/config.yml
 
 clean-prof:

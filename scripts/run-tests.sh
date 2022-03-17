@@ -9,6 +9,7 @@ mkdir -p /tmp/mort-tests/remote/dir
 
 echo "test" > /tmp/mort-tests/local/file
 echo "test" > /tmp/mort-tests/remote/file
+fallocate -l 1G /tmp/mort-tests/local/big.img
 
 pkill -f 'tests-int/config.yml'
 

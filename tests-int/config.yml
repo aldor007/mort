@@ -1,5 +1,6 @@
 server:
     listen: ":8091"
+    accessLogs: true
     plugins:
       "webp":
 

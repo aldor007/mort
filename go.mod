@@ -10,7 +10,8 @@ require (
 	github.com/bsm/redislock v0.7.2
 	github.com/d5/tengo/v2 v2.10.1
 	github.com/djherbis/stream v1.3.1
-	github.com/go-chi/chi v1.5.2
+	github.com/go-chi/chi/v5 v5.0.7
+	github.com/go-chi/httplog v0.2.4
 	github.com/go-redis/cache/v8 v8.3.1-0.20210129151214-1cdfea0b552b
 	github.com/go-redis/redis/v8 v8.11.4
 	github.com/go-redis/redismock/v8 v8.0.6

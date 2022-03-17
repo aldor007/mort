@@ -36,6 +36,7 @@ function checkImage(reqPath, width, height, sizeRange, done) {
         });
 }
 
+
 describe('Image processing', function () {
     describe('presets', function () {
 

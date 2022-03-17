@@ -182,6 +182,7 @@ type LockCfg struct {
 // Server configure HTTP server
 type Server struct {
 	LogLevel       string                 `yaml:"logLevel"`
+	AccessLog      bool                   `yaml:"accessLogs"`
 	InternalListen string                 `yaml:"internalListen"`
 	SingleListen   string                 `yaml:"listen"`
 	RequestTimeout int                    `yaml:"requestTimeout"`

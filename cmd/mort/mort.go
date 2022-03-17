@@ -7,8 +7,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/go-chi/chi"
-	"github.com/go-chi/chi/middleware"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/httplog"
 	"go.uber.org/zap"
 
 	"net"
@@ -223,6 +224,16 @@ func main() {
 
 	rp := processor.NewRequestProcessor(imgConfig.Server, lock.Create(imgConfig.Server.Lock, imgConfig.Server.LockTimeout), throttler.NewBucketThrottler(10))
 
+	if imgConfig.Server.AccessLog {
+		logger := httplog.NewLogger("mort", httplog.Options{
+			JSON: true,
+			Tags: map[string]string{
+				"version": version,
+			},
+		})
+		router.Use(httplog.RequestLogger(logger))
+
+	}
 	cloudinaryUploadInterceptor := cloudinary.NewUploadInterceptorMiddleware(imgConfig)
 	router.Use(cloudinaryUploadInterceptor.Handler)
 
@@ -256,6 +267,8 @@ func main() {
 			res.Set("Access-Control-Expose-Headers", "Content-Type, X-Amz-Public-Width, X-Amz-Public-Height")
 			res.Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, HEAD")
 			res.Set("Access-Control-Allow-Origin", "*")
+			res.Set("Accept-Ranges", "bytes")
+
 			if res.HasError() {
 				monitoring.Log().Error("Mort process error", obj.LogData(zap.Int("res.status", res.StatusCode), zap.String("req.url", req.URL.String()), zap.Error(res.Error()))...)
 			}
