@@ -1,3 +1,10 @@
+# [0.21.0](https://github.com/aldor007/mort/compare/v0.20.0...v0.21.0) (2022-03-17)
+
+
+### Features
+
+* **logs:** add access log ([96c6175](https://github.com/aldor007/mort/commit/96c6175510149867fcd2c2c2d2cbeabb9bc46d19))
+
 # [0.20.0](https://github.com/aldor007/mort/compare/v0.19.2...v0.20.0) (2022-03-16)
 
 
