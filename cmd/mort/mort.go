@@ -289,8 +289,8 @@ func main() {
 
 	for i, l := range imgConfig.Server.Listen {
 		servers[i] = &http.Server{
-			ReadTimeout:  2 * time.Minute,
-			WriteTimeout: 2 * time.Minute,
+			ReadTimeout:  2 * time.Hour, // allow to upload big files
+			WriteTimeout: 2 * time.Hour, // Write timeout is for while respone write (not reset after each write like in nginx)
 			Handler:      router,
 		}
 
