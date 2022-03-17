@@ -1,3 +1,10 @@
+## [0.21.4](https://github.com/aldor007/mort/compare/v0.21.3...v0.21.4) (2022-03-17)
+
+
+### Bug Fixes
+
+* do not write to cancel channel on error placeholder generation - goroutine leak ([80bad48](https://github.com/aldor007/mort/commit/80bad48f5f303fc48adf948f294b196399505056))
+
 ## [0.21.3](https://github.com/aldor007/mort/compare/v0.21.2...v0.21.3) (2022-03-17)
 
 
