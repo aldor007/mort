@@ -310,7 +310,7 @@ Example config
     b2ApplicationKeyId: "key"
 ```
 
-### google
+#### google
 
 ```yaml
   kind: "google"
