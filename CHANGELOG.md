@@ -1,3 +1,10 @@
+## [0.21.5](https://github.com/aldor007/mort/compare/v0.21.4...v0.21.5) (2022-03-19)
+
+
+### Bug Fixes
+
+* **compress:** fix response for compression plugin and add tests ([831a816](https://github.com/aldor007/mort/commit/831a8166d84a3614d5d0602ab32235e26f54686d))
+
 ## [0.21.4](https://github.com/aldor007/mort/compare/v0.21.3...v0.21.4) (2022-03-17)
 
 
