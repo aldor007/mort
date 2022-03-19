@@ -8,25 +8,12 @@ on:
 
 jobs:
   build:
+    container:
+      image: ghcr.io/aldor007/mort-base:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GHR_TOKEN }}
     runs-on: ubuntu-latest
-    container-job:
-    # Containers must run in Linux based operating systems
-    runs-on: ubuntu-latest
-    # Docker Hub image that `container-job` executes in
-    container: node:10.18-jessie
-
-    # Service containers to run with `container-job`
-    services:
-      # Label used to access the service container
-      redis:
-        # Docker Hub image
-        image: redis
-        # Set health checks to wait until redis has started
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
     - name: Git checkout 
