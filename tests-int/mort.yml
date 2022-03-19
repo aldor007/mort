@@ -2,7 +2,32 @@ server:
     listen: ":8091"
     accessLogs: true
     plugins:
-      "webp":
+      compress:
+           gzip:
+               types:
+                 - text/plain
+                 - text/css
+                 - application/json
+                 - application/javascript
+                 - text/xml
+                 - application/xml
+                 - application/xml+rss
+                 - text/javascript
+                 - text/html
+               level: 4
+           brotli:
+               types:
+                 - text/plain
+                 - text/css
+                 - application/json
+                 - application/javascript
+                 - text/xml
+                 - application/xml
+                 - application/xml+rss
+                 - text/javascript
+                 - text/html
+               level: 4
+      webp: ~
 
 headers:
   - statusCodes: [200]

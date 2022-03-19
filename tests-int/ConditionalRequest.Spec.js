@@ -1,7 +1,7 @@
 const supertest  = require('supertest');
 const moment = require('moment');
 
-const host = 'localhost:' + process.env.MORT_PORT;
+const host = process.env.MORT_HOST + ':' + + process.env.MORT_PORT;
 const request = supertest(`http://${host}`);
 const filePath = '/local/large.jpeg';
 

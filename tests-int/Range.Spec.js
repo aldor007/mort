@@ -4,7 +4,7 @@ const binary = require('superagent-binary-parser');
 const file = fs.readFileSync('./pkg/processor/benchmark/local/large.jpeg');
 const supertest  = require('supertest');
 
-const host = 'localhost:' + process.env.MORT_PORT;
+const host = process.env.MORT_HOST + ':' + + process.env.MORT_PORT;
 const request = supertest(`http://${host}`);
 
 function getRange(range) {

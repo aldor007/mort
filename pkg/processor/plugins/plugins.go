@@ -2,9 +2,12 @@ package plugins
 
 import (
 	"fmt"
+	"net/http"
+
+	"github.com/aldor007/mort/pkg/monitoring"
 	"github.com/aldor007/mort/pkg/object"
 	"github.com/aldor007/mort/pkg/response"
-	"net/http"
+	"go.uber.org/zap"
 )
 
 // pluginsList list of plugins
@@ -31,6 +34,7 @@ func NewPluginsManager(plugins map[string]interface{}) PluginsManager {
 			panic(fmt.Errorf("unknown plugin %s", pName))
 		}
 
+		monitoring.Log().Info("Plugin manager configuring", zap.String("pluginName", pName))
 		pluginsList[pName].configure(pConfig)
 		pm.list = append(pm.list, pName)
 	}

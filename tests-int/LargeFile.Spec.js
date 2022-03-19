@@ -6,7 +6,7 @@ const fs = require('fs');
 const crypto = require('crypto');
 
 
-const url = 'http://localhost:' + process.env.MORT_PORT;
+const url = 'http://' + process.env.MORT_HOST + ':' + process.env.MORT_PORT;
 
 
 const hashFile = async (input) => {

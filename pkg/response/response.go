@@ -238,7 +238,7 @@ func (r *Response) Send(w http.ResponseWriter) error {
 		return nil
 	}
 
-	if r.ContentLength > 0 {
+	if r.ContentLength > 0 && r.transformer == nil {
 		w.Header().Set("content-length", strconv.FormatInt(r.ContentLength, 10))
 	}
 
@@ -292,10 +292,6 @@ func (r *Response) GetTTL() int {
 }
 
 func (r *Response) parseCacheHeaders() {
-	if r.cachable {
-		return
-	}
-
 	reqDir, err := cacheobject.ParseRequestCacheControl(r.Headers.Get("Cache-Control"))
 	if err != nil {
 		r.cachable = false

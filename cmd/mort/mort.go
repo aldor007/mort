@@ -198,6 +198,7 @@ func startServer(s *http.Server, ln net.Listener) {
 	if err != nil && err != http.ErrServerClosed {
 		fmt.Println("Error listen", err)
 	}
+	fmt.Println("Server listen", ln.Addr().String())
 }
 
 func main() {
@@ -317,6 +318,7 @@ func main() {
 
 	var wg sync.WaitGroup
 
+	monitoring.Logs().Sync()
 	wg.Add(1)
 	go handleSignals(servers, socketPaths, &wg)
 

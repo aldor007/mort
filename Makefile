@@ -28,11 +28,8 @@ run-server:
 	go run cmd/mort/mort.go -config configuration/config.yml
 
 run-test-server:
-	mkdir -p /tmp/mort-tests/remote
-	mkdir -p /tmp/mort-tests/remote-query
-	mkdir -p /tmp/mort-tests/local
-	fallocate -l 1G /tmp/mort-tests/local/big.img
-	go run cmd/mort/mort.go -config ./tests-int/config.yml
+	scripts/prepare-for-tests.sh
+	go run cmd/mort/mort.go -config ./tests-int/mort.yml
 
 clean-prof:
 	find . -name ".test" -depth -exec rm {} \;
@@ -43,6 +40,7 @@ release:
 	docker build . -f Dockerfile.build --build-arg GITHUB_TOKEN=${GITHUB_TOKEN}
 
 docker-tests:
+	scripts/prepare-for-tests.sh
 	docker-compose up --build
 
 base-docker-push:

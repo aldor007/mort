@@ -65,7 +65,7 @@ func RegisterTransformKind(kind string) {
 func (c *Config) Load(filePath string) error {
 	data, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		panic(err)
+		panic("unable to load config file" + err.Error())
 	}
 
 	return c.load(data)

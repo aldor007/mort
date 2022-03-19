@@ -1,24 +1,15 @@
 #!/usr/bin/env bash
 
-rm -rf /tmp/mort-tests
-
-mkdir -p /tmp/mort-tests/local/dir/
-mkdir -p /tmp/mort-tests/local/dir/a/b/c
-mkdir -p /tmp/mort-tests/local/dir2/a/b/c
-mkdir -p /tmp/mort-tests/remote/dir
-
-echo "test" > /tmp/mort-tests/local/file
-echo "test" > /tmp/mort-tests/remote/file
-fallocate -l 1G /tmp/mort-tests/local/big.img
+bash scripts/prepare-for-tests.sh
 
 pkill -f 'tests-int/config.yml'
 
-cp -r pkg/processor/benchmark/local/* /tmp/mort-tests/local/
-
 MORT_PORT=8091
 export MORT_PORT
+MORT_HOST=localhost
+export MORT_HOST
 
-go run cmd/mort/mort.go -config tests-int/config.yml  &
+go run cmd/mort/mort.go -config tests-int/mort.yml  &
 pid=$!
 sleep 15
 

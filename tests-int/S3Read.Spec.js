@@ -3,14 +3,14 @@ const expect = chai.expect;
 const AWS = require('aws-sdk');
 const supertest  = require('supertest');
 
-const host = 'localhost:' + process.env.MORT_PORT;
+const host = process.env.MORT_HOST + ':' + + process.env.MORT_PORT;
 const request = supertest(`http://${host}`);
 
 describe('S3 Read features', function () {
     beforeEach(function () {
         this.s3opts = {
             region: 'mort',
-            endpoint: 'localhost:' + process.env.MORT_PORT,
+            endpoint: host, 
             s3ForcePathStyle: true,
             sslEnabled: false,
             accessKeyId: 'acc',

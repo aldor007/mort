@@ -1,17 +1,22 @@
 version: '3'
 
 services:
-  # mort:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #     args:
-  #       - TAG=dev
-  #       - COMMIT=master
-  #       - DATE=now
-  #   restart: always
-  #   ports:
-  #     - 8084:8080
+  redis:
+    image: redis
+  mort:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - TAG=tests
+        - COMMIT=master
+        - DATE=now
+    restart: always
+    ports:
+      - 8091:8091
+    volumes:
+      - /tmp/mort-tests:/tmp/mort-tests
+      - ./tests-int/:/etc/mort/
   tests:
     build:
       context: .
@@ -21,3 +26,17 @@ services:
         - COMMIT=master
         - DATE=now
     command: ["make", "unit"]
+  integrations:
+    build:
+      context: .
+      dockerfile: Dockerfile.integrations
+    command: ["sh", "./scripts/run-tests-docker.sh"]
+    environment:
+      - MORT_PORT=8091
+      - MORT_HOST=mort 
+    volumes:
+      - /tmp/mort-tests:/tmp/mort-tests:ro
+    depends_on:
+      - mort
+
+

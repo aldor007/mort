@@ -2,13 +2,14 @@ package plugins
 
 import (
 	"compress/gzip"
+	"io"
+	"net/http"
+	"strings"
+
 	"github.com/aldor007/mort/pkg/helpers"
 	"github.com/aldor007/mort/pkg/object"
 	"github.com/aldor007/mort/pkg/response"
 	brEnc "github.com/google/brotli/go/cbrotli"
-	"io"
-	"net/http"
-	"strings"
 )
 
 func init() {
@@ -75,7 +76,7 @@ func (c CompressPlugin) postProcess(obj *object.FileObject, req *http.Request, r
 
 	if c.brotli.enabled && strings.Contains(acceptEnc, "br") {
 		for _, supportedType := range c.brotli.types {
-			if contentType == supportedType {
+			if strings.Contains(contentType, supportedType) {
 				res.Headers.Set("Content-Encoding", "br")
 				res.Headers.Add("Vary", "Accept-Encoding")
 				res.BodyTransformer(func(w io.Writer) io.WriteCloser {
@@ -90,7 +91,7 @@ func (c CompressPlugin) postProcess(obj *object.FileObject, req *http.Request, r
 
 	if c.gzip.enabled && strings.Contains(acceptEnc, "gzip") {
 		for _, supportedType := range c.gzip.types {
-			if contentType == supportedType {
+			if strings.Contains(contentType, supportedType) {
 				res.Headers.Set("Content-Encoding", "gzip")
 				res.Headers.Add("Vary", "Accept-Encoding")
 				res.BodyTransformer(func(w io.Writer) io.WriteCloser {

@@ -1,0 +1,57 @@
+name: CI - Integration Test 
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container-job:
+    # Containers must run in Linux based operating systems
+    runs-on: ubuntu-latest
+    # Docker Hub image that `container-job` executes in
+    container: node:10.18-jessie
+
+    # Service containers to run with `container-job`
+    services:
+      # Label used to access the service container
+      redis:
+        # Docker Hub image
+        image: redis
+        # Set health checks to wait until redis has started
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    - name: Git checkout 
+      uses: actions/checkout@v2
+
+    - name: Install Node JS 
+      uses: actions/setup-node@v1
+      with:
+        node-version: 17 
+    
+    - name: Install npm deps
+      run: npm install
+
+    - name: Start Redis
+      uses: supercharge/redis-github-action@1.4.0
+      with:
+        redis-version: 6.2 
+
+    - name: Run the integrations tests
+      run: |
+        make run-test-server
+        sleep 10
+        npm run tests 
+        kill -9 `lsof -i:8091 -t`
+      env:
+        MORT_HOST: localhost 
+        MORT_PORT: 8081
+        CI: true

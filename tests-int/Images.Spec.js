@@ -2,7 +2,7 @@ const supertest  = require('supertest');
 const chai = require('chai');
 const expect = chai.expect;
 
-const host = 'localhost:' + process.env.MORT_PORT;
+const host = process.env.MORT_HOST + ':' + + process.env.MORT_PORT;
 const request = supertest(`http://${host}`);
 
 function checkImage(reqPath, width, height, sizeRange, done) {

@@ -1,17 +1,20 @@
 const chai = require('chai');
+chai.use(require('chai-like'));
+chai.use(require('chai-things'));
 const expect = chai.expect;
 const AWS = require('aws-sdk');
 const supertest  = require('supertest');
 const makeRequest = require('request');
 
-const host = 'localhost:' + process.env.MORT_PORT;
+const host = process.env.MORT_HOST + ':' + + process.env.MORT_PORT;
+console.log('----------->', host)
 const request = supertest(`http://${host}`);
 
 describe('S3 features', function () {
     beforeEach(function () {
        this.s3opts = {
             region: 'mort',
-            endpoint: 'localhost:' + process.env.MORT_PORT,
+            endpoint: host, 
             s3ForcePathStyle: true,
             sslEnabled: false,
             accessKeyId: 'acc',
@@ -60,9 +63,7 @@ describe('S3 features', function () {
 
                 this.s3.listObjects(listParams, function (err, data) {
                     expect(err).to.be.null;
-                    expect(data['CommonPrefixes']).to.deep.eql([ { Prefix: 'dir/' }, { Prefix: 'dir2/' } ]);
-                    // FIXME
-                    // expect(data['Contents'].length).to.eql(1);
+                    expect(data['CommonPrefixes']).to.include.something.like({ Prefix: 'dir/' });
                     done(err)
                 });
             });
@@ -192,9 +193,8 @@ describe('S3 features', function () {
 
                 this.s3.listObjects(listParams, function (err, data) {
                     expect(err).to.be.null;
-                    expect(data['CommonPrefixes']).to.deep.eql([ { Prefix: 'dir/' }, { Prefix: 'dir2/' } ]);
-                    // FIXME
-                    // expect(data['Contents'].length).to.eql(2);
+                    expect(data['CommonPrefixes']).to.include.something.like({ Prefix: 'dir/' });
+                    expect(data['Contents'].length).to.be.at.least(2);
                     done(err)
                 });
             });
