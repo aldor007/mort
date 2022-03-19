@@ -35,10 +35,10 @@ jobs:
     - name: Run the integrations tests
       run: |
         make run-test-server &
-        sleep 10
+        sleep 15
         npm run tests 
         kill -9 `lsof -i:8091 -t`
       env:
         MORT_HOST: localhost 
-        MORT_PORT: 8081
+        MORT_PORT: 8091
         CI: true
