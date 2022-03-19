@@ -35,7 +35,7 @@ jobs:
     - name: Run the integrations tests
       run: |
         make run-test-server &
-        sleep 15
+        sleep 30
         npm run tests 
         kill -9 `lsof -i:8091 -t`
       env:
