@@ -18,8 +18,8 @@
     "supertest": "^6.2.2"
   },
   "scripts": {
-    "test": "mocha tests-int/*Spec.js",
-    "tests": "mocha tests-int/*Spec.js"
+    "test": "mocha  --file ./tests-int/setup-mort.js  tests-int/*Spec.js",
+    "tests": "mocha --file ./tests-int/setup-mort.js   tests-int/*Spec.js"
   },
   "repository": {
     "type": "git"
