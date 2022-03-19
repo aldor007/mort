@@ -31,11 +31,12 @@ jobs:
       uses: supercharge/redis-github-action@1.4.0
       with:
         redis-version: 6.2 
-
+    - name: start mort
+      run: | 
+        make run-test-server &
     - name: Run the integrations tests
       run: |
-        make run-test-server &
-        sleep 30
+        curl --retry 20 --retry-delay 5 -s -o /dev/null "http://${MORT_HOST}:${MORT_PORT}"
         npm run tests 
         kill -9 `lsof -i:8091 -t`
       env:
