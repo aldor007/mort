@@ -3,6 +3,7 @@
 
 <img src="https://mort.mkaciuba.com/demo/medium/gopher.png" width="500px"/>
 
+Testuje CI dla Oli
 
 An S3-compatible image processing server written in Go. Still in active development.
 
