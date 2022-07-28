@@ -223,14 +223,14 @@ func CreatePreSign(obj *object.FileObject) *response.Response {
 	}
 
 	uri, err := client.PreSignRequest(obj.Ctx, stow.ClientMethodPut, getKey(obj), stow.PresignRequestParams{
-		ExpiresIn:   time.Hour*5,
+		ExpiresIn: time.Hour * 5,
 	})
 	if err != nil {
 		monitoring.Log().Warn("Storage/CreatePresign create request", obj.LogData(zap.Int("statusCode", 503), zap.Error(err))...)
 		return response.NewError(503, err)
 	}
 
-	res  := response.NewNoContent(307)
+	res := response.NewNoContent(307)
 	res.Headers.Set("location", uri)
 
 	return res
