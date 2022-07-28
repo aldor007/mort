@@ -1,3 +1,15 @@
+# [0.23.0](https://github.com/aldor007/mort/compare/v0.22.0...v0.23.0) (2022-07-28)
+
+
+### Bug Fixes
+
+* fix ci ([313d7c8](https://github.com/aldor007/mort/commit/313d7c8c5b838a32901ec12220d97999cffa1678))
+
+
+### Features
+
+* update docker ([4d08c49](https://github.com/aldor007/mort/commit/4d08c497647f1475d2f60b51336f1f3496e2b85b))
+
 # [0.22.0](https://github.com/aldor007/mort/compare/v0.21.5...v0.22.0) (2022-07-28)
 
 
