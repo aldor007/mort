@@ -1,3 +1,11 @@
+# [0.22.0](https://github.com/aldor007/mort/compare/v0.21.5...v0.22.0) (2022-07-28)
+
+
+### Features
+
+* introduce maxFileSize server config that uses redirect for big files, use go1.18 ([97ae2ea](https://github.com/aldor007/mort/commit/97ae2eaa326b0087daaa388a1ce9a40739737a7f))
+* preSign url ([a5c84d0](https://github.com/aldor007/mort/commit/a5c84d002e28719bdda7476c45908f59860d7f38))
+
 ## [0.21.5](https://github.com/aldor007/mort/compare/v0.21.4...v0.21.5) (2022-03-19)
 
 
