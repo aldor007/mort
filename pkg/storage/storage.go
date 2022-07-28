@@ -210,6 +210,32 @@ func Delete(obj *object.FileObject) *response.Response {
 	return resHead
 }
 
+func CreatePreSign(obj *object.FileObject) *response.Response {
+	inc(obj, "presign")
+	metric := "storage_time;method:presign,storage:" + obj.Storage.Kind
+	t := monitoring.Report().Timer(metric)
+	defer t.Done()
+	instance, err := getClient(obj)
+	client := instance.container
+	if err != nil {
+		monitoring.Log().Warn("Storage/CreatePresign create client", obj.LogData(zap.Int("statusCode", 503), zap.Error(err))...)
+		return response.NewError(503, err)
+	}
+
+	uri, err := client.PreSignRequest(obj.Ctx, stow.ClientMethodPut, getKey(obj), stow.PresignRequestParams{
+		ExpiresIn:   time.Hour*5,
+	})
+	if err != nil {
+		monitoring.Log().Warn("Storage/CreatePresign create request", obj.LogData(zap.Int("statusCode", 503), zap.Error(err))...)
+		return response.NewError(503, err)
+	}
+
+	res  := response.NewNoContent(307)
+	res.Headers.Set("location", uri)
+
+	return res
+}
+
 // List returns list of object in given path in S3 format
 // nolint: gocyclo
 func List(obj *object.FileObject, maxKeys int, _ string, prefix string, marker string) *response.Response {

@@ -193,6 +193,7 @@ type Server struct {
 	PlaceholderStr string                 `yaml:"placeholder"`
 	Plugins        map[string]interface{} `yaml:"plugins,omitempty"`
 	Cache          CacheCfg               `yaml:"cache"`
+	MaxFileSize    int64                    `yaml:"maxFileSize"`
 	Placeholder    struct {
 		Buf         []byte
 		ContentType string

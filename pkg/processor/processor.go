@@ -168,6 +168,10 @@ func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *r
 			res = updateHeaders(obj, r.collapseGET(req, obj))
 		} else {
 			res = updateHeaders(obj, r.handleGET(req, obj))
+			if r.serverConfig.MaxFileSize != 0 && res.ContentLength  > r.serverConfig.MaxFileSize {
+				res := storage.CreatePreSign(obj)
+				return res
+			}
 		}
 
 		if res.IsCacheable() && res.ContentLength != -1 && res.ContentLength < r.serverConfig.Cache.MaxCacheItemSize {
@@ -347,6 +351,7 @@ func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) 
 
 					return res
 				}
+
 
 				return res
 			}
