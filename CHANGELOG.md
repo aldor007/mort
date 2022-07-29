@@ -1,3 +1,10 @@
+## [0.23.1](https://github.com/aldor007/mort/compare/v0.23.0...v0.23.1) (2022-07-29)
+
+
+### Bug Fixes
+
+* use GET in preSign ([272e0da](https://github.com/aldor007/mort/commit/272e0daf5f959f55f44da5ca767ae4ae255c2417))
+
 # [0.23.0](https://github.com/aldor007/mort/compare/v0.22.0...v0.23.0) (2022-07-28)
 
 
