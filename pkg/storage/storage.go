@@ -222,7 +222,7 @@ func CreatePreSign(obj *object.FileObject) *response.Response {
 		return response.NewError(503, err)
 	}
 
-	uri, err := client.PreSignRequest(obj.Ctx, stow.ClientMethodPut, getKey(obj), stow.PresignRequestParams{
+	uri, err := client.PreSignRequest(obj.Ctx, stow.ClientMethodGet, getKey(obj), stow.PresignRequestParams{
 		ExpiresIn: time.Hour * 5,
 	})
 	if err != nil {
