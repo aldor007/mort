@@ -1,3 +1,10 @@
+## [0.23.2](https://github.com/aldor007/mort/compare/v0.23.1...v0.23.2) (2022-07-29)
+
+
+### Bug Fixes
+
+* close response when doing preSign request ([a4ceef1](https://github.com/aldor007/mort/commit/a4ceef1f814c057474e313194120434549849c04))
+
 ## [0.23.1](https://github.com/aldor007/mort/compare/v0.23.0...v0.23.1) (2022-07-29)
 
 
