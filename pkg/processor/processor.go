@@ -169,8 +169,9 @@ func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *r
 		} else {
 			res = updateHeaders(obj, r.handleGET(req, obj))
 			if r.serverConfig.MaxFileSize != 0 && res.ContentLength > r.serverConfig.MaxFileSize {
-				res := storage.CreatePreSign(obj)
-				return res
+				defer res.Close()
+				resPreSign := storage.CreatePreSign(obj)
+				return  resPreSign
 			}
 		}
 
