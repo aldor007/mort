@@ -1,3 +1,10 @@
+## [0.23.3](https://github.com/aldor007/mort/compare/v0.23.2...v0.23.3) (2022-08-19)
+
+
+### Bug Fixes
+
+* preSign redirect ([c7cb52f](https://github.com/aldor007/mort/commit/c7cb52f4ca8296eb9b3329a90e34195f3680afa2))
+
 ## [0.23.2](https://github.com/aldor007/mort/compare/v0.23.1...v0.23.2) (2022-07-29)
 
 
