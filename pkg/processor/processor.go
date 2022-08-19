@@ -168,11 +168,6 @@ func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *r
 			res = updateHeaders(obj, r.collapseGET(req, obj))
 		} else {
 			res = updateHeaders(obj, r.handleGET(req, obj))
-			if r.serverConfig.MaxFileSize != 0 && res.ContentLength > r.serverConfig.MaxFileSize {
-				defer res.Close()
-				resPreSign := storage.CreatePreSign(obj)
-				return  resPreSign
-			}
 		}
 
 		if res.IsCacheable() && res.ContentLength != -1 && res.ContentLength < r.serverConfig.Cache.MaxCacheItemSize {
@@ -289,7 +284,18 @@ func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) 
 	parentChan := make(chan *response.Response, 1)
 
 	go func(o *object.FileObject) {
-		resp := storage.Get(o)
+		var resp *response.Response
+		if r.serverConfig.MaxFileSize != 0 && len(transformsTab) == 0 {
+			resp = storage.Head(o)
+			if resp.ContentLength > r.serverConfig.MaxFileSize {
+				resp.Close()
+				resp = storage.CreatePreSign(obj)
+			} else {
+				resp = storage.Get(o)
+			}
+		} else {
+			resp = storage.Get(o)
+		}
 		// Ensure before passing the response that the context is not canceled.
 		// In such case Close the response.
 		// Passing the data to respChan and checking ctx.Done cannot be
