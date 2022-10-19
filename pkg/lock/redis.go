@@ -120,6 +120,13 @@ func (m *RedisLock) Lock(ctx context.Context, key string) (result LockResult, ok
 					select {
 					case <-ch:
 						m.NotifyAndRelease(ctx, key, nil)
+					case <-result.Cancel:
+						m.memoryLock.Release(ctx, key)
+						pubsub.Close()
+					case <-ctx.Done():
+						m.memoryLock.Release(ctx, key)
+						pubsub.Close()
+						return
 					}
 				}
 			}()
