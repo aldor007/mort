@@ -1,3 +1,11 @@
+## [0.23.4](https://github.com/aldor007/mort/compare/v0.23.3...v0.23.4) (2022-10-19)
+
+
+### Bug Fixes
+
+* gorouting leak on redis lock ([453bc3c](https://github.com/aldor007/mort/commit/453bc3c228f1bd3cc421e774c9cbc9309a43620a))
+* gorouting leak on redis lock - fmt not used ([2ad402f](https://github.com/aldor007/mort/commit/2ad402fc6f447af50484d8718e1ef7c446d71f6f))
+
 ## [0.23.3](https://github.com/aldor007/mort/compare/v0.23.2...v0.23.3) (2022-08-19)
 
 
