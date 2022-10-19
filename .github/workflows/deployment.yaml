@@ -42,7 +42,7 @@ jobs:
          path: infra
          token: ${{ secrets.GHR_TOKEN }}
       - name: Update Image Version in the related HelmChart values.yaml
-        uses: fjogeleit/yaml-update-action@main
+        uses: fjogeleit/yaml-update-action@v0.10.0
         with:
           valueFile: 'mort/values.yaml'
           propertyPath: 'image.tag'
