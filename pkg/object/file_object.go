@@ -189,7 +189,6 @@ func parseRange(s string) (httpRange, error) {
 	minStart = math.MaxUint64
 	maxEnd := uint64(0)
 	rangesArr := strings.Split(s[6:], ",")
-	fmt.Println("RRR", rangesArr)
 	for _, ra := range rangesArr {
 		ra = strings.TrimSpace(ra)
 		if ra == "" {
@@ -204,7 +203,6 @@ func parseRange(s string) (httpRange, error) {
 			// If no start is specified, end specifies the
 			// range start relative to the end of the file.
 			i, err := strconv.ParseUint(start, 10, 64)
-			fmt.Println("sssstart", i)
 			if err != nil {
 				return httpRangeData, errors.New("invalid range")
 			}
