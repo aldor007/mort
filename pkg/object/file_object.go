@@ -1,7 +1,6 @@
 package object
 
 import (
-	"fmt"
 	"math"
 
 	"github.com/aldor007/mort/pkg/config"
