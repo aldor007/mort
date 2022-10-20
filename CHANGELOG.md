@@ -1,3 +1,10 @@
+## [0.23.7](https://github.com/aldor007/mort/compare/v0.23.6...v0.23.7) (2022-10-20)
+
+
+### Bug Fixes
+
+* redis cache tests ([3e81a21](https://github.com/aldor007/mort/commit/3e81a2179860e50180a82d41e716781a5ebf954a))
+
 ## [0.23.6](https://github.com/aldor007/mort/compare/v0.23.5...v0.23.6) (2022-10-20)
 
 
