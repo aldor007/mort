@@ -1,6 +1,8 @@
 package lock
 
 import (
+	"github.com/aldor007/mort/pkg/monitoring"
+	"go.uber.org/zap"
 	"sync"
 	"time"
 
@@ -34,6 +36,7 @@ type rediser interface {
 }
 
 type internalLockRedis struct {
+	lockData
 	lock   *redislock.Lock
 	pubsub *goRedis.PubSub
 }
@@ -86,11 +89,15 @@ func (m *RedisLock) NotifyAndRelease(ctx context.Context, key string, originalRe
 	defer m.lock.Unlock()
 	lock, ok := m.locks[key]
 	if ok {
-		lock.lock.Release(ctx)
+		err := lock.lock.Release(ctx)
+		if err != nil {
+			monitoring.Log().Error("redis release error", zap.String("key", key), zap.Error(err))
+		}
 		delete(m.locks, key)
 		if lock.pubsub != nil {
-			m.redisClient.Publish(ctx, key, 1)
 			lock.pubsub.Close()
+		} else {
+			m.redisClient.Publish(ctx, key, 1)
 		}
 	}
 
@@ -106,12 +113,13 @@ func (m *RedisLock) Lock(ctx context.Context, key string) (result LockResult, ok
 		lock.lock.Refresh(ctx, time.Second*time.Duration(m.LockTimeout/2), nil)
 	} else {
 		lock, err := m.client.Obtain(ctx, key, time.Duration(m.LockTimeout)*time.Second, nil)
-		pubsub := m.redisClient.Subscribe(ctx, key)
-		lockData := internalLockRedis{lock: lock, pubsub: pubsub}
+		lockData := internalLockRedis{lock: lock, pubsub: nil}
 
+		ok = false
 		if err == redislock.ErrNotObtained {
 			result, ok = m.memoryLock.forceLockAndAddWatch(ctx, key)
-			ok = false
+			pubsub := m.redisClient.Subscribe(ctx, key)
+			lockData.pubsub = pubsub
 			// Go channel which receives messages.
 			ch := pubsub.Channel()
 
@@ -119,28 +127,31 @@ func (m *RedisLock) Lock(ctx context.Context, key string) (result LockResult, ok
 				for {
 					select {
 					case <-ch:
-						m.NotifyAndRelease(ctx, key, nil)
+						m.memoryLock.NotifyAndRelease(ctx, key, nil)
 						return
 					case <-result.Cancel:
 						m.memoryLock.Release(ctx, key)
-						pubsub.Close()
+						err := pubsub.Close()
+						if err != nil {
+							monitoring.Log().Error("Redis lock pubsub err", zap.String("key", key), zap.Error(err))
+						}
 						return
 					case <-ctx.Done():
 						m.memoryLock.Release(ctx, key)
-						pubsub.Close()
+						err := pubsub.Close()
+						if err != nil {
+							monitoring.Log().Error("Redis lock pubsub err", zap.String("key", key), zap.Error(err))
+						}
 						return
 					}
 				}
 			}()
-
-			return
 
 		} else if err != nil {
 			result.Error = err
 			return
 		}
 		m.locks[key] = lockData
-
 	}
 	return m.memoryLock.Lock(ctx, key)
 }

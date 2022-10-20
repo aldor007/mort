@@ -142,3 +142,38 @@ func TestRedisLock_NotifyAndReleaseTwoInstancesOfLock(t *testing.T) {
 
 	}
 }
+func TestRedisLock_Cancel(t *testing.T) {
+	s := miniredis.RunT(t)
+
+	l := NewRedisLock([]string{s.Addr()}, nil)
+	key := "kluczi22"
+	ctx := context.Background()
+	c, acquired := l.Lock(ctx, key)
+
+	assert.True(t, acquired, "Should acquire lock")
+	assert.Nil(t, c.ResponseChan, "shouldn't return channel")
+
+	l2 := NewRedisLock([]string{s.Addr()}, nil)
+	result, lock := l2.Lock(ctx, key)
+
+	assert.False(t, lock, "Shouldn't acquire lock")
+	assert.NotNil(t, result.ResponseChan, "should return channel")
+
+	go func() {
+		c.Cancel <- true
+	}()
+
+	buf := make([]byte, 1000)
+	go l.NotifyAndRelease(ctx, key, response.NewBuf(200, buf))
+
+	timer := time.NewTimer(time.Second * 2)
+	select {
+	case <-timer.C:
+		t.Fatalf("timeout waiting for lock")
+		return
+	case res, ok := <-result.ResponseChan:
+		assert.False(t, ok, "channel shouldn't be closed")
+		assert.Nil(t, res, "should be nil")
+
+	}
+}
