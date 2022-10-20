@@ -625,7 +625,7 @@ func (t *Transforms) BimgOptions(imageInfo ImageInfo) ([]bimg.Options, error) {
 	return opts, nil
 }
 
-//  FNV  for uint64
+// FNV  for uint64
 type fnvI64 uint64
 
 func (f *fnvI64) write(data ...uint64) {

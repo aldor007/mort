@@ -105,19 +105,22 @@ func (m *RedisLock) NotifyAndRelease(ctx context.Context, key string, originalRe
 }
 
 // Lock create unique entry in Redis map
-func (m *RedisLock) Lock(ctx context.Context, key string) (result LockResult, ok bool) {
+func (m *RedisLock) Lock(ctx context.Context, key string) (LockResult, bool) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	lock, ok := m.locks[key]
 	if ok {
-		lock.lock.Refresh(ctx, time.Second*time.Duration(m.LockTimeout/2), nil)
+		err := lock.lock.Refresh(ctx, time.Second*time.Duration(m.LockTimeout/2), nil)
+		if err != nil {
+			monitoring.Log().Error("Redis lock refresh err", zap.String("key", key), zap.Error(err))
+		}
 	} else {
 		lock, err := m.client.Obtain(ctx, key, time.Duration(m.LockTimeout)*time.Second, nil)
 		lockData := internalLockRedis{lock: lock, pubsub: nil}
 
 		ok = false
 		if err == redislock.ErrNotObtained {
-			result, ok = m.memoryLock.forceLockAndAddWatch(ctx, key)
+			result, _ := m.memoryLock.forceLockAndAddWatch(ctx, key)
 			pubsub := m.redisClient.Subscribe(ctx, key)
 			lockData.pubsub = pubsub
 			// Go channel which receives messages.
@@ -148,8 +151,7 @@ func (m *RedisLock) Lock(ctx context.Context, key string) (result LockResult, ok
 			}()
 
 		} else if err != nil {
-			result.Error = err
-			return
+			return LockResult{Error: err}, false
 		}
 		m.locks[key] = lockData
 	}

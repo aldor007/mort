@@ -49,7 +49,8 @@ func (o *FileObject) TypeName() string {
 // * `key` return object storage path
 // * `transforms` return Transforms object on which you can execute image manipulations
 // Usage in tengo
-//  obj.key // access to object key
+//
+//	obj.key // access to object key
 func (o *FileObject) IndexGet(index tengoLib.Object) (val tengoLib.Object, err error) {
 	strIdx, ok := tengoLib.ToString(index)
 	if !ok {

@@ -34,7 +34,7 @@ jobs:
     - uses: codecov/codecov-action@v2
       with:
         fail_ci_if_error: true # optional (default = false)
-  integrations:
+  redis-lock:
     container:
       image: ghcr.io/aldor007/mort-base:latest
       credentials:
@@ -63,7 +63,7 @@ jobs:
         redis-version: 6.2 
     - name: Run the integrations tests
       run: |
-        make run-test-server &
+        make run-test-server-redis &
         pid=$!
         sleep 13 && curl --retry 20 --retry-delay 5 -s -o /dev/null "http://localhost:8091" || true && sleep 5 && npm run tests 
         kill -9 $pid 
@@ -71,3 +71,36 @@ jobs:
         MORT_HOST: localhost 
         MORT_PORT: 8091
         CI: true
+  memory-lock:
+    container:
+      image: ghcr.io/aldor007/mort-base:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GHR_TOKEN }}
+    runs-on: ubuntu-latest
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      - name: Git checkout
+        uses: actions/checkout@v2
+
+      - name: Install Node JS
+        uses: actions/setup-node@v1
+        with:
+          node-version: 17
+
+      - name: Install npm deps
+        run: npm install
+
+      - name: Install go deps
+        run: go mod download
+
+      - name: Run the integrations tests
+        run: |
+          make run-test-server &
+          pid=$!
+          sleep 13 && curl --retry 20 --retry-delay 5 -s -o /dev/null "http://localhost:8091" || true && sleep 5 && npm run tests
+          kill -9 $pid
+        env:
+          MORT_HOST: localhost
+          MORT_PORT: 8091
+          CI: true

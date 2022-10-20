@@ -31,6 +31,10 @@ run-test-server:
 	scripts/prepare-for-tests.sh
 	go run cmd/mort/mort.go -config ./tests-int/mort.yml
 
+run-test-server-redis:
+	scripts/prepare-for-tests.sh
+	go run cmd/mort/mort.go -config ./tests-int/mort-redis.yml
+
 clean-prof:
 	find . -name ".test" -depth -exec rm {} \;
 	find . -name ".cpu" -depth -exec rm {} \;

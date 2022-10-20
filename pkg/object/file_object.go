@@ -99,7 +99,7 @@ func (o *FileObject) HasTransform() bool {
 	return o.Transforms.NotEmpty
 }
 
-//  Type returns type of object "parent" or "transform"
+// Type returns type of object "parent" or "transform"
 func (o *FileObject) Type() string {
 	if o.HasTransform() {
 		return "transform"

@@ -1,0 +1,162 @@
+server:
+    listen: ":8091"
+    accessLogs: true
+    cache:
+      type: "redis"
+      address:
+        - "redis:6379"
+      maxCacheItemSizeMB: 50
+      clientConfig:
+    lock:
+      type: "redis"
+      address:
+        - "redis:6379"
+      clientConfig:
+    plugins:
+      compress:
+           gzip:
+               types:
+                 - text/plain
+                 - text/css
+                 - application/json
+                 - application/javascript
+                 - text/xml
+                 - application/xml
+                 - application/xml+rss
+                 - text/javascript
+                 - text/html
+               level: 4
+           brotli:
+               types:
+                 - text/plain
+                 - text/css
+                 - application/json
+                 - application/javascript
+                 - text/xml
+                 - application/xml
+                 - application/xml+rss
+                 - text/javascript
+                 - text/html
+               level: 4
+      webp: ~
+
+headers:
+  - statusCodes: [200]
+    values:
+      "cache-control": "max-age=84000, public"
+  - statusCodes: [404, 400]
+    values:
+      "cache-control": "max-age=60, public"
+  - statusCodes: [500, 503]
+    values:
+      "cache-control": "max-age=10, public"
+
+buckets:
+    local:
+        keys:
+          - accessKey: "acc"
+            secretAccessKey: "sec"
+        transform:
+#            path: "\\/+(?:cache|resolve)\\/(?P<presetName>[a-z0-9_]+)\\/+[a-z]+\\/[a-zA-Z0-9]+\\/+(?P<parent>.*)"
+            path: "\\/(?P<parent>[a-zA-Z0-9-\\.]+)\\/(?P<presetName>[a-z0-9_]+).*"
+            kind: "presets"
+            order:
+              presetName: 0
+              parent: 1
+            presets:
+                blog_small:
+                    quality: 75
+                    filters:
+                        thumbnail:
+                            width: 100
+                            height: 70
+                            mode: outbound
+                        interlace: yes
+                blog_medium:
+                    quality: 75
+                    filters:
+                        thumbnail:
+                            width: 903
+                            height: 600
+                            mode: outbound
+                        crop:
+                            start: [0, 0]
+                            width: 900
+                            height: 320
+
+                blog_home:
+                    quality: 75
+                    filters:
+                        crop:
+                            width: 756
+                            height: 396
+                            mode: outbound
+        storages:
+            basic:
+                kind: "local-meta"
+                rootPath: "/tmp/mort-tests/"
+            transform:
+                kind: "local-meta"
+                rootPath: "/tmp/mort-tests/"
+    remote:
+        keys:
+          - accessKey: "acc"
+            secretAccessKey: "sec"
+        transform:
+            path: "\\/(?P<parent>[a-zA-Z0-9-\\.]+)\\/(?P<presetName>[a-z0-9_]+).*"
+            kind: "presets-query"
+            order:
+              parent: 0
+              presetName: 1
+            parentStorage: "api"
+            parentBucket: "remote"
+            presets:
+                default_small:
+                    quality: 95
+                    format: webp
+                    filters:
+                        thumbnail:
+                            width: 150
+                            height: 200
+                crop:
+                    quality: 75
+                    filters:
+                        crop:
+                            width: 756
+                            height: 396
+                            mode: outbound
+                extract:
+                    quality: 75
+                    filters:
+                        extract:
+                            width: 700
+                            height: 496
+                blur:
+                    quality: 75
+                    filters:
+                        crop:
+                            width: 756
+                            height: 396
+                            mode: outbound
+                        blur:
+                          sigma: 5.0
+                watermark:
+                    filters:
+                        crop:
+                            width: 200
+                            height: 200
+                        watermark:
+                            opacity: 0.5
+                            image: "https://i.imgur.com/uomkVIL.png"
+                            position: "top-left"
+        storages:
+            api:
+                kind: "http"
+                url: "https://i.redd.it<item>" # Cnxpvwo7qqfwz.jpg
+            transform:
+                kind: "local-meta"
+                rootPath: "/tmp/mort-tests/"
+                pathPrefix: "transforms"
+            basic:
+                kind: "local-meta"
+                rootPath: "/tmp/mort-tests/"
