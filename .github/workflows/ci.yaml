@@ -42,6 +42,13 @@ jobs:
         password: ${{ secrets.GHR_TOKEN }}
     runs-on: ubuntu-latest
     # Steps represent a sequence of tasks that will be executed as part of the job
+    services:
+      redis:
+        image: redis
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
+        ports:
+          - 6379:6379
     steps:
     - name: Git checkout 
       uses: actions/checkout@v2
@@ -57,10 +64,6 @@ jobs:
     - name: Install go deps
       run: go mod download
 
-    - name: Start Redis
-      uses: supercharge/redis-github-action@1.4.0
-      with:
-        redis-version: 6.2 
     - name: Run the integrations tests
       run: |
         make run-test-server-redis &
