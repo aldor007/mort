@@ -1,3 +1,10 @@
+## [0.23.5](https://github.com/aldor007/mort/compare/v0.23.4...v0.23.5) (2022-10-20)
+
+
+### Bug Fixes
+
+* fix redis lock ([b1bbb6d](https://github.com/aldor007/mort/commit/b1bbb6d658efe58010260bb7b51ab1c03a5ab4f1))
+
 ## [0.23.4](https://github.com/aldor007/mort/compare/v0.23.3...v0.23.4) (2022-10-19)
 
 
