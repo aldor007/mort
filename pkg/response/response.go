@@ -114,7 +114,7 @@ func (r *Response) setBodyBytes(body []byte) {
 		panic("reader must not be set when setBodyBytes is used")
 	}
 	r.bodySeeker = bytes.NewReader(body)
-	r.reader = ioutil.NopCloser(r.bodySeeker)
+	r.reader = io.NopCloser(r.bodySeeker)
 	r.ContentLength = int64(len(body))
 	r.body = body
 }
@@ -308,7 +308,11 @@ func (r *Response) EncodeMsgpack(enc *msgpack.Encoder) error {
 }
 
 func (r *Response) DecodeMsgpack(dec *msgpack.Decoder) error {
-	return dec.DecodeMulti(&r.StatusCode, &r.Headers, &r.ttl, &r.ContentLength, &r.body, &r.cachable)
+	if err := dec.DecodeMulti(&r.StatusCode, &r.Headers, &r.ttl, &r.ContentLength, &r.body, &r.cachable); err != nil {
+		return err
+	}
+	r.setBodyBytes(r.body)
+	return nil
 }
 
 // Copy create complete response copy with headers and body

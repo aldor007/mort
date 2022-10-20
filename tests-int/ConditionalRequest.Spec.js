@@ -10,7 +10,7 @@ describe('HTTP conditional requests',  function () {
     let lastMod = null;
 
     before(function (done) {
-       request.head(filePath)
+       request.get(filePath)
            .end(function (_, res) {
                etag = res.headers['etag'];
                lastMod = res.headers['last-modified'];

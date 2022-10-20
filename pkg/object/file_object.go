@@ -122,9 +122,9 @@ func (o *FileObject) FillWithRequest(req *http.Request, ctx context.Context) {
 		o.RangeData, err = parseRange(o.Range)
 		if err != nil {
 			monitoring.Log().Error("FileObject unable to parse range", append(o.LogData(), zap.Error(err))...)
-			o.Range = ""
 		}
 	}
+
 }
 
 func (o *FileObject) GetResponseCacheKey() string {

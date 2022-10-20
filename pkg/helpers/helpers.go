@@ -60,11 +60,11 @@ func FetchObject(uri string) ([]byte, error) {
 
 // IsRangeOrCondition check if request is range or condition
 func IsRangeOrCondition(req *http.Request) bool {
-	if req.Header.Get("Range") != "" || req.Header.Get("if-range") != "" {
+	if req.Header.Get("Range") != "" || req.Header.Get("If-Range") != "" {
 		return true
 	}
 
-	if req.Header.Get("If-match") != "" || req.Header.Get("If-none-match") != "" {
+	if req.Header.Get("If-Match") != "" || req.Header.Get("If-None-Match") != "" {
 		return true
 	}
 
