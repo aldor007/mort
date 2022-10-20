@@ -1,3 +1,11 @@
+## [0.23.6](https://github.com/aldor007/mort/compare/v0.23.5...v0.23.6) (2022-10-20)
+
+
+### Bug Fixes
+
+* redis lock improvments ([e426e61](https://github.com/aldor007/mort/commit/e426e61e38c261379a17e3ad03e600742694f8bf))
+* redis lock improvments && update CI tests ([e1da289](https://github.com/aldor007/mort/commit/e1da289921a0f54cc7faac9ac7ec764dc9b49261))
+
 ## [0.23.5](https://github.com/aldor007/mort/compare/v0.23.4...v0.23.5) (2022-10-20)
 
 
