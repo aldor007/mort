@@ -1,6 +1,6 @@
 server:
     listen: ":8091"
-    accessLogs: true
+    accessLogs: false
     cache:
       type: "redis"
       address:

@@ -164,7 +164,7 @@ func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *r
 			res = updateHeaders(obj, r.handleGET(req, obj))
 		}
 
-		if res.IsCacheable() && res.ContentLength != -1 && res.ContentLength < r.serverConfig.Cache.MaxCacheItemSize {
+		if !res.IsFromCache() && res.IsCacheable() && res.ContentLength != -1 && res.ContentLength < r.serverConfig.Cache.MaxCacheItemSize {
 			resCpy, err := res.Copy()
 			objCpy := obj.Copy()
 			if err == nil {
@@ -388,8 +388,29 @@ func (r *RequestProcessor) handleNotFound(obj, parentObj *object.FileObject, tra
 	if parentRes.StatusCode != 200 || !parentRes.IsImage() {
 		return res
 	}
-	parentRes = storage.Get(parentObj)
+	if cacheRes, errCache := r.responseCache.Get(parentObj); errCache == nil {
+		parentRes = cacheRes
+	} else {
+		parentRes = storage.Get(parentObj)
+	}
+
 	if obj.HasTransform() {
+		if !parentRes.IsFromCache() {
+			copyParentRes, err := parentRes.Copy()
+			if err != nil {
+				monitoring.Log().Warn("unable to copy qobject", parentObj.LogData(zap.Error(err))...)
+			} else {
+				updateHeaders(parentObj, copyParentRes)
+				go func() {
+					copyParentRes.Body()
+					defer copyParentRes.Close()
+					err := r.responseCache.Set(parentObj, copyParentRes)
+					if err != nil {
+						monitoring.Log().Warn("unable to set parent in cache", parentObj.LogData(zap.Error(err))...)
+					}
+				}()
+			}
+		}
 		// processImage returns new response so both parentRes must be closed
 		defer parentRes.Close()
 		return r.processImage(obj, parentRes, transformsTab)

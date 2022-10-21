@@ -286,6 +286,14 @@ func (r *Response) IsCacheable() bool {
 	return r.StatusCode > 199 && r.StatusCode < 299 && r.cachable
 }
 
+func (r *Response) IsFromCache() bool {
+	return r.Headers.Get("x-mort-cache") != ""
+}
+
+func (r *Response) SetCacheHit() {
+	r.Headers.Set("x-mort-cache", "hit")
+}
+
 func (r *Response) GetTTL() int {
 	r.parseCacheHeaders()
 	return r.ttl

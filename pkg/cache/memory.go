@@ -72,7 +72,7 @@ func (c *MemoryCache) Get(obj *object.FileObject) (*response.Response, error) {
 			monitoring.Report().Inc("cache_ratio;status:miss")
 			return nil, errors.New("not found")
 		}
-		resCp.Set("x-mort-cache", "hit")
+		resCp.SetCacheHit()
 		return resCp, nil
 	}
 

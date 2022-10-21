@@ -96,7 +96,7 @@ func (c *RedisCache) Get(obj *object.FileObject) (*response.Response, error) {
 		monitoring.Report().Inc("cache_ratio;status:hit")
 		err = msgpack.Unmarshal(buf, &res)
 		if res.Headers != nil {
-			res.Set("x-mort-cache", "hit")
+			res.SetCacheHit()
 		}
 	}
 

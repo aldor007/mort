@@ -125,6 +125,12 @@ func (o *FileObject) FillWithRequest(req *http.Request, ctx context.Context) {
 		}
 	}
 
+	parent := o.Parent
+	for parent != nil {
+		parent.Ctx = ctx
+		parent = parent.Parent
+	}
+
 }
 
 func (o *FileObject) GetResponseCacheKey() string {
