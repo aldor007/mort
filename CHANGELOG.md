@@ -1,3 +1,10 @@
+# [0.24.0](https://github.com/aldor007/mort/compare/v0.23.7...v0.24.0) (2022-10-21)
+
+
+### Features
+
+* parent image cache ([b5a80e4](https://github.com/aldor007/mort/commit/b5a80e4a0a2900f11b63c8345da501b07e7fa5ed))
+
 ## [0.23.7](https://github.com/aldor007/mort/compare/v0.23.6...v0.23.7) (2022-10-20)
 
 
