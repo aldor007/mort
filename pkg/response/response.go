@@ -15,7 +15,6 @@ import (
 	"go.uber.org/zap"
 
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
@@ -129,7 +128,7 @@ func (r *Response) Body() ([]byte, error) {
 		return nil, errors.New("empty body")
 	}
 
-	body, err := ioutil.ReadAll(r.reader)
+	body, err := io.ReadAll(r.reader)
 	r.reader.Close()
 	r.reader = nil
 	r.setBodyBytes(body)

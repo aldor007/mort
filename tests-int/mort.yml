@@ -2,8 +2,7 @@ server:
     listen: ":8091"
     accessLogs: true
     cache:
-      cacheSize: 100
-      maxCacheItemSizeMB: 50
+      maxCacheItemSizeMB: 5
     plugins:
       compress:
            gzip:

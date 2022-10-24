@@ -8,7 +8,6 @@ require (
 	github.com/alicebob/miniredis/v2 v2.18.0
 	github.com/bsm/redislock v0.7.2
 	github.com/d5/tengo/v2 v2.10.1
-	github.com/djherbis/stream v1.3.1
 	github.com/go-chi/chi/v5 v5.0.7
 	github.com/go-chi/httplog v0.2.4
 	github.com/go-redis/cache/v8 v8.3.1-0.20210129151214-1cdfea0b552b
@@ -16,7 +15,7 @@ require (
 	github.com/go-redis/redismock/v8 v8.0.6
 	github.com/google/brotli/go/cbrotli v0.0.0-20210127140805-63be8a994019
 	github.com/h2non/bimg v1.1.6-0.20210807160419-b29a57356338
-	github.com/karlseguin/ccache v2.0.3+incompatible
+	github.com/karlseguin/ccache/v3 v3.0.0
 	github.com/pkg/errors v0.9.1
 	github.com/pquerna/cachecontrol v0.0.0-20201205024021-ac21108117ac
 	github.com/prometheus/client_golang v1.9.0
@@ -64,7 +63,6 @@ require (
 	github.com/hashicorp/errwrap v1.0.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
-	github.com/karlseguin/expect v1.0.7 // indirect
 	github.com/klauspost/compress v1.11.7 // indirect
 	github.com/kr/fs v0.1.0 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect

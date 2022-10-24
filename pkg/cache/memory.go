@@ -8,7 +8,7 @@ import (
 	"github.com/aldor007/mort/pkg/monitoring"
 	"github.com/aldor007/mort/pkg/object"
 	"github.com/aldor007/mort/pkg/response"
-	"github.com/karlseguin/ccache"
+	"github.com/karlseguin/ccache/v3"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
@@ -16,7 +16,7 @@ import (
 type (
 	// MemoryCache uses memory for cache purpose
 	MemoryCache struct {
-		cache *ccache.Cache // cache for created image transformations
+		cache *ccache.Cache[responseSizeProvider] // cache for created image transformations
 	}
 
 	// responseSizeProvider adapts response.Response to how ccache size computation requirements.
@@ -46,7 +46,7 @@ func (r responseSizeProvider) Size() int64 {
 
 // NewMemoryCache returns instance of memory cache
 func NewMemoryCache(maxSize int64) *MemoryCache {
-	return &MemoryCache{ccache.New(ccache.Configure().MaxSize(maxSize).ItemsToPrune(50))}
+	return &MemoryCache{ccache.New[responseSizeProvider](ccache.Configure[responseSizeProvider]().MaxSize(maxSize).ItemsToPrune(50))}
 }
 
 // Set put response to cache
@@ -66,7 +66,7 @@ func (c *MemoryCache) Get(obj *object.FileObject) (*response.Response, error) {
 	if cacheValue != nil {
 		monitoring.Log().Info("Handle Get cache", zap.String("cache", "hit"), zap.String("obj.Key", obj.Key))
 		monitoring.Report().Inc("cache_ratio;status:hit")
-		res := cacheValue.Value().(responseSizeProvider)
+		res := cacheValue.Value()
 		resCp, err := res.Copy()
 		if err != nil {
 			monitoring.Report().Inc("cache_ratio;status:miss")
