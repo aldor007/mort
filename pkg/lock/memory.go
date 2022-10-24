@@ -75,8 +75,7 @@ func (m *MemoryLock) NotifyAndRelease(_ context.Context, key string, originalRes
 			res, err := originalResponse.Copy()
 			return res, err == nil
 		} else {
-			res, err := originalResponse.CopyWithStream()
-			return res, err == nil
+			return nil, false
 		}
 	})
 }

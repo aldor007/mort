@@ -93,8 +93,8 @@ func TestNewError(t *testing.T) {
 	assert.Equal(t, res.Error(), err)
 
 	buf, err := res.Body()
-	assert.NotNil(t, err, "Should return error when reading body")
-	assert.Nil(t, buf)
+	assert.Nil(t, err)
+	assert.Equal(t, string(buf), `{"message": "error"}`)
 
 	p := &object.FileObject{}
 	res.SetDebug(&object.FileObject{Debug: true, Parent: p, Transforms: transforms.Transforms{NotEmpty: true}})
@@ -273,32 +273,6 @@ func BenchmarkNewCopy(b *testing.B) {
 		resCpy, _ := res.Copy()
 
 		body, err := resCpy.Body()
-		if err != nil {
-			b.Fatalf("Errors %s", err)
-		}
-
-		if len(body) != len(buf) {
-			b.Fatalf("Inavlid body len %d != %d %d", len(body), len(buf), i)
-		}
-	}
-}
-
-func BenchmarkNewCopyWithStream(b *testing.B) {
-	buf := make([]byte, 1024*1024*4)
-	wBuf := make([]byte, 0, 1024*1024*1)
-	for i := 0; i < b.N; i++ {
-		s := ioutil.NopCloser(bytes.NewReader(buf))
-		w := bytes.NewBuffer(wBuf)
-		res := New(200, s)
-		res.Headers.Set("X-Header", "1")
-		res.SetContentType("text/html")
-		resCpy, _ := res.CopyWithStream()
-		go func() {
-			io.Copy(w, res.Stream())
-			res.Close()
-		}()
-
-		body, err := ioutil.ReadAll(resCpy.Stream())
 		if err != nil {
 			b.Fatalf("Errors %s", err)
 		}

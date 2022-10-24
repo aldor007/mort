@@ -68,7 +68,10 @@ describe('Image processing - cache', function () {
                         return done(err2);
                     }
 
-                    expect(res.headers['x-mort-cache']).to.eql('hit');
+                    // If not stream mort should cache response
+                    if (res.headers['content-length']) {
+                        expect(res.headers['x-mort-cache']).to.eql('hit');
+                    }
                     done(err)
                 })
         })
@@ -100,7 +103,10 @@ describe('Image processing - cache', function () {
                         return done(err2);
                     }
 
-                    expect(res.headers['x-mort-cache']).to.eql('hit');
+                    // If not stream mort should cache response
+                    if (res.headers['content-length']) {
+                        expect(res.headers['x-mort-cache']).to.eql('hit');
+                    }
                     done(err)
                 })
         })

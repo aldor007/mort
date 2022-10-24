@@ -24,13 +24,18 @@ func parseAddress(addrs []string) map[string]string {
 	return mp
 }
 
+type CacheCfg struct {
+	MaxItemSize int64
+}
+
 // RedisCache store response in redis
 type RedisCache struct {
 	client *redisCache.Cache
+	cfg    CacheCfg
 }
 
 // NewRedis create connection to redis and update it config from clientConfig map
-func NewRedis(redisAddress []string, clientConfig map[string]string) *RedisCache {
+func NewRedis(redisAddress []string, clientConfig map[string]string, cfg CacheCfg) *RedisCache {
 	ring := goRedis.NewRing(&goRedis.RingOptions{
 		Addrs: parseAddress(redisAddress),
 	})
@@ -45,10 +50,10 @@ func NewRedis(redisAddress []string, clientConfig map[string]string) *RedisCache
 		}
 	}
 
-	return &RedisCache{cache}
+	return &RedisCache{cache, cfg}
 }
 
-func NewRedisCluster(redisAddress []string, clientConfig map[string]string) *RedisCache {
+func NewRedisCluster(redisAddress []string, clientConfig map[string]string, cfg CacheCfg) *RedisCache {
 	ring := goRedis.NewClusterClient(&goRedis.ClusterOptions{
 		Addrs: redisAddress,
 	})
@@ -63,7 +68,7 @@ func NewRedisCluster(redisAddress []string, clientConfig map[string]string) *Red
 		}
 	}
 
-	return &RedisCache{cache}
+	return &RedisCache{cache, cfg}
 }
 
 func (c *RedisCache) getKey(obj *object.FileObject) string {
@@ -72,6 +77,9 @@ func (c *RedisCache) getKey(obj *object.FileObject) string {
 
 // Set put response into cache
 func (c *RedisCache) Set(obj *object.FileObject, res *response.Response) error {
+	if res.ContentLength > c.cfg.MaxItemSize {
+		return nil
+	}
 	monitoring.Report().Inc("cache_ratio;status:set")
 	v, err := msgpack.Marshal(res)
 	if err != nil {

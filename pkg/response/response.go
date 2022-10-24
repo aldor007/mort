@@ -10,7 +10,6 @@ import (
 	"github.com/aldor007/mort/pkg/monitoring"
 	"github.com/aldor007/mort/pkg/object"
 	"github.com/aldor007/mort/pkg/transforms"
-	"github.com/djherbis/stream"
 	"github.com/pquerna/cachecontrol/cacheobject"
 	"github.com/vmihailenco/msgpack"
 	"go.uber.org/zap"
@@ -42,8 +41,6 @@ type Response struct {
 	bodyReader io.ReadCloser // original response buffer
 	bodySeeker io.ReadSeeker
 
-	resStream   *stream.Stream   // response stream dispatcher
-	hasParent   bool             // flag indicated that response is a copy
 	transformer bodyTransformFnc // function that can transform body writner
 	cachable    bool             // flag indicating if response can be cached
 	ttl         int              // time to live in cache
@@ -95,6 +92,7 @@ func NewError(statusCode int, err error) *Response {
 	res := Response{StatusCode: statusCode, errorValue: err}
 	res.Headers = make(http.Header)
 	res.Headers.Set(HeaderContentType, "application/json")
+	res.setBodyBytes([]byte(`{"message": "error"}`))
 	return &res
 }
 
@@ -165,13 +163,6 @@ func (r *Response) Close() {
 		io.ReadAll(r.bodyReader)
 		r.bodyReader.Close()
 		r.bodyReader = nil
-	}
-
-	if r.resStream != nil && r.hasParent == false {
-		go func() {
-			r.resStream.Close()
-			r.resStream.Remove()
-		}()
 	}
 }
 
@@ -342,40 +333,6 @@ func (r *Response) Copy() (*Response, error) {
 
 }
 
-// CopyWithStream should be used with not buffered response that contain stream.
-// It tries to duplicate response stream for multiple readers.
-func (r *Response) CopyWithStream() (*Response, error) {
-	if r == nil {
-		return nil, errors.New("response is not created")
-	}
-	if r.body != nil {
-		return r.Copy()
-	}
-	// todo Add some protection mechanism to disallow CopyWithStream when Send or SendContent method is called.
-	// todo Also Stream method should be protected somehow, maybe if it possible should be removed in favor of SendContent.
-
-	c := Response{StatusCode: r.StatusCode, ContentLength: r.ContentLength, debug: r.debug, errorValue: r.errorValue}
-	c.Headers = r.Headers.Clone()
-	if r.resStream != nil {
-		c.resStream = r.resStream
-		c.hasParent = true
-		return &c, nil
-	}
-
-	r.bodyReader = r.reader
-	var err error
-	r.resStream, err = stream.New("res")
-	if err != nil {
-		return nil, err
-	}
-	c.resStream = r.resStream
-	c.hasParent = true
-	r.reader = ioutil.NopCloser(io.TeeReader(r.bodyReader, r.resStream))
-
-	return &c, nil
-
-}
-
 // BytesReaderCloser wraps Bytes
 
 type (
@@ -398,11 +355,6 @@ func (c bytesReaderAtSeekerNopCloser) Close() error {
 
 // Stream return io.Reader interface from correct response content
 func (r *Response) Stream() io.ReadCloser {
-	if r.hasParent == true && r.resStream != nil {
-		r, _ := r.resStream.NextReader()
-		return ioutil.NopCloser(r)
-	}
-
 	if r.body != nil {
 		return bytesReaderAtSeekerNopCloser{readerAtSeeker: bytes.NewReader(r.body)}
 	}
@@ -441,9 +393,8 @@ func (r *Response) writeDebug() {
 		if err != nil {
 			panic(err)
 		}
-		r.reader = ioutil.NopCloser(bytes.NewReader(jsonBody))
-		r.body = jsonBody
-		r.ContentLength = int64(len(jsonBody))
+		r.Close()
+		r.setBodyBytes(jsonBody)
 		r.SetContentType("application/json")
 	}
 }
