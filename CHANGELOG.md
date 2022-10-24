@@ -1,3 +1,10 @@
+## [0.24.1](https://github.com/aldor007/mort/compare/v0.24.0...v0.24.1) (2022-10-24)
+
+
+### Bug Fixes
+
+* memory lock panic [#49](https://github.com/aldor007/mort/issues/49) ([e4bba26](https://github.com/aldor007/mort/commit/e4bba26bb9f7f166a582f5223380475835fbdcd8))
+
 # [0.24.0](https://github.com/aldor007/mort/compare/v0.23.7...v0.24.0) (2022-10-21)
 
 
