@@ -1,3 +1,10 @@
+# [0.25.0](https://github.com/aldor007/mort/compare/v0.24.2...v0.25.0) (2022-10-24)
+
+
+### Features
+
+* update ccache dep ([891ee36](https://github.com/aldor007/mort/commit/891ee36b6d6834a7ec57f4b9ab43125242cd3f29))
+
 ## [0.24.2](https://github.com/aldor007/mort/compare/v0.24.1...v0.24.2) (2022-10-24)
 
 
