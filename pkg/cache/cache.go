@@ -25,6 +25,7 @@ func Create(cacheCfg config.CacheCfg) ResponseCache {
 		monitoring.Log().Info("Creating redis-cluster cache", zap.Strings("addr", cacheCfg.Address))
 		return NewRedisCluster(cacheCfg.Address, cacheCfg.ClientConfig, CacheCfg{
 			MaxItemSize: cacheCfg.MaxCacheItemSize,
+			MinUseCount: cacheCfg.MinUseCount,
 		})
 	default:
 		monitoring.Log().Info("Creating memory cache")

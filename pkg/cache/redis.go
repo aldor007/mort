@@ -26,12 +26,20 @@ func parseAddress(addrs []string) map[string]string {
 
 type CacheCfg struct {
 	MaxItemSize int64
+	MinUseCount uint64
+}
+
+type redisClient interface {
+	Incr(ctx context.Context, key string) *goRedis.IntCmd
+	Get(ctx context.Context, key string) *goRedis.StringCmd
 }
 
 // RedisCache store response in redis
 type RedisCache struct {
-	client *redisCache.Cache
-	cfg    CacheCfg
+	cache  *redisCache.Cache
+	client redisClient
+
+	cfg CacheCfg
 }
 
 // NewRedis create connection to redis and update it config from clientConfig map
@@ -39,6 +47,7 @@ func NewRedis(redisAddress []string, clientConfig map[string]string, cfg CacheCf
 	ring := goRedis.NewRing(&goRedis.RingOptions{
 		Addrs: parseAddress(redisAddress),
 	})
+
 	cache := redisCache.New(&redisCache.Options{
 		Redis:      ring,
 		LocalCache: redisCache.NewTinyLFU(10, time.Minute),
@@ -50,7 +59,7 @@ func NewRedis(redisAddress []string, clientConfig map[string]string, cfg CacheCf
 		}
 	}
 
-	return &RedisCache{cache, cfg}
+	return &RedisCache{cache, ring, cfg}
 }
 
 func NewRedisCluster(redisAddress []string, clientConfig map[string]string, cfg CacheCfg) *RedisCache {
@@ -68,7 +77,7 @@ func NewRedisCluster(redisAddress []string, clientConfig map[string]string, cfg 
 		}
 	}
 
-	return &RedisCache{cache, cfg}
+	return &RedisCache{cache, ring, cfg}
 }
 
 func (c *RedisCache) getKey(obj *object.FileObject) string {
@@ -80,6 +89,14 @@ func (c *RedisCache) Set(obj *object.FileObject, res *response.Response) error {
 	if res.ContentLength > c.cfg.MaxItemSize {
 		return nil
 	}
+
+	if c.cfg.MinUseCount > 0 {
+		r := c.client.Incr(obj.Ctx, "count"+c.getKey(obj))
+		if counter, err := r.Uint64(); err != nil && counter < c.cfg.MinUseCount {
+			return nil
+		}
+	}
+
 	monitoring.Report().Inc("cache_ratio;status:set")
 	v, err := msgpack.Marshal(res)
 	if err != nil {
@@ -90,14 +107,14 @@ func (c *RedisCache) Set(obj *object.FileObject, res *response.Response) error {
 		Value: v,
 		TTL:   time.Second * time.Duration(res.GetTTL()),
 	}
-	return c.client.Set(obj.Ctx, &item)
+	return c.cache.Set(obj.Ctx, &item)
 }
 
 // Get returns response from cache or error
 func (c *RedisCache) Get(obj *object.FileObject) (*response.Response, error) {
 	var buf []byte
 	var res response.Response
-	err := c.client.Get(obj.Ctx, c.getKey(obj), &buf)
+	err := c.cache.Get(obj.Ctx, c.getKey(obj), &buf)
 	if err != nil {
 		monitoring.Report().Inc("cache_ratio;status:miss")
 	} else {
@@ -113,5 +130,5 @@ func (c *RedisCache) Get(obj *object.FileObject) (*response.Response, error) {
 
 // Delete remove response from cache
 func (c *RedisCache) Delete(obj *object.FileObject) error {
-	return c.client.Delete(obj.Ctx, c.getKey(obj))
+	return c.cache.Delete(obj.Ctx, c.getKey(obj))
 }

@@ -169,6 +169,7 @@ type CacheCfg struct {
 	Address          []string          `yaml:"address"`
 	MaxCacheItemSize int64             `yaml:"maxCacheItemSizeMB"`
 	CacheSize        int64             `yaml:"cacheSize"`
+	MinUseCount      uint64            `yaml:"MinUseCount"`
 	ClientConfig     map[string]string `yaml:"clientConfig"`
 }
 
