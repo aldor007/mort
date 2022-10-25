@@ -1,3 +1,10 @@
+# [0.26.0](https://github.com/aldor007/mort/compare/v0.25.0...v0.26.0) (2022-10-25)
+
+
+### Features
+
+* redis min use counter ([4a52e11](https://github.com/aldor007/mort/commit/4a52e1179a19084b03a6d829c85609494d88e0bf))
+
 # [0.25.0](https://github.com/aldor007/mort/compare/v0.24.2...v0.25.0) (2022-10-24)
 
 
