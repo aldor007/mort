@@ -20,7 +20,7 @@ func Create(cacheCfg config.CacheCfg) ResponseCache {
 	switch cacheCfg.Type {
 	case "redis":
 		monitoring.Log().Info("Creating redis cache", zap.Strings("addr", cacheCfg.Address))
-		return NewRedis(cacheCfg.Address, cacheCfg.ClientConfig, CacheCfg{MaxItemSize: cacheCfg.MaxCacheItemSize})
+		return NewRedis(cacheCfg.Address, cacheCfg.ClientConfig, CacheCfg{MaxItemSize: cacheCfg.MaxCacheItemSize, MinUseCount: cacheCfg.MinUseCount})
 	case "redis-cluster":
 		monitoring.Log().Info("Creating redis-cluster cache", zap.Strings("addr", cacheCfg.Address))
 		return NewRedisCluster(cacheCfg.Address, cacheCfg.ClientConfig, CacheCfg{
