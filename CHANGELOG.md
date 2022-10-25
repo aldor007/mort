@@ -1,3 +1,11 @@
+## [0.26.1](https://github.com/aldor007/mort/compare/v0.26.0...v0.26.1) (2022-10-25)
+
+
+### Bug Fixes
+
+* config name for minUseCount ([e81c1de](https://github.com/aldor007/mort/commit/e81c1de6bb0dfbf9f0e9eddaedc5281c79c2b73f))
+* remove counter if usage count is grater ([20c6299](https://github.com/aldor007/mort/commit/20c6299ccb37ce00e26b8e230742a15530bb6362))
+
 # [0.26.0](https://github.com/aldor007/mort/compare/v0.25.0...v0.26.0) (2022-10-25)
 
 
