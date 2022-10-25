@@ -32,6 +32,7 @@ type CacheCfg struct {
 type redisClient interface {
 	Incr(ctx context.Context, key string) *goRedis.IntCmd
 	Get(ctx context.Context, key string) *goRedis.StringCmd
+	Del(ctx context.Context, keys ...string) *goRedis.IntCmd
 }
 
 // RedisCache store response in redis
@@ -91,10 +92,12 @@ func (c *RedisCache) Set(obj *object.FileObject, res *response.Response) error {
 	}
 
 	if c.cfg.MinUseCount > 0 {
-		r := c.client.Incr(obj.Ctx, "count"+c.getKey(obj))
+		countKey := "count" + c.getKey(obj)
+		r := c.client.Incr(obj.Ctx, countKey)
 		if counter, err := r.Uint64(); err != nil && counter < c.cfg.MinUseCount {
 			return nil
 		}
+		c.client.Del(obj.Ctx, countKey)
 	}
 
 	monitoring.Report().Inc("cache_ratio;status:set")
