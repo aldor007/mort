@@ -1,3 +1,10 @@
+## [0.29.1](https://github.com/aldor007/mort/compare/v0.29.0...v0.29.1) (2023-05-21)
+
+
+### Bug Fixes
+
+* fix aws s3 get ([a71fd98](https://github.com/aldor007/mort/commit/a71fd9837eefc5fd8e4424192ad99f7a3000028e))
+
 # [0.29.0](https://github.com/aldor007/mort/compare/v0.28.0...v0.29.0) (2023-05-21)
 
 
