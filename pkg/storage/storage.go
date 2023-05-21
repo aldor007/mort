@@ -69,7 +69,7 @@ func Get(obj *object.FileObject) *response.Response {
 	client := instance.container
 	if err != nil {
 		monitoring.Log().Info("Storage/Get get client", obj.LogData(zap.Error(err))...)
-		return response.NewError(503, err)
+		return response.NewError(503, fmt.Errorf("unable to get client %s, err: %v", obj.Key, err))
 	}
 
 	item, err := client.Item(key)
@@ -80,7 +80,7 @@ func Get(obj *object.FileObject) *response.Response {
 		}
 
 		monitoring.Log().Info("Storage/Get item response", obj.LogData(zap.Error(err))...)
-		return response.NewError(500, err)
+		return response.NewError(500, fmt.Errorf("get item %s, err %v", obj.Key, err))
 	}
 
 	if isDir(item) {
@@ -103,7 +103,7 @@ func Get(obj *object.FileObject) *response.Response {
 	}
 	if err != nil {
 		monitoring.Log().Warn("Storage/Get open item", obj.LogData(zap.Int("statusCode", 500), zap.Error(err))...)
-		return response.NewError(500, err)
+		return response.NewError(500, fmt.Errorf("unable to open item %s err: %v", obj.Key, err))
 	}
 	resData.stream = responseStream
 	return prepareResponse(obj, resData)
@@ -420,6 +420,8 @@ func getClient(obj *object.FileObject) (storageClient, error) {
 			azureStorage.ConfigAccount: storageCfg.AzureAccount,
 			azureStorage.ConfigKey:     storageCfg.AzureKey,
 		}
+	default:
+		return storageClient{}, fmt.Errorf("unknown kind %s", storageCfg.Kind)
 
 	}
 
@@ -475,7 +477,7 @@ func prepareResponse(obj *object.FileObject, resData responseData) *response.Res
 
 	if err != nil {
 		monitoring.Log().Warn("Storage/prepareResponse read metadata error", obj.LogData(zap.Int("statusCode", 500), zap.Error(err))...)
-		return response.NewError(500, err)
+		return response.NewError(500, fmt.Errorf("metadata read err %v", err))
 	}
 
 	parseMetadata(obj, metadata, res)

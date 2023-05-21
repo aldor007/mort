@@ -3,15 +3,16 @@ package storage
 import (
 	"bytes"
 	"fmt"
-	"github.com/aldor007/mort/pkg/config"
-	"github.com/aldor007/mort/pkg/object"
-	"github.com/aldor007/mort/pkg/response"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/aldor007/mort/pkg/config"
+	"github.com/aldor007/mort/pkg/object"
+	"github.com/aldor007/mort/pkg/response"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestMain(m *testing.M) {
@@ -241,6 +242,25 @@ func TestGetClientAllStorage(t *testing.T) {
 		getClient(obj)
 
 	}
+}
+
+func TestGetS3(t *testing.T) {
+	if os.Getenv("S3_ACCESS_KEY") == "" {
+		t.Skip()
+	}
+	mortConfig := config.Config{}
+	mortConfig.Load("testdata/config_s3.yml")
+	obj, err := object.NewFileObjectFromPath("/files/sources/2022/Lizbona_2_e38d7c5cac.jpg", &mortConfig)
+	assert.NoError(t, err)
+	res := Get(obj)
+	assert.NoError(t, res.Error())
+	assert.Equal(t, 200, res.StatusCode)
+
+	obj, err = object.NewFileObjectFromPath("/images/transform/ZmlsZXMvc291cmNlcy8yMDIyL0xpemJvbmFfMl9lMzhkN2M1Y2FjLmpwZw/photo_Lizbona-2-jpg_big300.jpg", &mortConfig)
+	assert.NoError(t, err)
+	res = Get(obj)
+	assert.NoError(t, res.Error())
+	assert.Equal(t, 200, res.StatusCode)
 }
 
 func BenchmarkGet(b *testing.B) {

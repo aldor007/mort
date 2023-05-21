@@ -1,0 +1,19 @@
+buckets:
+  files:
+    storages:
+      basic:
+        kind: "s3"
+        pathPrefix: "files"
+        accessKey: "${S3_ACCESS_KEY}"
+        secretAccessKey: "${S3_SECRET_ACCESS_KEY}"
+        region: "eu-central-1"
+        bucket: "${S3_BUCKET}"
+  images:
+    storages:
+      basic:
+        kind: "s3"
+        pathPrefix: "images"
+        accessKey: "${S3_ACCESS_KEY}"
+        secretAccessKey: "${S3_SECRET_ACCESS_KEY}"
+        region: "eu-central-1"
+        bucket: "${S3_BUCKET}"

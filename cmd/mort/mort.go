@@ -3,9 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
-	mortMiddleware "github.com/aldor007/mort/pkg/middleware"
 	"net/http"
 	"time"
+
+	mortMiddleware "github.com/aldor007/mort/pkg/middleware"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
