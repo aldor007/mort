@@ -1,3 +1,10 @@
+# [0.28.0](https://github.com/aldor007/mort/compare/v0.27.1...v0.28.0) (2023-05-21)
+
+
+### Features
+
+* update aws sdk to v2 fix ([0af0c58](https://github.com/aldor007/mort/commit/0af0c581d8201333996412106a8ce684b5d40859))
+
 ## [0.27.1](https://github.com/aldor007/mort/compare/v0.27.0...v0.27.1) (2023-05-21)
 
 
