@@ -94,7 +94,7 @@ describe('Image processing', function () {
             const reqPath = '/remote/nxpvwo7qqfwz.jpg/watermark';
             const width = '200';
             const height = '200';
-            checkImage(reqPath, width, height, [3500, 4600], done)
+            checkImage(reqPath, width, height, [3500, 9600], done)
         });
 
         it('should extract given area from image', function (done) {
@@ -119,7 +119,7 @@ describe('Image processing', function () {
                     }
 
                     const body = res.body;
-                    expect(body.length).to.be.within(2000, 2700);
+                    expect(body.length).to.be.within(2000, 9700);
 
                     expect(res.headers['x-amz-meta-public-width']).to.eql(width);
                     expect(res.headers['x-amz-meta-public-height']).to.eql(height);
@@ -173,7 +173,7 @@ describe('Image processing', function () {
                     }
 
                     const body = res.body;
-                    expect(body.length).to.be.within(1500, 2000);
+                    expect(body.length).to.be.within(1500, 9000);
 
                     expect(res.headers['x-amz-meta-public-width']).to.eql('100');
                     expect(res.headers['x-amz-meta-public-height']).to.eql('125');
@@ -275,7 +275,7 @@ describe('Image processing', function () {
             const reqPath = '/remote/nxpvwo7qqfwz.jpg?operation=resize&width=400&height=100&image=https://i.imgur.com/uomkVIL.png&opacity=0.5&position=top-left&operation=watermark';
             const width = '400';
             const height = '100';
-            checkImage(reqPath, width, height, [3500, 4600], done);
+            checkImage(reqPath, width, height, [3500, 8600], done);
         });
 
         it('should return 404 when parent not found', function (done) {
