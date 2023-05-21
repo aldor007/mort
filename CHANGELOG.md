@@ -1,3 +1,10 @@
+# [0.27.0](https://github.com/aldor007/mort/compare/v0.26.1...v0.27.0) (2023-05-21)
+
+
+### Features
+
+* update aws sdk to v2 - stow ([f5eccf3](https://github.com/aldor007/mort/commit/f5eccf3582922e0eb068a58f89f225c027384c53))
+
 ## [0.26.1](https://github.com/aldor007/mort/compare/v0.26.0...v0.26.1) (2022-10-25)
 
 
