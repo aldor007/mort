@@ -9,7 +9,7 @@ ARG DATE "now"
 
 ENV GOLANG_DOWNLOAD_URL https://golang.org/dl/go$GOLANG_VERSION.linux-$TARGETARCH.tar.gz
 
-RUN curl -fsSL --insecure "$GOLANG_DOWNLOAD_URL" -o golang.tar.gz \
+RUN rm -rvf /usr/local/go/ && curl -fsSL --insecure "$GOLANG_DOWNLOAD_URL" -o golang.tar.gz \
   && tar -C /usr/local -xzf golang.tar.gz \
   && rm golang.tar.gz
 

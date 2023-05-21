@@ -16,7 +16,8 @@ func TestMemoryCache_Set(t *testing.T) {
 
 	i.Set(&obj, res)
 	resCache, err := i.Get(&obj)
-	b, _ := resCache.Body()
+	assert.Nil(t, err)
+	b, err := resCache.Body()
 	assert.Nil(t, err)
 
 	assert.Equal(t, resCache.StatusCode, res.StatusCode)

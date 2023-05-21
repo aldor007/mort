@@ -1,0 +1,43 @@
+name: Docker build
+
+on:
+  push:
+    branches:
+      - 'master'
+    paths:
+      - Dockerfile.base
+
+jobs:
+  multi:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v2
+
+      - name: git tag
+        run: git fetch --tags;  git fetch --prune --unshallow || true
+
+      -
+        name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      -
+        name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHR_TOKEN }}
+          registry: ghcr.io
+      -
+        name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfile.base
+          platforms: linux/arm64,linux/amd64
+          push: true
+          tags: ghcr.io/aldor007/mort-base:latest
+
