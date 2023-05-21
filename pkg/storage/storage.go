@@ -420,8 +420,6 @@ func getClient(obj *object.FileObject) (storageClient, error) {
 			azureStorage.ConfigAccount: storageCfg.AzureAccount,
 			azureStorage.ConfigKey:     storageCfg.AzureKey,
 		}
-	default:
-		return storageClient{}, fmt.Errorf("unknown kind %s", storageCfg.Kind)
 
 	}
 
