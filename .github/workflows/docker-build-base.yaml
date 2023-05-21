@@ -39,5 +39,5 @@ jobs:
           file: ./Dockerfile.base
           platforms: linux/arm64,linux/amd64
           push: true
-          tags: ghcr.io/aldor007/mort-base:latest
+          tags: ghcr.io/aldor007/mort-base:latest, ghcr.io/aldor007/mort-base:${{ github.sha }}
 
