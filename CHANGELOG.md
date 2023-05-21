@@ -1,3 +1,10 @@
+## [0.27.1](https://github.com/aldor007/mort/compare/v0.27.0...v0.27.1) (2023-05-21)
+
+
+### Bug Fixes
+
+* trigger release - test deployment ([29a2abb](https://github.com/aldor007/mort/commit/29a2abbe44566f56f3625304d42a29a34209c8a6))
+
 # [0.27.0](https://github.com/aldor007/mort/compare/v0.26.1...v0.27.0) (2023-05-21)
 
 
