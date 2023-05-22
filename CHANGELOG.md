@@ -1,3 +1,10 @@
+## [0.29.6](https://github.com/aldor007/mort/compare/v0.29.5...v0.29.6) (2023-05-22)
+
+
+### Bug Fixes
+
+* aws sdk v2 doesn't trim / ([6165c67](https://github.com/aldor007/mort/commit/6165c67a6005b31aff48e0d7495b8a8ec210988a))
+
 ## [0.29.5](https://github.com/aldor007/mort/compare/v0.29.4...v0.29.5) (2023-05-22)
 
 
