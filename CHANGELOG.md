@@ -1,3 +1,12 @@
+## [0.29.3](https://github.com/aldor007/mort/compare/v0.29.2...v0.29.3) (2023-05-22)
+
+
+### Bug Fixes
+
+* httptracing for s3 ([b2f0948](https://github.com/aldor007/mort/commit/b2f09488d84066d80c69c0e13ae2869b91ffb2b7))
+* httptracing for s3 ([a66bfd6](https://github.com/aldor007/mort/commit/a66bfd617b06794949172848cc78ade8d3678e16))
+* httptracing for s3 ([1f5bd54](https://github.com/aldor007/mort/commit/1f5bd549d6704c0694300a1904e56bc6815fa08c))
+
 ## [0.29.2](https://github.com/aldor007/mort/compare/v0.29.1...v0.29.2) (2023-05-21)
 
 
