@@ -381,6 +381,7 @@ func getClient(obj *object.FileObject) (storageClient, error) {
 			s3Storage.ConfigSecretKey:   storageCfg.SecretAccessKey,
 			s3Storage.ConfigRegion:      storageCfg.Region,
 			s3Storage.ConfigEndpoint:    storageCfg.Endpoint,
+			s3Storage.ConfigHTTPTracing: storageCfg.HTTPTracing,
 		}
 	case "local-meta":
 		config = stow.ConfigMap{

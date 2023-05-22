@@ -116,6 +116,7 @@ type Storage struct {
 	SFTPHostBasePath   string            `yaml:"sftpBasePath"`                 // base path for sftp storage
 	AzureAccount       string            `yaml:"azureAccount,omitempty"`       // azure account name
 	AzureKey           string            `yaml:"azureKey,omitempty"`           // azure key
+	HTTPTracing        string            `yaml:"HTTPTracing,omitempty" default:"false"`
 	Hash               string            // unique hash for given storage
 }
 
