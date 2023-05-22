@@ -460,7 +460,7 @@ func getClient(obj *object.FileObject) (storageClient, error) {
 
 func getKey(obj *object.FileObject) string {
 	switch obj.Storage.Kind {
-	case "b2":
+	case "b2", "s3":
 		return strings.TrimPrefix(path.Join(obj.Storage.PathPrefix, obj.Key), "/")
 	default:
 		return path.Join(obj.Storage.PathPrefix, obj.Key)
