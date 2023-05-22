@@ -93,8 +93,8 @@ github.com/VividCortex/gohistogram v1.0.0/go.mod h1:Pf5mBqqDxYaXu3hDrrU+w6nw50o/
 github.com/afex/hystrix-go v0.0.0-20180502004556-fa1af6a1f4f5/go.mod h1:SkGFH1ia65gfNATL8TAiHDNxPzPdmEL5uirI2Uyuz6c=
 github.com/aldor007/go-aws-auth v0.0.0-20180623204207-00898dfb9272 h1:TuxcUGZxsHKCW50twhDbGdRtuMXmMDCmOssevV0ZoOA=
 github.com/aldor007/go-aws-auth v0.0.0-20180623204207-00898dfb9272/go.mod h1:gm7JFOl7Sp8r+lJqHXOkL0HyUFR05QXueqxVufqfkTg=
-github.com/aldor007/stow v1.4.4 h1:IrMAIv+rU9rBUno/AqoVgmZ1P+csxizn2XH1ZHyP1Gs=
-github.com/aldor007/stow v1.4.4/go.mod h1:a13WIntCP+uRi262S0Ah2y3l9RonG3mL0B07/zXeAyo=
+github.com/aldor007/stow v1.4.5 h1:t3kpIukmWZqawgixVyCkJq3aRWqWGnZhOJUDXuQLr8k=
+github.com/aldor007/stow v1.4.5/go.mod h1:a13WIntCP+uRi262S0Ah2y3l9RonG3mL0B07/zXeAyo=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
 github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
 github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf/go.mod h1:ybxpYRFXyAe+OPACYpWeL0wqObRcbAqCMya13uyzqw0=

@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/aldor007/go-aws-auth v0.0.0-20180623204207-00898dfb9272
-	github.com/aldor007/stow v1.4.4
+	github.com/aldor007/stow v1.4.5
 	github.com/alicebob/miniredis/v2 v2.18.0
 	github.com/bsm/redislock v0.7.2
 	github.com/d5/tengo/v2 v2.10.1
