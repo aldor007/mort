@@ -1,3 +1,10 @@
+## [0.29.5](https://github.com/aldor007/mort/compare/v0.29.4...v0.29.5) (2023-05-22)
+
+
+### Bug Fixes
+
+* httptracing for s3-debug ([b0adedb](https://github.com/aldor007/mort/commit/b0adedbbfee56ec735523b2ba442e16eb0136fb6))
+
 ## [0.29.4](https://github.com/aldor007/mort/compare/v0.29.3...v0.29.4) (2023-05-22)
 
 
