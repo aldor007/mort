@@ -89,14 +89,16 @@ func (m *RedisLock) NotifyAndRelease(ctx context.Context, key string, originalRe
 	defer m.lock.Unlock()
 	lock, ok := m.locks[key]
 	if ok {
-		err := lock.lock.Release(ctx)
-		if err != nil {
-			monitoring.Log().Error("redis release error", zap.String("key", key), zap.Error(err))
+		if lock.lock != nil {
+			err := lock.lock.Release(ctx)
+			if err != nil {
+				monitoring.Log().Error("redis release error", zap.String("key", key), zap.Error(err))
+			}
 		}
 		delete(m.locks, key)
 		if lock.pubsub != nil {
 			lock.pubsub.Close()
-		} else {
+		} else if lock.lock != nil {
 			m.redisClient.Publish(ctx, key, 1)
 		}
 	}
@@ -110,19 +112,20 @@ func (m *RedisLock) Lock(ctx context.Context, key string) (LockResult, bool) {
 	defer m.lock.Unlock()
 	lock, ok := m.locks[key]
 	if ok {
-		err := lock.lock.Refresh(ctx, time.Second*time.Duration(m.LockTimeout/2), nil)
-		if err != nil {
-			monitoring.Log().Error("Redis lock refresh err", zap.String("key", key), zap.Error(err))
+		if lock.lock != nil {
+			err := lock.lock.Refresh(ctx, time.Second*time.Duration(m.LockTimeout/2), nil)
+			if err != nil {
+				monitoring.Log().Error("Redis lock refresh err", zap.String("key", key), zap.Error(err))
+			}
 		}
 	} else {
 		lock, err := m.client.Obtain(ctx, key, time.Duration(m.LockTimeout)*time.Second, nil)
-		lockData := internalLockRedis{lock: lock, pubsub: nil}
 
 		ok = false
 		if err == redislock.ErrNotObtained {
 			result, _ := m.memoryLock.forceLockAndAddWatch(ctx, key)
 			pubsub := m.redisClient.Subscribe(ctx, key)
-			lockData.pubsub = pubsub
+			lockData := internalLockRedis{lock: lock, pubsub: pubsub}
 			// Go channel which receives messages.
 			ch := pubsub.Channel()
 
@@ -149,11 +152,13 @@ func (m *RedisLock) Lock(ctx context.Context, key string) (LockResult, bool) {
 					}
 				}
 			}()
-
+			m.locks[key] = lockData
 		} else if err != nil {
 			return LockResult{Error: err}, false
+		} else {
+			lockData := internalLockRedis{lock: lock, pubsub: nil}
+			m.locks[key] = lockData
 		}
-		m.locks[key] = lockData
 	}
 	return m.memoryLock.Lock(ctx, key)
 }
@@ -164,7 +169,9 @@ func (m *RedisLock) Release(ctx context.Context, key string) {
 	defer m.lock.Unlock()
 	lock, ok := m.locks[key]
 	if ok {
-		lock.lock.Release(ctx)
+		if lock.lock != nil {
+			lock.lock.Release(ctx)
+		}
 		if lock.pubsub != nil {
 			lock.pubsub.Close()
 		}
