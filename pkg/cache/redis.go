@@ -82,7 +82,12 @@ func NewRedisCluster(redisAddress []string, clientConfig map[string]string, cfg 
 }
 
 func (c *RedisCache) getKey(obj *object.FileObject) string {
-	return "mort-v1:" + obj.GetResponseCacheKey()
+	// Prepend prefix efficiently to avoid string concatenation allocation
+	cacheKey := obj.GetResponseCacheKey()
+	key := make([]byte, 0, 8+len(cacheKey)) // "mort-v1:" is 8 bytes
+	key = append(key, "mort-v1:"...)
+	key = append(key, cacheKey...)
+	return string(key)
 }
 
 // Set put response into cache
@@ -94,9 +99,11 @@ func (c *RedisCache) Set(obj *object.FileObject, res *response.Response) error {
 	if c.cfg.MinUseCount > 0 {
 		countKey := "count" + c.getKey(obj)
 		r := c.client.Incr(obj.Ctx, countKey)
-		if counter, err := r.Uint64(); err != nil && counter < c.cfg.MinUseCount {
+		if counter, err := r.Uint64(); err == nil && counter < c.cfg.MinUseCount {
+			// Not yet reached min use count, skip caching
 			return nil
 		}
+		// Reached min use count or error occurred, delete counter and cache the item
 		c.client.Del(obj.Ctx, countKey)
 	}
 

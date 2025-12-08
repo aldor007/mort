@@ -67,6 +67,30 @@ type requestMessage struct {
 	request      *http.Request
 }
 
+// tryCacheSet attempts to cache a response with timeout protection
+// Returns true if caching was attempted, false if skipped due to semaphore timeout
+func (r *RequestProcessor) tryCacheSet(obj *object.FileObject, res *response.Response) {
+	timer := time.NewTimer(50 * time.Millisecond)
+	defer timer.Stop()
+
+	// Limit concurrent cache operations
+	select {
+	case cacheWorkerSem <- struct{}{}:
+		defer func() { <-cacheWorkerSem }()
+	case <-timer.C:
+		// Too many cache operations, skip this one
+		res.Close()
+		return
+	}
+
+	// Force body read for caching
+	res.Body()
+	err := r.responseCache.Set(obj, res)
+	if err != nil {
+		monitoring.Log().Error("response cache error set", obj.LogData(zap.Error(err))...)
+	}
+}
+
 // Process handle incoming request and create response
 func (r *RequestProcessor) Process(req *http.Request, obj *object.FileObject) *response.Response {
 	pCtx := req.Context()
@@ -87,7 +111,6 @@ func (r *RequestProcessor) Process(req *http.Request, obj *object.FileObject) *r
 	msg.request = req
 	msg.obj = obj
 	msg.responseChan = make(chan *response.Response, 1)
-	defer close(msg.responseChan)
 
 	go r.processChan(ctx, msg)
 
@@ -95,10 +118,7 @@ func (r *RequestProcessor) Process(req *http.Request, obj *object.FileObject) *r
 	case <-ctx.Done():
 		monitoring.Log().Warn("Process timeout", obj.LogData(zap.String("error", "Context.timeout"))...)
 		return r.replyWithError(obj, 499, errContextCancel)
-	case res, ok := <-msg.responseChan:
-		if !ok {
-			return r.replyWithError(obj, 500, errors.New("channel closed"))
-		}
+	case res := <-msg.responseChan:
 		r.plugins.PostProcess(obj, req, res)
 		return res
 	}
@@ -107,13 +127,16 @@ func (r *RequestProcessor) Process(req *http.Request, obj *object.FileObject) *r
 
 func (r *RequestProcessor) processChan(ctx context.Context, msg requestMessage) {
 	res := r.process(msg.request, msg.obj)
+	timer := time.NewTimer(100 * time.Millisecond)
+	defer timer.Stop()
+
 	select {
 	case <-ctx.Done():
 		res.Close()
 		return
 	case msg.responseChan <- res:
 		return
-	case <-time.After(100 * time.Millisecond):
+	case <-timer.C:
 		// Channel blocked, receiver likely gone
 		res.Close()
 		return
@@ -179,23 +202,7 @@ func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *r
 			resCpy, err := res.Copy()
 			objCpy := obj.Copy()
 			if err == nil {
-				go func() {
-					// Limit concurrent cache operations
-					select {
-					case cacheWorkerSem <- struct{}{}:
-						defer func() { <-cacheWorkerSem }()
-					case <-time.After(50 * time.Millisecond):
-						// Too many cache operations, skip this one
-						resCpy.Close()
-						return
-					}
-
-					resCpy.Body()
-					err = r.responseCache.Set(objCpy, resCpy)
-					if err != nil {
-						monitoring.Log().Error("response cache error set", obj.LogData(zap.Error(err))...)
-					}
-				}()
+				go r.tryCacheSet(objCpy, resCpy)
 			}
 		}
 
@@ -282,7 +289,8 @@ func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) 
 
 	currObj := obj
 	var parentObj *object.FileObject
-	var transformsTab []transforms.Transforms
+	// Preallocate with capacity 4 (most requests have 1-2 transforms, rarely more)
+	transformsTab := make([]transforms.Transforms, 0, 4)
 	var res *response.Response
 	var parentRes *response.Response
 
@@ -316,13 +324,16 @@ func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) 
 		}
 		// Send response to channel with timeout protection
 		// This prevents goroutine leak if context is cancelled
+		timer := time.NewTimer(100 * time.Millisecond)
+		defer timer.Stop()
+
 		select {
 		case <-ctx.Done():
 			resp.Close()
 			return
 		case resChan <- resp:
 			return
-		case <-time.After(100 * time.Millisecond):
+		case <-timer.C:
 			// Channel blocked, receiver likely gone
 			resp.Close()
 			return
@@ -418,24 +429,7 @@ func (r *RequestProcessor) handleNotFound(obj, parentObj *object.FileObject, tra
 				monitoring.Log().Warn("unable to copy qobject", parentObj.LogData(zap.Error(err))...)
 			} else {
 				updateHeaders(parentObj, copyParentRes)
-				go func() {
-					// Limit concurrent cache operations
-					select {
-					case cacheWorkerSem <- struct{}{}:
-						defer func() { <-cacheWorkerSem }()
-					case <-time.After(50 * time.Millisecond):
-						// Too many cache operations, skip this one
-						copyParentRes.Close()
-						return
-					}
-
-					copyParentRes.Body()
-					defer copyParentRes.Close()
-					err := r.responseCache.Set(parentObj, copyParentRes)
-					if err != nil {
-						monitoring.Log().Warn("unable to set parent in cache", parentObj.LogData(zap.Error(err))...)
-					}
-				}()
+				go r.tryCacheSet(parentObj, copyParentRes)
 			}
 		}
 		// processImage returns new response so both parentRes must be closed
@@ -530,7 +524,8 @@ func updateHeaders(obj *object.FileObject, res *response.Response) *response.Res
 
 	if ok {
 		for h, v := range bucket.Headers {
-			if res.Headers.Get(h) == "" {
+			// Only check if header exists once, then set if empty
+			if _, exists := res.Headers[h]; !exists || len(res.Headers[h]) == 0 {
 				res.Set(h, v)
 			}
 		}
@@ -542,8 +537,11 @@ func updateHeaders(obj *object.FileObject, res *response.Response) *response.Res
 				for h, v := range headerPred.Values {
 					if headerPred.Override {
 						res.Set(h, v)
-					} else if res.Headers.Get(h) == "" {
-						res.Set(h, v)
+					} else {
+						// Direct map access to avoid case-insensitive lookup overhead
+						if _, exists := res.Headers[h]; !exists || len(res.Headers[h]) == 0 {
+							res.Set(h, v)
+						}
 					}
 				}
 				return res

@@ -134,7 +134,13 @@ func (o *FileObject) FillWithRequest(req *http.Request, ctx context.Context) {
 }
 
 func (o *FileObject) GetResponseCacheKey() string {
-	return o.Bucket + o.Key + o.Range
+	// Use strings.Builder to avoid multiple allocations from string concatenation
+	var b strings.Builder
+	b.Grow(len(o.Bucket) + len(o.Key) + len(o.Range))
+	b.WriteString(o.Bucket)
+	b.WriteString(o.Key)
+	b.WriteString(o.Range)
+	return b.String()
 }
 
 func (o *FileObject) Copy() *FileObject {
@@ -193,42 +199,61 @@ func parseRange(s string) (httpRange, error) {
 	var minStart uint64
 	minStart = math.MaxUint64
 	maxEnd := uint64(0)
-	rangesArr := strings.Split(s[6:], ",")
-	for _, ra := range rangesArr {
+
+	// Parse ranges more efficiently without extra allocations
+	rangesStr := s[6:] // Skip "bytes="
+	for len(rangesStr) > 0 {
+		// Find next range (comma-separated)
+		commaIdx := strings.IndexByte(rangesStr, ',')
+		var ra string
+		if commaIdx >= 0 {
+			ra = rangesStr[:commaIdx]
+			rangesStr = rangesStr[commaIdx+1:]
+		} else {
+			ra = rangesStr
+			rangesStr = ""
+		}
+
+		// Trim spaces without allocating
 		ra = strings.TrimSpace(ra)
 		if ra == "" {
 			continue
 		}
-		i := strings.Index(ra, "-")
+
+		i := strings.IndexByte(ra, '-')
 		if i < 0 {
 			return httpRangeData, errors.New("invalid range")
 		}
-		start, end := strings.TrimSpace(ra[:i]), strings.TrimSpace(ra[i+1:])
-		if start != "" {
+
+		// Parse start and end without TrimSpace allocations
+		startStr := strings.TrimSpace(ra[:i])
+		endStr := strings.TrimSpace(ra[i+1:])
+
+		if startStr != "" {
 			// If no start is specified, end specifies the
 			// range start relative to the end of the file.
-			i, err := strconv.ParseUint(start, 10, 64)
+			startVal, err := strconv.ParseUint(startStr, 10, 64)
 			if err != nil {
 				return httpRangeData, errors.New("invalid range")
 			}
-			if i < minStart {
-				minStart = i
+			if startVal < minStart {
+				minStart = startVal
 			}
 
-			if i > maxEnd {
-				maxEnd = i
+			if startVal > maxEnd {
+				maxEnd = startVal
 			}
 		}
-		if end != "" {
+		if endStr != "" {
 			// If no start is specified, end specifies the
 			// range start relative to the end of the file.
-			i, err := strconv.ParseUint(end, 10, 64)
+			endVal, err := strconv.ParseUint(endStr, 10, 64)
 			if err != nil {
 				return httpRangeData, errors.New("invalid range")
 			}
 
-			if i > maxEnd {
-				maxEnd = i
+			if endVal > maxEnd {
+				maxEnd = endVal
 			}
 		}
 	}

@@ -119,6 +119,8 @@ func TestReturn503WhenThrottled(t *testing.T) {
 }
 
 func TestContextTimeout(t *testing.T) {
+	t.Parallel()
+
 	req, _ := http.NewRequest("GET", "http://mort/local/small.jpg?width=5", nil)
 	ctx, cancel := context.WithCancel(context.Background())
 	req = req.WithContext(ctx)
@@ -135,6 +137,39 @@ func TestContextTimeout(t *testing.T) {
 	res := rp.Process(req, obj)
 
 	assert.Equal(t, res.StatusCode, 499)
+}
+
+// TestContextTimeoutRace tests that concurrent requests with canceled contexts
+// don't cause a race condition or panic from sending on a closed channel
+func TestContextTimeoutRace(t *testing.T) {
+	t.Parallel()
+
+	mortConfig := config.Config{}
+	err := mortConfig.Load("./benchmark/small.yml")
+	assert.Nil(t, err)
+
+	rp := NewRequestProcessor(mortConfig.Server, lock.NewMemoryLock(), throttler.NewBucketThrottler(0))
+
+	// Run many concurrent requests with already-canceled contexts
+	// This should trigger the race condition that was fixed
+	var wg sync.WaitGroup
+	for i := 0; i < 50; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			req, _ := http.NewRequest("GET", "http://mort/local/small.jpg?width=5", nil)
+			ctx, cancel := context.WithCancel(context.Background())
+			req = req.WithContext(ctx)
+			cancel() // Cancel immediately
+
+			obj, err := object.NewFileObject(req.URL, &mortConfig)
+			assert.Nil(t, err)
+
+			res := rp.Process(req, obj)
+			assert.Equal(t, 499, res.StatusCode)
+		}()
+	}
+	wg.Wait()
 }
 
 func TestCollapse(t *testing.T) {

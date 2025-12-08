@@ -37,6 +37,9 @@ func (c *ImageEngine) Process(obj *object.FileObject, trans []transforms.Transfo
 		return response.NewError(500, err), err
 	}
 
+	// Cache image type name to avoid repeated detection
+	imageType := bimg.DetermineImageTypeName(buf)
+
 	for _, tran := range trans {
 		image := bimg.NewImage(buf)
 		meta, err := image.Metadata()
@@ -44,7 +47,8 @@ func (c *ImageEngine) Process(obj *object.FileObject, trans []transforms.Transfo
 			return response.NewError(500, err), err
 		}
 
-		optsArr, err := tran.BimgOptions(transforms.NewImageInfo(meta, bimg.DetermineImageTypeName(buf)))
+		// Use cached image type (updated after each transform if needed)
+		optsArr, err := tran.BimgOptions(transforms.NewImageInfo(meta, imageType))
 		if err != nil {
 			monitoring.Log().Error("ImageEngine unable to create opts array age", obj.LogData(zap.Any("transforms", trans), zap.Any("currentTrans", tran), zap.Error(err))...)
 			return response.NewError(500, err), err
@@ -57,10 +61,13 @@ func (c *ImageEngine) Process(obj *object.FileObject, trans []transforms.Transfo
 				return response.NewError(500, err), err
 			}
 
-			if i <= optsLen-1 {
+			// Only create new image if not the last iteration
+			if i < optsLen-1 {
 				image = bimg.NewImage(buf)
 			}
 		}
+		// Update image type for next transform (format may have changed)
+		imageType = bimg.DetermineImageTypeName(buf)
 	}
 
 	bodyHash := md5.New()

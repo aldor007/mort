@@ -1,6 +1,6 @@
 module github.com/aldor007/mort
 
-go 1.20
+go 1.21
 
 require (
 	github.com/aldor007/go-aws-auth v0.0.0-20180623204207-00898dfb9272

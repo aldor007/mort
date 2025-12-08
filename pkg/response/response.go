@@ -224,8 +224,10 @@ func (r *Response) Error() error {
 
 // Send write response to client using streaming
 func (r *Response) Send(w http.ResponseWriter) error {
-	for headerName, headerValue := range r.Headers {
-		w.Header().Set(headerName, headerValue[0])
+	for headerName, headerValues := range r.Headers {
+		for _, headerValue := range headerValues {
+			w.Header().Add(headerName, headerValue)
+		}
 	}
 
 	defer r.Close()
@@ -271,8 +273,10 @@ func (r *Response) SendContent(req *http.Request, w http.ResponseWriter) error {
 	}
 
 	defer r.Close()
-	for headerName, headerValue := range r.Headers {
-		w.Header().Set(headerName, headerValue[0])
+	for headerName, headerValues := range r.Headers {
+		for _, headerValue := range headerValues {
+			w.Header().Add(headerName, headerValue)
+		}
 	}
 
 	lastMod, err := time.Parse(http.TimeFormat, r.Headers.Get("Last-Modified"))
@@ -334,8 +338,11 @@ func (r *Response) Copy() (*Response, error) {
 
 	c := Response{StatusCode: r.StatusCode, ContentLength: r.ContentLength, debug: r.debug, errorValue: r.errorValue}
 	c.Headers = r.Headers.Clone()
-	c.trans = make([]transforms.Transforms, len(r.trans))
-	copy(c.trans, r.trans)
+	// Only copy transforms slice if it exists and has items
+	if len(r.trans) > 0 {
+		c.trans = make([]transforms.Transforms, len(r.trans))
+		copy(c.trans, r.trans)
+	}
 	body, err := r.CopyBody()
 	if err != nil {
 		return nil, err
