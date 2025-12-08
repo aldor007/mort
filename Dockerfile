@@ -1,20 +1,20 @@
-FROM ghcr.io/aldor007/mort-base as builder
+FROM ghcr.io/aldor007/mort-base AS builder
 
-ENV LIBVIPS_VERSION 8.11.2
-ENV GOLANG_VERSION 1.20.4
+ENV LIBVIPS_VERSION=8.11.2
+ENV GOLANG_VERSION=1.20.4
 ARG TARGETARCH amd64
 ARG TAG 'dev'
 ARG COMMIT "master"
 ARG DATE "now"
 
-ENV GOLANG_DOWNLOAD_URL https://golang.org/dl/go$GOLANG_VERSION.linux-$TARGETARCH.tar.gz
+ENV GOLANG_DOWNLOAD_URL=https://golang.org/dl/go$GOLANG_VERSION.linux-$TARGETARCH.tar.gz
 
 RUN rm -rf /usr/local/go/ && curl -fsSL --insecure "$GOLANG_DOWNLOAD_URL" -o golang.tar.gz \
   && tar -C /usr/local -xzf golang.tar.gz \
   && rm golang.tar.gz
 
-ENV WORKDIR /workspace
-ENV PATH /usr/local/go/bin:$PATH
+ENV WORKDIR=/workspace
+ENV PATH=/usr/local/go/bin:$PATH
 
 
 WORKDIR $WORKDIR
@@ -54,9 +54,9 @@ RUN ldconfig
 COPY --from=builder /go/mort /go/mort
 COPY --from=builder /workspace/configuration/config.yml /etc/mort/mort.yml
 COPY --from=builder /workspace/configuration/parse.tengo /etc/mort/parse.tengo
-ENV MORT_CONFIG_DIR /etc/mort
+ENV MORT_CONFIG_DIR=/etc/mort
 # add mime types
-ADD http://svn.apache.org/viewvc/httpd/httpd/branches/2.2.x/docs/conf/mime.types?view=co /etc/mime.types
+ADD https://raw.githubusercontent.com/apache/httpd/trunk/docs/conf/mime.types /etc/mime.types
 
 RUN /go/mort -version
 # Run the outyet command by default when the container starts.
