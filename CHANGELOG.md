@@ -1,3 +1,10 @@
+## [0.29.7](https://github.com/aldor007/mort/compare/v0.29.6...v0.29.7) (2025-12-08)
+
+
+### Bug Fixes
+
+* panic in redis lock ([92927f8](https://github.com/aldor007/mort/commit/92927f8d8adce3ccddd3e5686989d45f893bd86e))
+
 ## [0.29.6](https://github.com/aldor007/mort/compare/v0.29.5...v0.29.6) (2023-05-22)
 
 
