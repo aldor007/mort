@@ -102,6 +102,9 @@ func Get(obj *object.FileObject) *response.Response {
 		resData.statusCode = 200
 	}
 	if err != nil {
+		if responseStream != nil {
+			responseStream.Close()
+		}
 		monitoring.Log().Warn("Storage/Get open item", obj.LogData(zap.Int("statusCode", 500), zap.Error(err))...)
 		return response.NewError(500, fmt.Errorf("unable to open item %s err: %v", obj.Key, err))
 	}

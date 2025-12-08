@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"strconv"
+	"sync"
 
 	"github.com/aldor007/mort/pkg/helpers"
 	"github.com/aldor007/mort/pkg/monitoring"
@@ -24,6 +25,14 @@ const (
 	// HeaderContentType name of Content-Type header
 	HeaderContentType = "content-type"
 )
+
+// copyBufferPool reuses buffers for io.Copy operations to reduce allocations
+var copyBufferPool = sync.Pool{
+	New: func() interface{} {
+		buf := make([]byte, 256*1024) // 256KB buffer for better streaming performance
+		return &buf
+	},
+}
 
 type bodyTransformFnc func(writer io.Writer) io.WriteCloser
 
@@ -137,29 +146,28 @@ func (r *Response) Body() ([]byte, error) {
 
 // CopyBody returns a copy of Body in []byte
 func (r *Response) CopyBody() ([]byte, error) {
-	var err error
-	src := r.body
-	if src == nil {
-		src, err = r.Body()
-		if err != nil {
-			return nil, err
-		}
+	// If body is already buffered, return it directly without copying
+	// Caller should not modify the returned slice
+	if r.body != nil {
+		return r.body, nil
 	}
-	dst := make([]byte, len(src))
-	copy(dst, src)
-	return dst, nil
+
+	// Only read and buffer if body hasn't been read yet
+	body, err := r.Body()
+	if err != nil {
+		return nil, err
+	}
+	return body, nil
 }
 
 // Close response reader
 func (r *Response) Close() {
 	if r.reader != nil {
-		io.ReadAll(r.reader)
 		r.reader.Close()
 		r.reader = nil
 	}
 
 	if r.bodyReader != nil {
-		io.ReadAll(r.bodyReader)
 		r.bodyReader.Close()
 		r.bodyReader = nil
 	}
@@ -237,12 +245,17 @@ func (r *Response) Send(w http.ResponseWriter) error {
 	if resStream == nil {
 		return nil
 	}
+
+	// Get buffer from pool for efficient copying
+	buf := copyBufferPool.Get().(*[]byte)
+	defer copyBufferPool.Put(buf)
+
 	if r.transformer != nil {
 		tW := r.transformer(w)
-		io.Copy(tW, resStream)
+		io.CopyBuffer(tW, resStream, *buf)
 		tW.Close()
 	} else {
-		io.Copy(w, resStream)
+		io.CopyBuffer(w, resStream, *buf)
 	}
 	return resStream.Close()
 }
