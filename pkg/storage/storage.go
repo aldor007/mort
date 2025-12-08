@@ -21,6 +21,7 @@ import (
 	oracleStorage "github.com/aldor007/stow/oracle"
 	sftpStorage "github.com/aldor007/stow/sftp"
 
+	"github.com/aldor007/mort/pkg/config"
 	"github.com/aldor007/mort/pkg/monitoring"
 	"github.com/aldor007/mort/pkg/object"
 	"github.com/aldor007/mort/pkg/response"
@@ -53,10 +54,14 @@ func newResponseData() responseData {
 }
 
 // storageCache map for used storage client instances
-var storageCache = make(map[string]storageClient)
+var storageCache sync.Map // map[string]*storageClientEntry
 
-// storageCacheLock lock for writing to storageCache
-var storageCacheLock = sync.RWMutex{}
+// storageClientEntry wraps a storage client with initialization state
+type storageClientEntry struct {
+	once   sync.Once
+	client storageClient
+	err    error
+}
 
 // Get retrieve obj from given storage and returns its wrapped in response
 func Get(obj *object.FileObject) *response.Response {
@@ -293,13 +298,19 @@ func List(obj *object.FileObject, maxKeys int, _ string, prefix string, marker s
 	result := listBucketResult{Name: obj.Bucket, Prefix: prefix, Marker: resultMarker, MaxKeys: maxKeys, IsTruncated: false}
 
 	commonPrefixes := make(map[string]bool, len(items))
+	// Preallocate result slices with estimated capacity
+	result.Contents = make([]contentXML, 0, len(items))
+	result.CommonPrefixes = make([]commonPrefixXML, 0, len(items)/2)
+
+	// Split prefix once before loop instead of repeating for every item
+	prefixPath := strings.Split(prefix, "/")
+
 	for _, item := range items {
 		lastMod, _ := item.LastMod()
 		size, _ := item.Size()
 		etag, _ := item.ETag()
 		itemID := item.ID()
 		filePath := strings.Split(itemID, "/")
-		prefixPath := strings.Split(prefix, "/")
 		var commonPrefix string
 		var key string
 
@@ -349,19 +360,21 @@ func List(obj *object.FileObject, maxKeys int, _ string, prefix string, marker s
 }
 
 func getClient(obj *object.FileObject) (storageClient, error) {
-	storageCacheLock.RLock()
 	storageCfg := obj.Storage
-	if c, ok := storageCache[storageCfg.Hash]; ok {
-		storageCacheLock.RUnlock()
-		return c, nil
-	}
-	storageCacheLock.RUnlock()
-	storageCacheLock.Lock()
-	defer storageCacheLock.Unlock()
-	if c, ok := storageCache[storageCfg.Hash]; ok {
-		return c, nil
-	}
 
+	// Load or create entry atomically
+	entryInterface, _ := storageCache.LoadOrStore(storageCfg.Hash, &storageClientEntry{})
+	entry := entryInterface.(*storageClientEntry)
+
+	// Initialize client exactly once per storage config
+	entry.once.Do(func() {
+		entry.client, entry.err = createStorageClient(obj, storageCfg)
+	})
+
+	return entry.client, entry.err
+}
+
+func createStorageClient(obj *object.FileObject, storageCfg config.Storage) (storageClient, error) {
 	var config stow.Config
 	var client stow.Location
 
@@ -457,7 +470,6 @@ func getClient(obj *object.FileObject) (storageClient, error) {
 	}
 
 	storageInstance := storageClient{container, client}
-	storageCache[storageCfg.Hash] = storageInstance
 	return storageInstance, nil
 }
 

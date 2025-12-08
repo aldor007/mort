@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 
 	"github.com/aldor007/mort/pkg/config"
@@ -280,4 +281,56 @@ func BenchmarkHead(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		Head(obj)
 	}
+}
+
+// TestStorageCacheConcurrency tests that concurrent access to storage cache
+// doesn't cause race conditions or lock contention issues
+func TestStorageCacheConcurrency(t *testing.T) {
+	t.Parallel()
+
+	mortConfig := config.Config{}
+	err := mortConfig.Load("testdata/config.yml")
+	assert.Nil(t, err)
+
+	// Clear storage cache to ensure fresh state
+	storageCache = sync.Map{}
+
+	// Create multiple goroutines that all try to get storage clients concurrently
+	// This should trigger the race condition that was fixed with sync.Once
+	var wg sync.WaitGroup
+	numGoroutines := 50
+
+	for i := 0; i < numGoroutines; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			obj, err := object.NewFileObjectFromPath("/bucket/file", &mortConfig)
+			assert.Nil(t, err)
+
+			// Call getClient multiple times
+			for j := 0; j < 10; j++ {
+				client, err := getClient(obj)
+				assert.Nil(t, err)
+				assert.NotNil(t, client.client)
+				assert.NotNil(t, client.container)
+			}
+		}()
+	}
+
+	wg.Wait()
+
+	// Verify that only one storage client was created (stored in cache)
+	// Count entries in sync.Map
+	count := 0
+	storageCache.Range(func(key, value interface{}) bool {
+		count++
+		entry := value.(*storageClientEntry)
+		assert.Nil(t, entry.err)
+		assert.NotNil(t, entry.client.client)
+		return true
+	})
+
+	// Should have exactly one entry for the storage config hash
+	assert.Equal(t, 1, count, "Should have exactly one cached storage client")
 }
