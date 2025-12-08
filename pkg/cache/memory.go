@@ -22,26 +22,45 @@ type (
 	// responseSizeProvider adapts response.Response to how ccache size computation requirements.
 	responseSizeProvider struct {
 		*response.Response
+		cachedSize int64 // Pre-calculated size to avoid recalculation
 	}
 )
 
-// Size provides ths size of cached response in an naive way
+// Size returns the pre-calculated size of the cached response
 func (r responseSizeProvider) Size() int64 {
-	body, err := r.Response.Body()
-	if err != nil {
-		// Result from Size() method is counted to an overall cache limit.
-		// Thus if the size cannot be determined it make sense to return MaxInt value instead of 0.
-		return math.MaxInt64
-	}
-	size := len(body) + int(unsafe.Sizeof(*r.Response)) + int(unsafe.Sizeof(r.Response.Headers)) // map structures
-	for k, v := range r.Response.Headers {
-		for i := 0; i < len(v); i++ {
-			size += len(v[i])
+	return r.cachedSize
+}
+
+// calculateResponseSize computes the size once during cache entry creation
+func calculateResponseSize(res *response.Response) int64 {
+	// Use ContentLength if available (more accurate and faster)
+	size := res.ContentLength
+	if size <= 0 {
+		// If not available, try to get body size if already buffered
+		if res.IsBuffered() {
+			body, err := res.Body()
+			if err != nil {
+				// Return large value to prevent caching problematic responses
+				return math.MaxInt64
+			}
+			size = int64(len(body))
+		} else {
+			// For unbuffered responses, use a conservative estimate
+			size = 1024 * 1024 // 1MB default estimate
 		}
-		size += len(k)
 	}
-	// 350 bytes of overhead described in ccache documentation
-	return int64(size) + 350
+
+	// Add header overhead (estimate)
+	headerSize := int64(unsafe.Sizeof(res.Headers))
+	for k, v := range res.Headers {
+		headerSize += int64(len(k))
+		for i := 0; i < len(v); i++ {
+			headerSize += int64(len(v[i]))
+		}
+	}
+
+	// Add ccache overhead (350 bytes) + response struct overhead
+	return size + headerSize + 350 + int64(unsafe.Sizeof(*res))
 }
 
 // NewMemoryCache returns instance of memory cache
@@ -56,7 +75,12 @@ func (c *MemoryCache) Set(obj *object.FileObject, res *response.Response) error 
 		return err
 	}
 	monitoring.Report().Inc("cache_ratio;status:set")
-	c.cache.Set(obj.GetResponseCacheKey(), responseSizeProvider{cachedResp}, time.Second*time.Duration(res.GetTTL()))
+	// Calculate size once when creating cache entry
+	provider := responseSizeProvider{
+		Response:   cachedResp,
+		cachedSize: calculateResponseSize(cachedResp),
+	}
+	c.cache.Set(obj.GetResponseCacheKey(), provider, time.Second*time.Duration(res.GetTTL()))
 	return nil
 }
 

@@ -33,6 +33,9 @@ var (
 	errThrottled     = errors.New("throttled")       // error when request throttled
 )
 
+// cacheWorkerSem limits concurrent background cache operations to prevent goroutine accumulation
+var cacheWorkerSem = make(chan struct{}, 50)
+
 // NewRequestProcessor create instance of request processor
 // It main component of mort it handle all of requests
 func NewRequestProcessor(serverConfig config.Server, l lock.Lock, throttler throttler.Throttler) RequestProcessor {
@@ -83,7 +86,8 @@ func (r *RequestProcessor) Process(req *http.Request, obj *object.FileObject) *r
 	msg := requestMessage{}
 	msg.request = req
 	msg.obj = obj
-	msg.responseChan = make(chan *response.Response)
+	msg.responseChan = make(chan *response.Response, 1)
+	defer close(msg.responseChan)
 
 	go r.processChan(ctx, msg)
 
@@ -91,7 +95,10 @@ func (r *RequestProcessor) Process(req *http.Request, obj *object.FileObject) *r
 	case <-ctx.Done():
 		monitoring.Log().Warn("Process timeout", obj.LogData(zap.String("error", "Context.timeout"))...)
 		return r.replyWithError(obj, 499, errContextCancel)
-	case res := <-msg.responseChan:
+	case res, ok := <-msg.responseChan:
+		if !ok {
+			return r.replyWithError(obj, 500, errors.New("channel closed"))
+		}
 		r.plugins.PostProcess(obj, req, res)
 		return res
 	}
@@ -105,6 +112,10 @@ func (r *RequestProcessor) processChan(ctx context.Context, msg requestMessage) 
 		res.Close()
 		return
 	case msg.responseChan <- res:
+		return
+	case <-time.After(100 * time.Millisecond):
+		// Channel blocked, receiver likely gone
+		res.Close()
 		return
 	}
 }
@@ -169,6 +180,16 @@ func (r *RequestProcessor) process(req *http.Request, obj *object.FileObject) *r
 			objCpy := obj.Copy()
 			if err == nil {
 				go func() {
+					// Limit concurrent cache operations
+					select {
+					case cacheWorkerSem <- struct{}{}:
+						defer func() { <-cacheWorkerSem }()
+					case <-time.After(50 * time.Millisecond):
+						// Too many cache operations, skip this one
+						resCpy.Close()
+						return
+					}
+
 					resCpy.Body()
 					err = r.responseCache.Set(objCpy, resCpy)
 					if err != nil {
@@ -293,22 +314,18 @@ func (r *RequestProcessor) handleGET(req *http.Request, obj *object.FileObject) 
 		} else {
 			resp = storage.Get(o)
 		}
-		// Ensure before passing the response that the context is not canceled.
-		// In such case Close the response.
-		// Passing the data to respChan and checking ctx.Done cannot be
-		// done in a single select since golang randomly choice which channel
-		// to handle. So when ctx.Done is closed there is 50% of chance that
-		// it will choice to send resp to resChan.
+		// Send response to channel with timeout protection
+		// This prevents goroutine leak if context is cancelled
 		select {
 		case <-ctx.Done():
 			resp.Close()
 			return
-		default:
-		}
-		select {
 		case resChan <- resp:
 			return
-		default:
+		case <-time.After(100 * time.Millisecond):
+			// Channel blocked, receiver likely gone
+			resp.Close()
+			return
 		}
 	}(obj)
 
@@ -402,6 +419,16 @@ func (r *RequestProcessor) handleNotFound(obj, parentObj *object.FileObject, tra
 			} else {
 				updateHeaders(parentObj, copyParentRes)
 				go func() {
+					// Limit concurrent cache operations
+					select {
+					case cacheWorkerSem <- struct{}{}:
+						defer func() { <-cacheWorkerSem }()
+					case <-time.After(50 * time.Millisecond):
+						// Too many cache operations, skip this one
+						copyParentRes.Close()
+						return
+					}
+
 					copyParentRes.Body()
 					defer copyParentRes.Close()
 					err := r.responseCache.Set(parentObj, copyParentRes)
