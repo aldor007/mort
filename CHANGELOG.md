@@ -1,3 +1,10 @@
+## [0.29.9](https://github.com/aldor007/mort/compare/v0.29.8...v0.29.9) (2025-12-08)
+
+
+### Bug Fixes
+
+* memory improvments ([5016f6e](https://github.com/aldor007/mort/commit/5016f6e4e16d8a15431fcf7decf050d4a011dd8a))
+
 ## [0.29.8](https://github.com/aldor007/mort/compare/v0.29.7...v0.29.8) (2025-12-08)
 
 
