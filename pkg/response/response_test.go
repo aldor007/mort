@@ -282,3 +282,104 @@ func BenchmarkNewCopy(b *testing.B) {
 		}
 	}
 }
+
+func TestResponse_SetTransforms(t *testing.T) {
+	t.Parallel()
+
+	res := NewNoContent(200)
+	trans := []transforms.Transforms{{NotEmpty: true}}
+
+	res.SetTransforms(trans)
+
+	assert.Equal(t, trans[0], res.trans[0])
+}
+
+func TestResponse_CacheHit(t *testing.T) {
+	t.Parallel()
+
+	res := NewNoContent(200)
+	assert.False(t, res.IsFromCache())
+
+	res.SetCacheHit()
+	assert.True(t, res.IsFromCache())
+}
+
+func TestResponse_SendContent_WithRange(t *testing.T) {
+	t.Parallel()
+
+	buf := make([]byte, 1000)
+	for i := range buf {
+		buf[i] = byte(i % 256)
+	}
+	res := NewBuf(200, buf)
+	res.SetContentType("text/html")
+
+	req, _ := http.NewRequest("GET", "/test", nil)
+	req.Header.Set("Range", "bytes=0-99")
+	recorder := httptest.NewRecorder()
+
+	res.SendContent(req, recorder)
+
+	result := recorder.Result()
+	assert.Equal(t, 206, result.StatusCode)
+	body, _ := ioutil.ReadAll(result.Body)
+	assert.Equal(t, 100, len(body))
+}
+
+func TestResponse_SendContent_WithIfMatch(t *testing.T) {
+	t.Parallel()
+
+	buf := make([]byte, 100)
+	res := NewBuf(200, buf)
+	res.Headers.Set("Etag", "\"test-etag\"")
+
+	req, _ := http.NewRequest("GET", "/test", nil)
+	req.Header.Set("If-Match", "\"test-etag\"")
+	recorder := httptest.NewRecorder()
+
+	res.SendContent(req, recorder)
+
+	result := recorder.Result()
+	// ServeContent handles If-Match, expect 200 if etag matches
+	assert.True(t, result.StatusCode == 200 || result.StatusCode == 304)
+}
+
+func TestResponse_Close(t *testing.T) {
+	t.Parallel()
+
+	buf := make([]byte, 100)
+	reader := ioutil.NopCloser(bytes.NewReader(buf))
+	res := New(200, reader)
+
+	res.Close()
+	// Close doesn't return error, just verify it doesn't panic
+	assert.NotNil(t, res)
+}
+
+func TestResponse_CopyBody(t *testing.T) {
+	t.Parallel()
+
+	buf := make([]byte, 500)
+	for i := range buf {
+		buf[i] = byte(i % 256)
+	}
+	res := NewBuf(200, buf)
+
+	copiedBuf, err := res.CopyBody()
+	assert.Nil(t, err)
+	assert.Equal(t, len(buf), len(copiedBuf))
+	assert.Equal(t, buf[0], copiedBuf[0])
+	assert.Equal(t, buf[len(buf)-1], copiedBuf[len(copiedBuf)-1])
+}
+
+func TestResponse_SetDebug_WithoutDebug(t *testing.T) {
+	t.Parallel()
+
+	res := NewNoContent(200)
+	obj := &object.FileObject{Debug: false}
+
+	result := res.SetDebug(obj)
+
+	// Should return self when debug is false
+	assert.Equal(t, res, result)
+}

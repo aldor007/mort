@@ -230,3 +230,4 @@ For transformed images, Mort can verify the original (parent) image exists:
 1. Add filter implementation in `pkg/processor/plugins/` or extend `pkg/engine/`
 2. Update transform parsing to support new operation
 3. Filters are applied in order specified in configuration
+- memorise commend with flags for tests
