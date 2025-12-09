@@ -286,7 +286,7 @@ func BenchmarkHead(b *testing.B) {
 // TestStorageCacheConcurrency tests that concurrent access to storage cache
 // doesn't cause race conditions or lock contention issues
 func TestStorageCacheConcurrency(t *testing.T) {
-	t.Parallel()
+	// Note: Cannot use t.Parallel() because this test resets the global storageCache
 
 	mortConfig := config.Config{}
 	err := mortConfig.Load("testdata/config.yml")
