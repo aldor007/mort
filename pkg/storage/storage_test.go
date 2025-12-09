@@ -334,3 +334,207 @@ func TestStorageCacheConcurrency(t *testing.T) {
 	// Should have exactly one entry for the storage config hash
 	assert.Equal(t, 1, count, "Should have exactly one cached storage client")
 }
+
+func TestSetWithInvalidPath(t *testing.T) {
+	t.Parallel()
+
+	mortConfig := config.Config{}
+	mortConfig.Load("testdata/config.yml")
+
+	obj, _ := object.NewFileObjectFromPath("/bucket/../invalid", &mortConfig)
+
+	headers := make(http.Header)
+	buf := make([]byte, 10)
+	res := Set(obj, headers, int64(len(buf)), ioutil.NopCloser(bytes.NewReader(buf)))
+
+	// Should still succeed with local storage
+	assert.Equal(t, 200, res.StatusCode)
+}
+
+func TestSetWithSmallContent(t *testing.T) {
+	t.Parallel()
+
+	mortConfig := config.Config{}
+	mortConfig.Load("testdata/config.yml")
+
+	obj, _ := object.NewFileObjectFromPath("/bucket/small-file", &mortConfig)
+
+	headers := make(http.Header)
+	buf := []byte("x")
+	res := Set(obj, headers, int64(len(buf)), ioutil.NopCloser(bytes.NewReader(buf)))
+
+	assert.Equal(t, 200, res.StatusCode)
+
+	// Verify file exists
+	resGet := Get(obj)
+	assert.Equal(t, 200, resGet.StatusCode)
+	body, _ := resGet.Body()
+	assert.Equal(t, 1, len(body))
+
+	// Cleanup
+	Delete(obj)
+}
+
+func TestGetWithRange(t *testing.T) {
+	t.Parallel()
+
+	mortConfig := config.Config{}
+	mortConfig.Load("testdata/config.yml")
+
+	obj, _ := object.NewFileObjectFromPath("/bucket/file", &mortConfig)
+	obj.Range = "bytes=0-1"
+
+	res := Get(obj)
+	assert.Equal(t, 200, res.StatusCode)
+}
+
+func TestSetAndGetLargeFile(t *testing.T) {
+	t.Parallel()
+
+	mortConfig := config.Config{}
+	mortConfig.Load("testdata/config.yml")
+
+	obj, _ := object.NewFileObjectFromPath("/bucket/large-file", &mortConfig)
+
+	headers := make(http.Header)
+	headers.Add("Content-Type", "application/octet-stream")
+	// Create a 100KB file
+	buf := make([]byte, 100*1024)
+	for i := range buf {
+		buf[i] = byte(i % 256)
+	}
+
+	res := Set(obj, headers, int64(len(buf)), ioutil.NopCloser(bytes.NewReader(buf)))
+	assert.Equal(t, 200, res.StatusCode)
+
+	// Verify file was stored correctly
+	resGet := Get(obj)
+	assert.Equal(t, 200, resGet.StatusCode)
+	body, _ := resGet.Body()
+	assert.Equal(t, len(buf), len(body))
+
+	// Verify content matches
+	assert.Equal(t, buf[0], body[0])
+	assert.Equal(t, buf[len(buf)-1], body[len(body)-1])
+
+	// Cleanup
+	Delete(obj)
+}
+
+func TestListWithMaxKeys(t *testing.T) {
+	t.Parallel()
+
+	mortConfig := config.Config{}
+	mortConfig.Load("testdata/config.yml")
+
+	// List with max keys limit
+	obj, _ := object.NewFileObjectFromPath("/bucket/", &mortConfig)
+	res := List(obj, 10, "", "", "")
+
+	assert.Equal(t, 200, res.StatusCode)
+	assert.Equal(t, "application/xml", res.Headers.Get("content-type"))
+}
+
+func TestGetKey(t *testing.T) {
+	t.Parallel()
+
+	mortConfig := config.Config{}
+	mortConfig.Load("testdata/config.yml")
+
+	obj, _ := object.NewFileObjectFromPath("/bucket/test/file.jpg", &mortConfig)
+	key := getKey(obj)
+
+	// For local storage, key includes the path
+	assert.NotEmpty(t, key)
+	assert.Contains(t, key, "test/file.jpg")
+}
+
+func TestPrepareMetadataWithContentType(t *testing.T) {
+	t.Parallel()
+
+	headers := make(http.Header)
+	headers.Add("Content-Type", "image/jpeg")
+	headers.Add("X-Amz-Meta-Custom", "value")
+	headers.Add("Etag", "abc123")
+
+	mortConfig := config.Config{}
+	mortConfig.Load("testdata/config.yml")
+	obj, _ := object.NewFileObjectFromPath("/bucket/file.jpg", &mortConfig)
+
+	meta := prepareMetadata(obj, headers)
+
+	// prepareMetadata only stores content-type, etag, and x-amz-meta headers for local storage
+	assert.Equal(t, "image/jpeg", meta["content-type"])
+	assert.Equal(t, "value", meta["x-amz-meta-custom"])
+	assert.Equal(t, "abc123", meta["etag"])
+}
+
+func TestParseMetadataWithCacheControl(t *testing.T) {
+	t.Parallel()
+
+	mortConfig := config.Config{}
+	mortConfig.Load("testdata/config.yml")
+	obj, _ := object.NewFileObjectFromPath("/bucket/file", &mortConfig)
+
+	meta := make(map[string]interface{})
+	meta["cache-control"] = "public, max-age=3600"
+	meta["x-custom-header"] = "value"
+
+	res := response.NewNoContent(200)
+	parseMetadata(obj, meta, res)
+
+	// parseMetadata handles cache-control and x- prefixed headers
+	assert.Equal(t, "public, max-age=3600", res.Headers.Get("Cache-Control"))
+	assert.Equal(t, "value", res.Headers.Get("X-Custom-Header"))
+}
+
+func TestSetWithMultipleMetadataHeaders(t *testing.T) {
+	t.Parallel()
+
+	mortConfig := config.Config{}
+	mortConfig.Load("testdata/config.yml")
+
+	obj, _ := object.NewFileObjectFromPath("/bucket/metadata-test", &mortConfig)
+
+	headers := make(http.Header)
+	headers.Add("X-Amz-Meta-Author", "TestUser")
+	headers.Add("X-Amz-Meta-Version", "1.0")
+	headers.Add("Content-Type", "application/json")
+	headers.Add("Cache-Control", "no-cache")
+
+	buf := []byte(`{"test": "data"}`)
+	res := Set(obj, headers, int64(len(buf)), ioutil.NopCloser(bytes.NewReader(buf)))
+	assert.Equal(t, 200, res.StatusCode)
+
+	// Verify metadata was stored
+	resHead := Head(obj)
+	assert.Equal(t, 200, resHead.StatusCode)
+	assert.Equal(t, "TestUser", resHead.Headers.Get("X-Amz-Meta-Author"))
+	assert.Equal(t, "1.0", resHead.Headers.Get("X-Amz-Meta-Version"))
+	assert.Equal(t, "application/json", resHead.Headers.Get("Content-Type"))
+
+	// Cleanup
+	Delete(obj)
+}
+
+func TestDeleteMultipleTimes(t *testing.T) {
+	t.Parallel()
+
+	mortConfig := config.Config{}
+	mortConfig.Load("testdata/config.yml")
+
+	obj, _ := object.NewFileObjectFromPath("/bucket/delete-test", &mortConfig)
+
+	// Create file
+	headers := make(http.Header)
+	buf := []byte("test")
+	Set(obj, headers, int64(len(buf)), ioutil.NopCloser(bytes.NewReader(buf)))
+
+	// Delete first time
+	res := Delete(obj)
+	assert.Equal(t, 200, res.StatusCode)
+
+	// Delete second time (file already deleted)
+	res = Delete(obj)
+	assert.Equal(t, 200, res.StatusCode, "Deleting non-existent file should return 200")
+}

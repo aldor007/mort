@@ -81,7 +81,7 @@ func (m *MemoryLock) NotifyAndRelease(_ context.Context, key string, originalRes
 }
 
 // Lock create unique entry in memory map
-func (m *MemoryLock) Lock(_ context.Context, key string) (LockResult, bool) {
+func (m *MemoryLock) Lock(ctx context.Context, key string) (LockResult, bool) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	lock, ok := m.internal[key]
@@ -91,6 +91,23 @@ func (m *MemoryLock) Lock(_ context.Context, key string) (LockResult, bool) {
 		lock.notifyQueue = make([]LockResult, 0, 5)
 	} else {
 		result = lock.AddWatcher()
+		// Monitor context cancellation for waiters
+		if ctx != nil && result.Cancel != nil {
+			go func(cancelChan chan bool, doneChan <-chan struct{}) {
+				select {
+				case <-doneChan:
+					// Context was canceled, signal the Cancel channel
+					select {
+					case cancelChan <- true:
+					default:
+						// Cancel channel already closed or full
+					}
+				case <-cancelChan:
+					// Cancel was already signaled by another source
+					return
+				}
+			}(result.Cancel, ctx.Done())
+		}
 	}
 	m.internal[key] = lock
 	return result, !ok
