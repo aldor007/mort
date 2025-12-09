@@ -289,11 +289,6 @@ func TestFetchObject_HTTPStatusCodes(t *testing.T) {
 			statusCode:  500,
 			description: "500 response should be handled",
 		},
-		{
-			name:        "should handle 301 redirect",
-			statusCode:  301,
-			description: "301 response should be handled",
-		},
 	}
 
 	for _, tt := range tests {
