@@ -422,7 +422,8 @@ func TestSetAndGetLargeFile(t *testing.T) {
 }
 
 func TestListWithMaxKeys(t *testing.T) {
-	t.Parallel()
+	// Note: Cannot use t.Parallel() because List reads filesystem state
+	// that may be modified by other parallel tests
 
 	mortConfig := config.Config{}
 	mortConfig.Load("testdata/config.yml")
