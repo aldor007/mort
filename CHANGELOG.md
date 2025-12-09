@@ -1,3 +1,11 @@
+## [0.29.10](https://github.com/aldor007/mort/compare/v0.29.9...v0.29.10) (2025-12-09)
+
+
+### Bug Fixes
+
+* more fixesc ([90f0a1b](https://github.com/aldor007/mort/commit/90f0a1be3a5235067938d40143a5f174d59209a7))
+* more test ([96a1e3b](https://github.com/aldor007/mort/commit/96a1e3be846e404c28b1e75e4aa4def64ec38d4a))
+
 ## [0.29.9](https://github.com/aldor007/mort/compare/v0.29.8...v0.29.9) (2025-12-08)
 
 
