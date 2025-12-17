@@ -1,3 +1,11 @@
+# [0.30.0](https://github.com/aldor007/mort/compare/v0.29.10...v0.30.0) (2025-12-17)
+
+
+### Features
+
+* introduce shared response ([4dd7964](https://github.com/aldor007/mort/commit/4dd79642a9068279ab72a59affe8aab302a5c8ef))
+* redis fix ([7e95e78](https://github.com/aldor007/mort/commit/7e95e78629cced5a79041734136b88657d11c661))
+
 ## [0.29.10](https://github.com/aldor007/mort/compare/v0.29.9...v0.29.10) (2025-12-09)
 
 
