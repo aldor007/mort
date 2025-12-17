@@ -68,36 +68,49 @@ func NewMemoryCache(maxSize int64) *MemoryCache {
 	return &MemoryCache{ccache.New[responseSizeProvider](ccache.Configure[responseSizeProvider]().MaxSize(maxSize).ItemsToPrune(50))}
 }
 
-// Set put response to cache
+// Set put response to cache. Cache takes ownership of the response - no copying.
+// The response must be buffered before caching. This eliminates one full copy
+// compared to the previous implementation that copied on both Set and Get.
 func (c *MemoryCache) Set(obj *object.FileObject, res *response.Response) error {
-	cachedResp, err := res.Copy()
-	if err != nil {
-		return err
+	// Ensure response is buffered before caching
+	if !res.IsBuffered() {
+		_, err := res.Body()
+		if err != nil {
+			return err
+		}
 	}
+
 	monitoring.Report().Inc("cache_ratio;status:set")
+
+	// Cache takes ownership - NO COPY!
 	// Calculate size once when creating cache entry
 	provider := responseSizeProvider{
-		Response:   cachedResp,
-		cachedSize: calculateResponseSize(cachedResp),
+		Response:   res,
+		cachedSize: calculateResponseSize(res),
 	}
 	c.cache.Set(obj.GetResponseCacheKey(), provider, time.Second*time.Duration(res.GetTTL()))
 	return nil
 }
 
-// Get returns instance from cache or error (if not found in cache)
+// Get returns a view of the cached response (zero-copy).
+// The view shares the underlying buffer with the cached response, eliminating
+// the need to copy the full response body on every cache hit.
 func (c *MemoryCache) Get(obj *object.FileObject) (*response.Response, error) {
 	cacheValue := c.cache.Get(obj.GetResponseCacheKey())
 	if cacheValue != nil {
 		monitoring.Log().Info("Handle Get cache", zap.String("cache", "hit"), zap.String("obj.Key", obj.Key))
 		monitoring.Report().Inc("cache_ratio;status:hit")
-		res := cacheValue.Value()
-		resCp, err := res.Copy()
+
+		cached := cacheValue.Value().Response
+
+		// Create view instead of copy - zero memory allocation for body!
+		view, err := cached.CreateView()
 		if err != nil {
 			monitoring.Report().Inc("cache_ratio;status:miss")
 			return nil, errors.New("not found")
 		}
-		resCp.SetCacheHit()
-		return resCp, nil
+		view.SetCacheHit()
+		return view, nil
 	}
 
 	monitoring.Report().Inc("cache_ratio;status:miss")

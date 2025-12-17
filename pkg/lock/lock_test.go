@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/aldor007/mort/pkg/config"
-	"github.com/aldor007/mort/pkg/response"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,7 +18,8 @@ func TestNewNopLock(t *testing.T) {
 	_, locked = l.Lock(ctx, "a")
 	assert.True(t, locked)
 
-	l.NotifyAndRelease(ctx, "a", response.NewNoContent(200))
+	// NopLock accepts nil since it does nothing with the response
+	l.NotifyAndRelease(ctx, "a", nil)
 
 	_, locked = l.Lock(ctx, "a")
 	assert.True(t, locked)
