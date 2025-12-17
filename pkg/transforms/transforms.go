@@ -288,9 +288,12 @@ func (t *Transforms) StripMetadata() error {
 
 // Blur blur whole image
 func (t *Transforms) Blur(sigma, minAmpl float64) error {
-	// Validate sigma is positive
+	// Validate sigma is positive and not too large
 	if sigma <= 0 {
 		return errors.New("sigma must be positive")
+	}
+	if sigma > 100 {
+		return errors.New("sigma value too large, maximum allowed is 100")
 	}
 	t.NotEmpty = true
 	t.blur.sigma = sigma

@@ -98,6 +98,15 @@ func parseOperation(query url.Values) (transforms.Transforms, error) {
 	trans := transforms.New()
 	var err error
 	opt := query.Get("operation")
+
+	// Check if operation key exists but is empty
+	if opValues, hasOperation := query["operation"]; hasOperation && opt == "" {
+		// If operation parameter is explicitly provided but empty, return error
+		if len(opValues) > 0 && opValues[0] == "" {
+			return trans, errors.New("operation parameter cannot be empty")
+		}
+	}
+
 	if opt == "" {
 		var w, h int
 		_, hasWidth := query["width"]
@@ -230,9 +239,12 @@ func parseOperation(query url.Values) (transforms.Transforms, error) {
 					if err != nil {
 						return trans, errors.New("invalid sigma value: " + err.Error())
 					}
-					// Validate sigma is positive
+					// Validate sigma is positive and not too large
 					if sigma <= 0 {
 						return trans, errors.New("sigma must be positive")
+					}
+					if sigma > 100 {
+						return trans, errors.New("sigma value too large, maximum allowed is 100")
 					}
 
 					minAmpl, _ = strconv.ParseFloat(query.Get("minAmpl"), 32)
