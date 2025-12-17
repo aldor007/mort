@@ -11,6 +11,21 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// testNotifyAndReleaseRedis is a test helper for redis tests (same as memory_test.go)
+func testNotifyAndReleaseRedis(l Lock, ctx context.Context, key string, res *response.Response) {
+	if res == nil {
+		l.NotifyAndRelease(ctx, key, nil)
+		return
+	}
+
+	sharedRes, err := response.NewSharedResponse(res)
+	if err != nil {
+		l.NotifyAndRelease(ctx, key, nil)
+		return
+	}
+	l.NotifyAndRelease(ctx, key, sharedRes)
+}
+
 func TestNewRedisLock(t *testing.T) {
 	l := NewRedisLock([]string{"1.1.1.1:1234"}, nil)
 
@@ -60,7 +75,7 @@ func TestRedisLock_NotifyAndReleaseWhenError(t *testing.T) {
 	assert.False(t, lock, "Shouldn't acquire lock")
 	assert.NotNil(t, result, "should return channel")
 
-	go l.NotifyAndRelease(ctx, key, response.NewError(400, errors.New("invalid transform")))
+	go testNotifyAndReleaseRedis(l, ctx, key, response.NewError(400, errors.New("invalid transform")))
 
 	timer := time.NewTimer(time.Second * 2)
 	select {
@@ -92,7 +107,7 @@ func TestRedisLock_NotifyAndRelease(t *testing.T) {
 	assert.NotNil(t, result.ResponseChan, "should return channel")
 
 	buf := make([]byte, 1000)
-	go l.NotifyAndRelease(ctx, key, response.NewBuf(200, buf))
+	go testNotifyAndReleaseRedis(l, ctx, key, response.NewBuf(200, buf))
 
 	timer := time.NewTimer(time.Second * 2)
 	select {
@@ -129,7 +144,7 @@ func TestRedisLock_NotifyAndReleaseTwoInstancesOfLock(t *testing.T) {
 	assert.NotNil(t, result.ResponseChan, "should return channel")
 
 	buf := make([]byte, 1000)
-	go l.NotifyAndRelease(ctx, key, response.NewBuf(200, buf))
+	go testNotifyAndReleaseRedis(l, ctx, key, response.NewBuf(200, buf))
 
 	timer := time.NewTimer(time.Second * 2)
 	select {
@@ -164,7 +179,7 @@ func TestRedisLock_Cancel(t *testing.T) {
 	}()
 
 	buf := make([]byte, 1000)
-	go l.NotifyAndRelease(ctx, key, response.NewBuf(200, buf))
+	go testNotifyAndReleaseRedis(l, ctx, key, response.NewBuf(200, buf))
 
 	timer := time.NewTimer(time.Second * 2)
 	select {

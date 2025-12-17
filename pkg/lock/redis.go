@@ -84,7 +84,8 @@ func NewRedisCluster(redisAddress []string, clientConfig map[string]string) *Red
 }
 
 // NotifyAndRelease tries notify all waiting goroutines about response
-func (m *RedisLock) NotifyAndRelease(ctx context.Context, key string, originalResponse *response.Response) {
+// Delegates to MemoryLock which uses SharedResponse for zero-copy buffer sharing
+func (m *RedisLock) NotifyAndRelease(ctx context.Context, key string, sharedResponse *response.SharedResponse) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	lock, ok := m.locks[key]
@@ -103,7 +104,8 @@ func (m *RedisLock) NotifyAndRelease(ctx context.Context, key string, originalRe
 		}
 	}
 
-	m.memoryLock.NotifyAndRelease(ctx, key, originalResponse)
+	// Delegate to memory lock which handles SharedResponse reference counting
+	m.memoryLock.NotifyAndRelease(ctx, key, sharedResponse)
 }
 
 // Lock create unique entry in Redis map

@@ -42,8 +42,11 @@ func notifyListeners(lock lockData, respFactory func() (*response.Response, bool
 	}
 }
 
-// NotifyAndRelease tries notify all waiting goroutines about response
-func (m *MemoryLock) NotifyAndRelease(_ context.Context, key string, originalResponse *response.Response) {
+// NotifyAndRelease tries notify all waiting goroutines about response.
+// Uses SharedResponse to allow all waiting requests to share the same buffer
+// without creating full copies, significantly reducing memory usage for
+// duplicate requests (e.g., 10 waiters × 5MB = 50MB → 5MB).
+func (m *MemoryLock) NotifyAndRelease(_ context.Context, key string, sharedResponse *response.SharedResponse) {
 	m.lock.Lock()
 	lock, ok := m.internal[key]
 	if !ok {
@@ -54,30 +57,30 @@ func (m *MemoryLock) NotifyAndRelease(_ context.Context, key string, originalRes
 	m.lock.Unlock()
 
 	if len(lock.notifyQueue) == 0 {
+		// No waiters, release the original reference
+		if sharedResponse != nil {
+			sharedResponse.Release()
+		}
 		return
 	}
 
 	monitoring.Log().Info("Notify lock queue", zap.String("key", key), zap.Int("len", len(lock.notifyQueue)))
-	// Notify all listeners by sending them a copy of originalResponse.
-	//
-	// Current synchronous notification is simpler compared to asynchronous implementation.
-	// The asynchronous implementation might be tricky since the response in not buffered mode must be
-	// protected from being read before it is copied. Otherwise CopyWithStream in a worst case will deliver partial body
-	// since it can read in parallel with HTTP handler. To prevent such behavior extra temporary copy of response
-	// must be created before returning from this method. Of course such creation must
-	// also take into account whether the originalResponse is buffered or not.
-	// The time spend on notifying listeners is negligible compared to the total time of image processing,
-	// so making this process asynchronous makes almost no sense.
+
+	// Each waiter gets a shared reference (no copying!)
+	// SharedResponse uses atomic reference counting to safely share the buffer
+	// across all waiting goroutines. Each Acquire() increments the refcount,
+	// and each consumer should Release() when done.
 	notifyListeners(lock, func() (*response.Response, bool) {
-		if originalResponse == nil {
-			return nil, false
-		} else if originalResponse.IsBuffered() {
-			res, err := originalResponse.Copy()
-			return res, err == nil
-		} else {
+		if sharedResponse == nil {
 			return nil, false
 		}
+		// Acquire increments refcount and returns a lightweight view
+		// that shares the underlying buffer
+		return sharedResponse.Acquire(), true
 	})
+
+	// Release the original reference after distribution to all waiters
+	sharedResponse.Release()
 }
 
 // Lock create unique entry in memory map

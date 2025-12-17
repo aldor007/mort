@@ -1,8 +1,10 @@
 package processor
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"io"
 	"net/http"
 	"strconv"
 	"time"
@@ -244,7 +246,18 @@ func (r *RequestProcessor) collapseGET(req *http.Request, obj *object.FileObject
 	if locked {
 		monitoring.Log().Info("Lock acquired", obj.LogData()...)
 		res := r.handleGET(req, obj)
-		r.collapse.NotifyAndRelease(ctx, obj.Key, res)
+
+		// Convert to SharedResponse for zero-copy buffer sharing with waiting requests
+		// This eliminates creating N full copies for N waiting requests
+		sharedRes, err := response.NewSharedResponse(res)
+		if err != nil {
+			// If SharedResponse creation fails (e.g., response not buffered),
+			// notify with nil so waiters can try fetching from cache
+			monitoring.Log().Warn("Unable to create SharedResponse", obj.LogData(zap.Error(err))...)
+			r.collapse.NotifyAndRelease(ctx, obj.Key, nil)
+		} else {
+			r.collapse.NotifyAndRelease(ctx, obj.Key, sharedRes)
+		}
 		return res
 	}
 
@@ -504,14 +517,22 @@ func (r *RequestProcessor) processImage(obj *object.FileObject, parent *response
 }
 
 func storeProcessedImage(res *response.Response, obj *object.FileObject) error {
-	resCpy, err := res.Copy()
+	// Ensure response is buffered (should already be after image processing)
+	body, err := res.Body()
 	if err != nil {
 		return err
 	}
-	go func(objS object.FileObject, resS *response.Response) {
-		storage.Set(&objS, resS.Headers, resS.ContentLength, resS.Stream())
-		resS.Close()
-	}(*obj, resCpy)
+
+	// Share buffer with storage writer (read-only) - zero copy!
+	// bytes.NewReader creates a reader over the existing buffer without copying
+	headers := res.Headers.Clone()
+	contentLength := res.ContentLength
+
+	go func(objS object.FileObject, buf []byte, h http.Header, cl int64) {
+		reader := bytes.NewReader(buf)
+		storage.Set(&objS, h, cl, io.NopCloser(reader))
+	}(*obj, body, headers, contentLength)
+
 	return nil
 }
 

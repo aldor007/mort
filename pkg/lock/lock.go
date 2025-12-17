@@ -16,7 +16,8 @@ type Lock interface {
 	// Release remove lock for given key
 	Release(ctx context.Context, key string)
 	// NotifyAndRelease remove lock for given key and notify all clients waiting for result
-	NotifyAndRelease(ctx context.Context, key string, res *response.Response)
+	// SharedResponse allows sharing the same buffer across all waiting requests without copying
+	NotifyAndRelease(ctx context.Context, key string, res *response.SharedResponse)
 }
 
 // LockResult contain struct
@@ -60,7 +61,7 @@ func (l *NopLock) Release(_ context.Context, _ string) {
 }
 
 // NotifyAndRelease do nothing
-func (l *NopLock) NotifyAndRelease(_ context.Context, _ string, _ *response.Response) {
+func (l *NopLock) NotifyAndRelease(_ context.Context, _ string, _ *response.SharedResponse) {
 
 }
 

@@ -395,6 +395,47 @@ func (r *Response) IsBuffered() bool {
 	return r.body != nil
 }
 
+// CreateView returns a new Response that shares the body buffer with the original.
+// This is a zero-copy operation that allows multiple consumers to read the same
+// response data without duplicating memory.
+//
+// The returned Response shares the underlying body buffer (read-only) and has
+// cloned headers. This is safe because the buffer is immutable after buffering.
+//
+// IMPORTANT: This method only works with buffered responses. Returns an error
+// if the response is not buffered. Always check IsBuffered() first or call
+// Body() to force buffering before creating a view.
+//
+// Use case: Cache can store the original response and create views for each
+// cache hit, eliminating the need to copy the full response body.
+func (r *Response) CreateView() (*Response, error) {
+	if !r.IsBuffered() {
+		return nil, errors.New("can only create view from buffered response")
+	}
+
+	view := &Response{
+		StatusCode:    r.StatusCode,
+		Headers:       r.Headers.Clone(), // Headers are small, safe to clone
+		ContentLength: r.ContentLength,
+		debug:         r.debug,
+		errorValue:    r.errorValue,
+		cachable:      r.cachable,
+		ttl:           r.ttl,
+	}
+
+	// Share the body buffer (immutable after buffering)
+	// setBodyBytes will set up the reader without copying
+	view.setBodyBytes(r.body)
+
+	// Copy transforms if present
+	if len(r.trans) > 0 {
+		view.trans = make([]transforms.Transforms, len(r.trans))
+		copy(view.trans, r.trans)
+	}
+
+	return view, nil
+}
+
 // IsImage check if response is image
 func (r *Response) IsImage() bool {
 	return strings.Contains(r.Headers.Get(HeaderContentType), "image/")

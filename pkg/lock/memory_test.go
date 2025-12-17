@@ -10,6 +10,23 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// testNotifyAndRelease is a test helper that converts Response to SharedResponse
+// before calling NotifyAndRelease, mirroring what the processor does in production
+func testNotifyAndRelease(l Lock, ctx context.Context, key string, res *response.Response) {
+	if res == nil {
+		l.NotifyAndRelease(ctx, key, nil)
+		return
+	}
+
+	sharedRes, err := response.NewSharedResponse(res)
+	if err != nil {
+		// If SharedResponse creation fails, notify with nil
+		l.NotifyAndRelease(ctx, key, nil)
+		return
+	}
+	l.NotifyAndRelease(ctx, key, sharedRes)
+}
+
 func TestNewMemoryLock(t *testing.T) {
 	l := NewMemoryLock()
 
@@ -52,7 +69,7 @@ func TestMemoryLock_NotifyAndReleaseWhenError(t *testing.T) {
 	assert.False(t, lock, "Shouldn't acquire lock")
 	assert.NotNil(t, result, "should return channel")
 
-	go l.NotifyAndRelease(ctx, key, response.NewError(400, errors.New("invalid transform")))
+	go testNotifyAndRelease(l, ctx, key, response.NewError(400, errors.New("invalid transform")))
 
 	timer := time.NewTimer(time.Second * 2)
 	select {
@@ -82,7 +99,7 @@ func TestMemoryLock_NotifyAndRelease(t *testing.T) {
 	assert.NotNil(t, result.ResponseChan, "should return channel")
 
 	buf := make([]byte, 1000)
-	go l.NotifyAndRelease(ctx, key, response.NewBuf(200, buf))
+	go testNotifyAndRelease(l, ctx, key, response.NewBuf(200, buf))
 
 	timer := time.NewTimer(time.Second * 2)
 	select {
@@ -110,8 +127,8 @@ func TestMemoryLock_NotifyAndRelease2(t *testing.T) {
 	assert.True(t, acquired, "Should acquire lock")
 	assert.Nil(t, c.ResponseChan, "shouldn't return channel")
 
-	l.NotifyAndRelease(ctx, "no-key", response.NewError(400, errors.New("invalid transform")))
-	l.NotifyAndRelease(ctx, key, response.NewNoContent(200))
+	testNotifyAndRelease(l, ctx, "no-key", response.NewError(400, errors.New("invalid transform")))
+	testNotifyAndRelease(l, ctx, key, response.NewNoContent(200))
 }
 
 func TestMemoryLock_Release(t *testing.T) {
@@ -157,7 +174,7 @@ func TestMemoryLock_MultipleLockWaiters(t *testing.T) {
 
 	// Notify and release - all waiters should receive response
 	testResponse := response.NewBuf(200, []byte("test"))
-	go l.NotifyAndRelease(ctx, key, testResponse)
+	go testNotifyAndRelease(l, ctx, key, testResponse)
 
 	// All waiters should receive the response
 	received := 0
@@ -201,7 +218,7 @@ func TestMemoryLock_CancelContext(t *testing.T) {
 	time.Sleep(50 * time.Millisecond)
 
 	// Now notify - the canceled waiter should not receive (channel closed)
-	l.NotifyAndRelease(ctx, key, response.NewBuf(200, []byte("test")))
+	testNotifyAndRelease(l, ctx, key, response.NewBuf(200, []byte("test")))
 
 	// Channel should be closed
 	_, ok := <-result.ResponseChan
@@ -226,7 +243,7 @@ func TestMemoryLock_Concurrent(t *testing.T) {
 				if acquired {
 					// Simulate some work
 					time.Sleep(1 * time.Millisecond)
-					l.NotifyAndRelease(ctx, key, response.NewBuf(200, []byte("ok")))
+					testNotifyAndRelease(l, ctx, key, response.NewBuf(200, []byte("ok")))
 				} else {
 					// Wait for response
 					select {
@@ -254,7 +271,7 @@ func BenchmarkMemoryLock_NotifyAndRelease(b *testing.B) {
 	buf := make([]byte, 10)
 	l.Lock(ctx, key)
 	go time.AfterFunc(time.Millisecond*time.Duration(500), func() {
-		l.NotifyAndRelease(ctx, key, response.NewBuf(200, buf))
+		testNotifyAndRelease(l, ctx, key, response.NewBuf(200, buf))
 	})
 
 	for i := 0; i < b.N; i++ {
@@ -262,7 +279,7 @@ func BenchmarkMemoryLock_NotifyAndRelease(b *testing.B) {
 		multi := 500 % (i + 1)
 		if acquired {
 			go time.AfterFunc(time.Millisecond*time.Duration(multi), func() {
-				l.NotifyAndRelease(ctx, key, response.NewBuf(200, buf))
+				testNotifyAndRelease(l, ctx, key, response.NewBuf(200, buf))
 			})
 		} else {
 			go func(r LockResult) {
