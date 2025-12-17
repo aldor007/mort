@@ -21,7 +21,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.25'
+        go-version-file: 'go.mod'
     - name: Install
       run: go mod download && git config --global --add safe.directory '*'
 
@@ -31,9 +31,6 @@ jobs:
     - name: Test
       run: ./scripts/unit-travis.sh
 
-    - uses: codecov/codecov-action@v4
-      with:
-        fail_ci_if_error: true # optional (default = false)
   redis-lock:
     container:
       image: ghcr.io/aldor007/mort-base:latest
@@ -50,19 +47,24 @@ jobs:
         ports:
           - 6379:6379
     steps:
-    - name: Git checkout 
-      uses: actions/checkout@v2
+    - name: Git checkout
+      uses: actions/checkout@v4
 
-    - name: Install Node JS 
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version-file: 'go.mod'
+
+    - name: Install Node JS
       uses: actions/setup-node@v4
       with:
-        node-version: 17 
-    
+        node-version: 18
+
     - name: Install npm deps
       run: npm install
-    
+
     - name: Install go deps
-      run: go mod download
+      run: go mod download && git config --global --add safe.directory '*'
 
     - name: Run the integrations tests
       run: |
@@ -84,18 +86,23 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       - name: Git checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
 
       - name: Install Node JS
         uses: actions/setup-node@v4
         with:
-          node-version: 17
+          node-version: 18
 
       - name: Install npm deps
         run: npm install
 
       - name: Install go deps
-        run: go mod download
+        run: go mod download && git config --global --add safe.directory '*'
 
       - name: Run the integrations tests
         run: |
