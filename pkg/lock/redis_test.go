@@ -192,3 +192,62 @@ func TestRedisLock_Cancel(t *testing.T) {
 
 	}
 }
+
+// TestRedisLock_PubSubCleanup verifies that pubsub connection is properly closed
+// when a message is received from Redis pub/sub channel
+func TestRedisLock_PubSubCleanup(t *testing.T) {
+	t.Parallel()
+
+	s := miniredis.RunT(t)
+
+	// Create first lock instance that will acquire the lock
+	l1 := NewRedisLock([]string{s.Addr()}, nil)
+	key := "test-pubsub-cleanup"
+	ctx := context.Background()
+
+	// First instance acquires the lock
+	_, acquired := l1.Lock(ctx, key)
+	assert.True(t, acquired, "First instance should acquire lock")
+
+	// Create second lock instance that will wait for the lock
+	l2 := NewRedisLock([]string{s.Addr()}, nil)
+	result, locked := l2.Lock(ctx, key)
+
+	assert.False(t, locked, "Second instance shouldn't acquire lock")
+	assert.NotNil(t, result.ResponseChan, "Should return response channel for waiting")
+
+	// Verify that l2 has created a pubsub subscription
+	l2.lock.RLock()
+	lockData, exists := l2.locks[key]
+	l2.lock.RUnlock()
+
+	assert.True(t, exists, "Lock entry should exist in l2.locks map")
+	assert.NotNil(t, lockData.pubsub, "PubSub should be initialized")
+
+	// First instance notifies and releases (publishes to Redis)
+	buf := make([]byte, 100)
+	go testNotifyAndReleaseRedis(l1, ctx, key, response.NewBuf(200, buf))
+
+	// Wait for the response to propagate via pubsub
+	// In a two-instance scenario, the channel is closed (not sent a response)
+	// because the actual response data doesn't transfer across instances
+	timer := time.NewTimer(time.Second * 2)
+	select {
+	case <-timer.C:
+		t.Fatalf("Timeout waiting for pubsub message")
+		return
+	case res, ok := <-result.ResponseChan:
+		assert.False(t, ok, "Channel should be closed")
+		assert.Nil(t, res, "Response should be nil for cross-instance notification")
+	}
+
+	// Give a small amount of time for cleanup to complete
+	time.Sleep(50 * time.Millisecond)
+
+	// Verify that pubsub connection and locks entry are cleaned up
+	l2.lock.RLock()
+	_, stillExists := l2.locks[key]
+	l2.lock.RUnlock()
+
+	assert.False(t, stillExists, "Lock entry should be deleted from l2.locks map after pubsub message")
+}

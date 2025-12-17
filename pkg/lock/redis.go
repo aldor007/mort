@@ -135,7 +135,7 @@ func (m *RedisLock) Lock(ctx context.Context, key string) (LockResult, bool) {
 				for {
 					select {
 					case <-ch:
-						m.memoryLock.NotifyAndRelease(ctx, key, nil)
+						m.NotifyAndRelease(ctx, key, nil)
 						return
 					case <-result.Cancel:
 						m.memoryLock.Release(ctx, key)
