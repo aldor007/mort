@@ -65,11 +65,6 @@ func Parse(url *url.URL, mortConfig *config.Config, obj *FileObject) error {
 		return fmt.Errorf("transform '%s' parser failed: %w", bucketConfig.Transform.Kind, err)
 	}
 	if parent == "" {
-		// If bucket has parentStorage configured but no transforms were specified, return error
-		// This enforces that buckets with remote/external sources require transforms
-		if bucketConfig.Transform.ParentStorage != "" && !obj.Transforms.NotEmpty {
-			return errors.New("transforms are required for this bucket")
-		}
 		return nil
 	}
 
