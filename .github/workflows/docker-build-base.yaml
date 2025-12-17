@@ -1,4 +1,4 @@
-name: Docker build
+name: Build and Push mort-base Image
 
 on:
   push:
@@ -6,31 +6,57 @@ on:
       - 'master'
     paths:
       - Dockerfile.base
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Additional tag for the image'
+        required: false
+        default: ''
 
 jobs:
-  multi:
+  build-base-image:
     runs-on: ubuntu-latest
     steps:
       -
         name: Checkout
         uses: actions/checkout@v4
 
-      - name: git tag
-        run: git fetch --tags;  git fetch --prune --unshallow || true
+      -
+        name: Fetch git tags
+        run: git fetch --tags; git fetch --prune --unshallow || true
+
+      -
+        name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/aldor007/mort-base
+          tags: |
+            type=raw,value=latest
+            type=sha,prefix={{branch}}-
+            type=ref,event=branch
+            ${{ github.event.inputs.tag && format('type=raw,value={0}', github.event.inputs.tag) || '' }}
+          labels: |
+            org.opencontainers.image.title=mort-base
+            org.opencontainers.image.description=Base image for Mort with libvips and Go
+            org.opencontainers.image.vendor=aldor007
 
       -
         name: Set up QEMU
         uses: docker/setup-qemu-action@v3
+
       -
         name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
       -
-        name: Login to DockerHub
+        name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
+          registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GHR_TOKEN }}
-          registry: ghcr.io
+
       -
         name: Build and push
         uses: docker/build-push-action@v6
@@ -39,5 +65,9 @@ jobs:
           file: ./Dockerfile.base
           platforms: linux/arm64,linux/amd64
           push: true
-          tags: ghcr.io/aldor007/mort-base:latest, ghcr.io/aldor007/mort-base:${{ github.sha }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: false
 

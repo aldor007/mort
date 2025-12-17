@@ -1,3 +1,58 @@
+# Build artifacts
+*.o
+*.so
+*.a
+mort
+dist/
+build/
+
+# Dependencies
+vendor/
+node_modules/
+
+# Test files
+*_test.go
+**/*_test.go
+*.test
+coverage.out
+coverage.html
+TEST_COVERAGE_REPORT.md
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+.circleci/
+
+# Documentation
+*.md
+docs/
+example/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Docker files (to avoid recursion)
+Dockerfile*
+.dockerignore
+docker-compose*.yml
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.log
+.cache/
+
+# Source maps and debug files
 src/*
-vendor
-node_modules/*
