@@ -1,8 +1,10 @@
-FROM ghcr.io/aldor007/mort-base AS builder
+FROM --platform=$TARGETPLATFORM ghcr.io/aldor007/mort-base AS builder
 
 ENV LIBVIPS_VERSION=8.11.2
 ENV GOLANG_VERSION=1.25.4
-ARG TARGETARCH=amd64
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
+ARG TARGETARCH
 ARG TAG='dev'
 ARG COMMIT="master"
 ARG DATE="now"
@@ -39,7 +41,7 @@ RUN curl -fsSL -o /tmp/mime.types https://raw.githubusercontent.com/apache/httpd
 
 
 # Runtime stage - use ubuntu 20.04 to match builder libraries
-FROM ubuntu:20.04
+FROM --platform=$TARGETPLATFORM ubuntu:20.04
 
 # Install runtime dependencies in a single layer
 RUN apt-get update && \
