@@ -1,3 +1,10 @@
+## [0.30.1](https://github.com/aldor007/mort/compare/v0.30.0...v0.30.1) (2025-12-17)
+
+
+### Bug Fixes
+
+* fix docker image ([c3f4570](https://github.com/aldor007/mort/commit/c3f4570eacd3e7199c8e3bd847a92ea28bcc2284))
+
 # [0.30.0](https://github.com/aldor007/mort/compare/v0.29.10...v0.30.0) (2025-12-17)
 
 
