@@ -163,6 +163,11 @@ func (t *Transforms) ToJSON() map[string]interface{} {
 
 // Resize change image width and height
 func (t *Transforms) Resize(width, height int, enlarge bool, preserveAspectRatio bool, fill bool) error {
+	// Validate width and height are non-negative
+	if width < 0 || height < 0 {
+		return errors.New("width and height cannot be negative")
+	}
+
 	t.width = width
 	t.height = height
 	t.enlarge = enlarge
@@ -187,6 +192,11 @@ func (t *Transforms) Resize(width, height int, enlarge bool, preserveAspectRatio
 
 // Extract area from image with given properties
 func (t *Transforms) Extract(top, left, width, height int) error {
+	// Validate coordinates are non-negative
+	if top < 0 || left < 0 || width < 0 || height < 0 {
+		return errors.New("extract coordinates cannot be negative")
+	}
+
 	t.top = top
 	t.left = left
 	t.areaWidth = width
@@ -203,6 +213,11 @@ func (t *Transforms) Extract(top, left, width, height int) error {
 
 // Crop extract part of image
 func (t *Transforms) Crop(width, height int, gravity string, enlarge, embed bool) error {
+	// Validate width and height are non-negative
+	if width < 0 || height < 0 {
+		return errors.New("width and height cannot be negative")
+	}
+
 	t.width = width
 	t.height = height
 	t.enlarge = enlarge
@@ -229,6 +244,11 @@ func (t *Transforms) Crop(width, height int, gravity string, enlarge, embed bool
 
 // Crop extract part of image
 func (t *Transforms) ResizeCropAuto(width, height int) error {
+	// Validate width and height are non-negative
+	if width < 0 || height < 0 {
+		return errors.New("width and height cannot be negative")
+	}
+
 	t.NotEmpty = true
 	t.autoCropWidth = width
 	t.autoCropHeight = height
@@ -248,6 +268,10 @@ func (t *Transforms) Interlace() error {
 
 // Quality change image quality
 func (t *Transforms) Quality(quality int) error {
+	// Validate quality is in range [1, 100]
+	if quality < 1 || quality > 100 {
+		return errors.New("quality must be between 1 and 100")
+	}
 	t.quality = quality
 	t.NotEmpty = true
 	t.transHash.write(1401, uint64(t.quality))
@@ -264,6 +288,10 @@ func (t *Transforms) StripMetadata() error {
 
 // Blur blur whole image
 func (t *Transforms) Blur(sigma, minAmpl float64) error {
+	// Validate sigma is positive
+	if sigma <= 0 {
+		return errors.New("sigma must be positive")
+	}
 	t.NotEmpty = true
 	t.blur.sigma = sigma
 	t.blur.minAmpl = minAmpl
@@ -303,6 +331,11 @@ func (t *Transforms) Watermark(image string, position string, opacity float32) e
 		return errors.New("missing required params image or position")
 	}
 
+	// Validate opacity is in range [0, 1]
+	if opacity < 0 || opacity > 1 {
+		return errors.New("opacity must be between 0 and 1")
+	}
+
 	p := strings.Split(position, "-")
 	if len(p) != 2 {
 		return errors.New("invalid position given")
@@ -335,6 +368,11 @@ func (t *Transforms) Grayscale() {
 
 // Rotate rotate image of given angle
 func (t *Transforms) Rotate(angle int) error {
+	// Validate that angle is a multiple of 90
+	if angle%90 != 0 {
+		return errors.New("wrong angle")
+	}
+
 	a := int(angle / 90)
 	if v, ok := angleMap[a]; ok {
 		t.transHash.write(32941, uint64(a))

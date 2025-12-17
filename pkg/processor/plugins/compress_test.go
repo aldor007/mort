@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"github.com/aldor007/mort/pkg/response"
 	brEnc "github.com/google/brotli/go/cbrotli"
+	"github.com/klauspost/compress/zstd"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v2"
 	"net/http"
@@ -526,4 +527,386 @@ brotli:
 			}
 		})
 	}
+}
+
+func TestCompressZstd(t *testing.T) {
+	t.Parallel()
+
+	c := CompressPlugin{}
+	configStr := `
+zstd:
+   level: 5
+`
+	var config interface{}
+	yaml.Unmarshal([]byte(configStr), &config)
+
+	c.configure(config)
+	req, _ := http.NewRequest("GET", "http://mort/local/small.jpg-m", nil)
+	req.Header.Add("Accept-Encoding", "zstd")
+	body := make([]byte, 1200)
+	body[33] = 'a'
+	body[324] = 'c'
+	res := response.NewBuf(200, body)
+	res.Headers.Add("Content-Type", "text/html")
+
+	c.postProcess(nil, req, res)
+
+	assert.Equal(t, 3, len(res.Headers))
+	assert.Equal(t, "zstd", res.Headers.Get("Content-Encoding"))
+	assert.Equal(t, "Accept-Encoding", res.Headers.Get("Vary"))
+
+	recorder := httptest.NewRecorder()
+	res.Send(recorder)
+
+	var buf bytes.Buffer
+	zw, _ := zstd.NewWriter(&buf, zstd.WithEncoderLevel(zstd.SpeedDefault))
+	zw.Write(body)
+	zw.Close()
+
+	assert.Equal(t, buf.Len(), recorder.Body.Len())
+}
+
+func TestCompressZstdType(t *testing.T) {
+	t.Parallel()
+
+	c := CompressPlugin{}
+	configStr := `
+zstd:
+   level: 5
+   types: ["application/json"]
+`
+	var config interface{}
+	yaml.Unmarshal([]byte(configStr), &config)
+
+	c.configure(config)
+	req, _ := http.NewRequest("GET", "http://mort/local/data.json", nil)
+	req.Header.Add("Accept-Encoding", "zstd")
+	body := make([]byte, 1200)
+	body[33] = 'a'
+	body[324] = 'c'
+	res := response.NewBuf(200, body)
+	res.Headers.Add("Content-Type", "application/json")
+
+	c.postProcess(nil, req, res)
+
+	assert.Equal(t, 3, len(res.Headers))
+	assert.Equal(t, "zstd", res.Headers.Get("Content-Encoding"))
+	assert.Equal(t, "Accept-Encoding", res.Headers.Get("Vary"))
+
+	recorder := httptest.NewRecorder()
+	res.Send(recorder)
+
+	var buf bytes.Buffer
+	zw, _ := zstd.NewWriter(&buf, zstd.WithEncoderLevel(zstd.SpeedDefault))
+	zw.Write(body)
+	zw.Close()
+
+	assert.Equal(t, buf.Len(), recorder.Body.Len())
+}
+
+func TestCompressZstdImage(t *testing.T) {
+	t.Parallel()
+
+	c := CompressPlugin{}
+	configStr := `
+zstd:
+   level: 5
+`
+	var config interface{}
+	yaml.Unmarshal([]byte(configStr), &config)
+
+	c.configure(config)
+	req, _ := http.NewRequest("GET", "http://mort/local/small.jpg", nil)
+	req.Header.Add("Accept-Encoding", "zstd")
+	res := response.NewBuf(200, make([]byte, 13000))
+	res.Headers.Add("Content-Type", "image/jpg")
+
+	c.postProcess(nil, req, res)
+
+	assert.Equal(t, 1, len(res.Headers))
+}
+
+func TestZstdVsGzipPriority(t *testing.T) {
+	t.Parallel()
+
+	c := CompressPlugin{}
+	configStr := `
+gzip:
+   level: 6
+zstd:
+   level: 5
+   types: ["text/html", "application/json"]
+`
+	var config interface{}
+	yaml.Unmarshal([]byte(configStr), &config)
+	c.configure(config)
+
+	// When both are accepted, zstd should be preferred over gzip
+	req, _ := http.NewRequest("GET", "http://test/file.html", nil)
+	req.Header.Add("Accept-Encoding", "gzip, deflate, zstd")
+	body := make([]byte, 3000)
+	res := response.NewBuf(200, body)
+	res.Headers.Add("Content-Type", "text/html")
+
+	c.postProcess(nil, req, res)
+
+	assert.Equal(t, "zstd", res.Headers.Get("Content-Encoding"),
+		"Zstd should be preferred when both gzip and zstd are accepted")
+}
+
+func TestBrotliVsZstdPriority(t *testing.T) {
+	t.Parallel()
+
+	c := CompressPlugin{}
+	configStr := `
+brotli:
+   quality: 4
+zstd:
+   level: 5
+   types: ["text/html", "application/json"]
+`
+	var config interface{}
+	yaml.Unmarshal([]byte(configStr), &config)
+	c.configure(config)
+
+	// When both are accepted, brotli should be preferred over zstd
+	req, _ := http.NewRequest("GET", "http://test/file.html", nil)
+	req.Header.Add("Accept-Encoding", "br, zstd, gzip")
+	body := make([]byte, 3000)
+	res := response.NewBuf(200, body)
+	res.Headers.Add("Content-Type", "text/html")
+
+	c.postProcess(nil, req, res)
+
+	assert.Equal(t, "br", res.Headers.Get("Content-Encoding"),
+		"Brotli should be preferred when both br and zstd are accepted")
+}
+
+func TestZstdCompressionLevels(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		level   int
+		wantErr bool
+	}{
+		{"level_fastest", 1, false},
+		{"level_default", 4, false},
+		{"level_medium", 5, false},
+		{"level_best", 8, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := CompressPlugin{}
+			configStr := `
+zstd:
+   level: ` + string(rune(tt.level+'0')) + `
+   types: ["text/plain"]
+`
+			var config interface{}
+			yaml.Unmarshal([]byte(configStr), &config)
+			c.configure(config)
+
+			req, _ := http.NewRequest("GET", "http://test/file.txt", nil)
+			req.Header.Add("Accept-Encoding", "zstd")
+			body := make([]byte, 2000)
+			for i := range body {
+				body[i] = byte(i % 256)
+			}
+			res := response.NewBuf(200, body)
+			res.Headers.Add("Content-Type", "text/plain")
+
+			c.postProcess(nil, req, res)
+
+			assert.Equal(t, "zstd", res.Headers.Get("Content-Encoding"))
+			assert.Equal(t, "Accept-Encoding", res.Headers.Get("Vary"))
+		})
+	}
+}
+
+func TestZstdCompressionRatio(t *testing.T) {
+	t.Parallel()
+
+	c := CompressPlugin{}
+	configStr := `
+zstd:
+   level: 6
+   types: ["text/plain"]
+`
+	var config interface{}
+	yaml.Unmarshal([]byte(configStr), &config)
+	c.configure(config)
+
+	req, _ := http.NewRequest("GET", "http://test/file.txt", nil)
+	req.Header.Add("Accept-Encoding", "zstd")
+
+	// Create highly compressible content (repeated pattern)
+	body := bytes.Repeat([]byte("test data for compression "), 100)
+	originalSize := len(body)
+	res := response.NewBuf(200, body)
+	res.Headers.Add("Content-Type", "text/plain")
+
+	c.postProcess(nil, req, res)
+
+	recorder := httptest.NewRecorder()
+	res.Send(recorder)
+
+	compressedSize := recorder.Body.Len()
+
+	// Zstd should achieve good compression ratio on repeated data
+	compressionRatio := float64(compressedSize) / float64(originalSize)
+	assert.Less(t, compressionRatio, 0.5,
+		"Zstd should compress repeated data to less than 50%% of original size")
+}
+
+func TestZstdWithEmptyBody(t *testing.T) {
+	t.Parallel()
+
+	c := CompressPlugin{}
+	configStr := `
+zstd:
+   level: 4
+   types: ["text/plain"]
+`
+	var config interface{}
+	yaml.Unmarshal([]byte(configStr), &config)
+	c.configure(config)
+
+	req, _ := http.NewRequest("GET", "http://test/file.txt", nil)
+	req.Header.Add("Accept-Encoding", "zstd")
+	res := response.NewBuf(200, []byte{})
+	res.Headers.Add("Content-Type", "text/plain")
+
+	c.postProcess(nil, req, res)
+
+	// Empty body should not be compressed
+	assert.NotEqual(t, "zstd", res.Headers.Get("Content-Encoding"))
+}
+
+func TestZstdWithDifferentContentTypes(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name           string
+		contentType    string
+		shouldCompress bool
+	}{
+		{"json", "application/json", true},
+		{"html", "text/html; charset=utf-8", true},
+		{"javascript", "application/javascript", true},
+		{"css", "text/css", true},
+		{"xml", "application/xml", true},
+		{"svg", "image/svg+xml", true},
+		{"jpeg", "image/jpeg", false},
+		{"png", "image/png", false},
+		{"gif", "image/gif", false},
+		{"binary", "application/octet-stream", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := CompressPlugin{}
+			configStr := `
+zstd:
+   level: 5
+   types: ["application/json", "text/html", "application/javascript", "text/css", "application/xml", "image/svg+xml"]
+`
+			var config interface{}
+			yaml.Unmarshal([]byte(configStr), &config)
+			c.configure(config)
+
+			req, _ := http.NewRequest("GET", "http://test/file", nil)
+			req.Header.Add("Accept-Encoding", "zstd")
+			body := make([]byte, 2000)
+			res := response.NewBuf(200, body)
+			res.Headers.Add("Content-Type", tt.contentType)
+
+			c.postProcess(nil, req, res)
+
+			if tt.shouldCompress {
+				assert.Equal(t, "zstd", res.Headers.Get("Content-Encoding"),
+					"Content-Type %s should be compressed", tt.contentType)
+			} else {
+				assert.NotEqual(t, "zstd", res.Headers.Get("Content-Encoding"),
+					"Content-Type %s should not be compressed", tt.contentType)
+			}
+		})
+	}
+}
+
+func TestZstdWithMultipleEncodings(t *testing.T) {
+	t.Parallel()
+
+	c := CompressPlugin{}
+	configStr := `
+zstd:
+   level: 4
+   types: ["text/html"]
+`
+	var config interface{}
+	yaml.Unmarshal([]byte(configStr), &config)
+	c.configure(config)
+
+	tests := []struct {
+		name           string
+		acceptEncoding string
+		expectedEnc    string
+	}{
+		{"only_zstd", "zstd", "zstd"},
+		{"zstd_first", "zstd, gzip, deflate", "zstd"},
+		{"zstd_last", "gzip, deflate, zstd", "zstd"},
+		{"wildcard_with_zstd", "*, zstd", "zstd"},
+		{"no_zstd", "gzip, deflate", ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req, _ := http.NewRequest("GET", "http://test/file.html", nil)
+			req.Header.Add("Accept-Encoding", tt.acceptEncoding)
+			body := make([]byte, 2000)
+			res := response.NewBuf(200, body)
+			res.Headers.Add("Content-Type", "text/html")
+
+			c.postProcess(nil, req, res)
+
+			if tt.expectedEnc != "" {
+				assert.Equal(t, tt.expectedEnc, res.Headers.Get("Content-Encoding"))
+			} else {
+				assert.Equal(t, "", res.Headers.Get("Content-Encoding"))
+			}
+		})
+	}
+}
+
+func TestAllCompressionPriority(t *testing.T) {
+	t.Parallel()
+
+	c := CompressPlugin{}
+	configStr := `
+brotli:
+   quality: 4
+   types: ["text/html"]
+zstd:
+   level: 5
+   types: ["text/html"]
+gzip:
+   level: 6
+   types: ["text/html"]
+`
+	var config interface{}
+	yaml.Unmarshal([]byte(configStr), &config)
+	c.configure(config)
+
+	// When all three are accepted, priority should be: brotli > zstd > gzip
+	req, _ := http.NewRequest("GET", "http://test/file.html", nil)
+	req.Header.Add("Accept-Encoding", "gzip, br, zstd")
+	body := make([]byte, 3000)
+	res := response.NewBuf(200, body)
+	res.Headers.Add("Content-Type", "text/html")
+
+	c.postProcess(nil, req, res)
+
+	assert.Equal(t, "br", res.Headers.Get("Content-Encoding"),
+		"Priority should be brotli > zstd > gzip")
 }

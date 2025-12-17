@@ -10,6 +10,7 @@ import (
 	"github.com/aldor007/mort/pkg/object"
 	"github.com/aldor007/mort/pkg/response"
 	brEnc "github.com/google/brotli/go/cbrotli"
+	"github.com/klauspost/compress/zstd"
 )
 
 func init() {
@@ -26,6 +27,7 @@ type compressConfig struct {
 type CompressPlugin struct {
 	brotli compressConfig
 	gzip   compressConfig
+	zstd   compressConfig
 }
 
 func parseConfig(cType *compressConfig, cfg interface{}) {
@@ -59,6 +61,10 @@ func (c *CompressPlugin) configure(config interface{}) {
 	if tmpCfg, ok := cfg["gzip"]; ok {
 		parseConfig(&c.gzip, tmpCfg)
 	}
+
+	if tmpCfg, ok := cfg["zstd"]; ok {
+		parseConfig(&c.zstd, tmpCfg)
+	}
 }
 
 // PreProcess add webp transform to object
@@ -87,6 +93,34 @@ func (c CompressPlugin) postProcess(obj *object.FileObject, req *http.Request, r
 			}
 		}
 
+	}
+
+	if c.zstd.enabled && strings.Contains(acceptEnc, "zstd") {
+		for _, supportedType := range c.zstd.types {
+			if strings.Contains(contentType, supportedType) {
+				res.Headers.Set("Content-Encoding", "zstd")
+				res.Headers.Add("Vary", "Accept-Encoding")
+				res.BodyTransformer(func(w io.Writer) io.WriteCloser {
+					// Map compression level (1-10) to zstd level
+					// zstd levels go from 1 (fastest) to 19 (best compression), default is 3
+					zstdLevel := zstd.SpeedDefault
+					if c.zstd.level >= 1 && c.zstd.level <= 4 {
+						zstdLevel = zstd.SpeedFastest
+					} else if c.zstd.level >= 5 && c.zstd.level <= 7 {
+						zstdLevel = zstd.SpeedDefault
+					} else if c.zstd.level >= 8 {
+						zstdLevel = zstd.SpeedBestCompression
+					}
+
+					zw, err := zstd.NewWriter(w, zstd.WithEncoderLevel(zstdLevel))
+					if err != nil {
+						panic(err)
+					}
+					return zw
+				})
+				return
+			}
+		}
 	}
 
 	if c.gzip.enabled && strings.Contains(acceptEnc, "gzip") {

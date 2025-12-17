@@ -19,7 +19,7 @@ jobs:
     steps:
       -
         name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: git tag
         run: git fetch --tags;  git fetch --prune --unshallow || true
 
@@ -36,7 +36,7 @@ jobs:
             return tag;
       -
         name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
          repository: ${{ secrets.REPO_NAME }}
          path: infra

@@ -1,7 +1,8 @@
-const axiosRetry = require('axios-retry');
+const axiosRetry = require('axios-retry').default;
 const axios = require('axios');
 
-axiosRetry(axios, { retries: 10,
+axiosRetry(axios, {
+    retries: 10,
     retryDelay: axiosRetry.exponentialDelay,
     retryCondition: (err) => {
         if (err.response && err.response.status > 0) {
