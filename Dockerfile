@@ -1,7 +1,5 @@
-FROM --platform=$TARGETPLATFORM ghcr.io/aldor007/mort-base AS builder
+FROM --platform=$TARGETPLATFORM ghcr.io/aldor007/mort-base:master-6feb103 AS builder
 
-ENV LIBVIPS_VERSION=8.11.2
-ENV GOLANG_VERSION=1.25.4
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 ARG TARGETARCH
@@ -9,20 +7,15 @@ ARG TAG='dev'
 ARG COMMIT="master"
 ARG DATE="now"
 
-ENV GOLANG_DOWNLOAD_URL=https://golang.org/dl/go$GOLANG_VERSION.linux-$TARGETARCH.tar.gz
-
-RUN rm -rf /usr/local/go/ && curl -fsSL --insecure "$GOLANG_DOWNLOAD_URL" -o golang.tar.gz \
-  && tar -C /usr/local -xzf golang.tar.gz \
-  && rm golang.tar.gz
-
 ENV WORKDIR=/workspace
 ENV PATH=/usr/local/go/bin:$PATH
 
 WORKDIR $WORKDIR
 
-# Download dependencies first (better caching)
+# Download dependencies first (better caching with cache mount)
 COPY go.mod go.sum ./
-RUN go mod download
+RUN --mount=type=cache,target=/go/pkg/mod \
+    go mod download
 
 # Copy source code
 COPY cmd/ $WORKDIR/cmd
@@ -31,50 +24,49 @@ COPY configuration/ ${WORKDIR}/configuration
 COPY etc/ ${WORKDIR}/etc
 COPY pkg/ ${WORKDIR}/pkg
 
-# Build binary with optimizations
-RUN CGO_ENABLED=1 GOOS=linux GOARCH=${TARGETARCH} \
+# Build binary with optimizations and build cache
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg/mod \
+    CGO_ENABLED=1 GOOS=linux GOARCH=${TARGETARCH} \
     go build -ldflags="-s -w -X 'main.version=${TAG}' -X 'main.commit=${COMMIT}' -X 'main.date=${DATE}'" \
+    -trimpath \
     -o /go/mort ./cmd/mort/mort.go
 
 # Download mime.types at build time for reproducibility
 RUN curl -fsSL -o /tmp/mime.types https://raw.githubusercontent.com/apache/httpd/refs/heads/trunk/docs/conf/mime.types
 
 
-# Runtime stage - use ubuntu 20.04 to match builder libraries
+# Runtime stage - use minimal ubuntu 20.04
 FROM --platform=$TARGETPLATFORM ubuntu:20.04
 
-# Install runtime dependencies in a single layer
+# Install runtime dependencies, create user, and cleanup in single layer
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
     ca-certificates \
     libglib2.0-0 libjpeg-turbo8 libpng16-16 libopenexr24 \
     libwebp6 libwebpmux3 libwebpdemux2 libtiff5 libgif7 libexif12 libxml2 libpoppler-glib8 \
-    libmagickwand-6.q16-6 libpango1.0-0 libmatio-dev libopenslide0 \
-    libgsf-1-114 fftw3 liborc-0.4-0 librsvg2-2 libcfitsio8 libimagequant0 libheif1 libbrotli-dev && \
+    libmagickwand-6.q16-6 libpango1.0-0 libmatio9 libopenslide0 \
+    libgsf-1-114 fftw3 liborc-0.4-0 librsvg2-2 libcfitsio8 libimagequant0 libheif1 libbrotli1 && \
+    useradd -r -u 1000 -g users mort && \
+    mkdir -p /etc/mort && \
+    chown -R mort:users /etc/mort && \
     apt-get autoremove -y && \
     apt-get autoclean && \
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /var/cache/apt/archives/*
 
-# Copy libvips libraries and update linker cache
+# Copy libvips libraries and application files
 COPY --from=builder /usr/local/lib /usr/local/lib
-RUN ldconfig /usr/local/lib
-
-# Create non-root user for security
-RUN useradd -r -u 1000 -g users mort && \
-    mkdir -p /etc/mort && \
-    chown -R mort:users /etc/mort
-
-# Copy application files
 COPY --from=builder /go/mort /usr/local/bin/mort
 COPY --from=builder /workspace/configuration/config.yml /etc/mort/mort.yml
 COPY --from=builder /workspace/configuration/parse.tengo /etc/mort/parse.tengo
 COPY --from=builder /tmp/mime.types /etc/mime.types
 
-ENV MORT_CONFIG_DIR=/etc/mort
+# Update linker cache and verify installation
+RUN ldconfig /usr/local/lib && \
+    /usr/local/bin/mort -version
 
-# Verify installation
-RUN /usr/local/bin/mort -version
+ENV MORT_CONFIG_DIR=/etc/mort
 
 # Switch to non-root user
 USER mort
