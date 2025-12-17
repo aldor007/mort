@@ -1,3 +1,7 @@
+# CGO flags for brotli and libvips
+export CGO_CFLAGS := $(shell pkg-config --cflags libbrotlienc libbrotlidec 2>/dev/null || echo "-I/opt/homebrew/include")
+export CGO_LDFLAGS := $(shell pkg-config --libs libbrotlienc libbrotlidec 2>/dev/null || echo "-L/opt/homebrew/lib -lbrotlienc -lbrotlidec")
+export CGO_CFLAGS_ALLOW := -Xpreprocessor
 
 install:
 	dep ensure

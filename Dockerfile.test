@@ -1,6 +1,6 @@
 FROM ghcr.io/aldor007/mort-base 
 
-ENV GOLANG_VERSION 1.19.2
+ENV GOLANG_VERSION 1.25.4
 ENV TARGETARCH amd64
 ARG TAG 'dev'
 ARG COMMIT "master"

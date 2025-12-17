@@ -1,6 +1,7 @@
 package tengo_test
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 
@@ -234,8 +235,8 @@ func TestTransformsCall(t *testing.T) {
 			Args: []tengoLib.Object{
 				&tengoLib.Int{Value: 100},
 			},
-			Error:      nil,
-			ResultHash: "13a03cf3bd8c54e9",
+			Error:      errors.New("wrong angle"),
+			ResultHash: noChangesHash,
 		},
 		TestResult{
 			Method: "blur",
@@ -290,8 +291,8 @@ func TestTransformsCall(t *testing.T) {
 				&tengoLib.String{Value: "top-left"},
 				&tengoLib.Float{Value: 11.1},
 			},
-			Error:      nil,
-			ResultHash: "12534f2e185c287e",
+			Error:      errors.New("opacity must be between 0 and 1"),
+			ResultHash: noChangesHash,
 		},
 	}
 

@@ -345,8 +345,8 @@ func TestTransforms_Merge_Empty(t *testing.T) {
 func TestTransforms_Merge_Watermark(t *testing.T) {
 	tab := make([]Transforms, 3)
 	tab[0].Blur(1., 3.)
-	tab[0].Watermark("image2", "top-left", 2.)
-	tab[1].Watermark("image", "top-left", 2.)
+	tab[0].Watermark("image2", "top-left", 0.7)
+	tab[1].Watermark("image", "top-left", 0.5)
 	tab[2].Blur(3., 3.)
 
 	result := Merge(tab)
@@ -387,4 +387,220 @@ func TestTransforms_ResizeCropAuto(t *testing.T) {
 
 	hashStr := strconv.FormatUint(uint64(trans.Hash().Sum64()), 16)
 	assert.Equal(t, "a9476be4baa3fb94", hashStr)
+}
+
+// Validation Tests
+
+func TestQualityValidation(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		quality int
+		wantErr bool
+	}{
+		{"valid quality 1", 1, false},
+		{"valid quality 50", 50, false},
+		{"valid quality 100", 100, false},
+		{"invalid quality 0", 0, true},
+		{"invalid quality -1", -1, true},
+		{"invalid quality 101", 101, true},
+		{"invalid quality 200", 200, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			trans := New()
+			err := trans.Quality(tt.quality)
+			if tt.wantErr {
+				assert.NotNil(t, err, "Quality(%d) should return error", tt.quality)
+				assert.Contains(t, err.Error(), "quality must be between 1 and 100")
+			} else {
+				assert.Nil(t, err, "Quality(%d) should not return error", tt.quality)
+			}
+		})
+	}
+}
+
+func TestBlurValidation(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		sigma   float64
+		minAmpl float64
+		wantErr bool
+	}{
+		{"valid sigma 0.1", 0.1, 0, false},
+		{"valid sigma 1.0", 1.0, 2.0, false},
+		{"valid sigma 10.0", 10.0, 5.0, false},
+		{"invalid sigma 0", 0, 0, true},
+		{"invalid sigma -1", -1.0, 0, true},
+		{"invalid sigma -5", -5.0, 2.0, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			trans := New()
+			err := trans.Blur(tt.sigma, tt.minAmpl)
+			if tt.wantErr {
+				assert.NotNil(t, err, "Blur(%f, %f) should return error", tt.sigma, tt.minAmpl)
+				assert.Contains(t, err.Error(), "sigma must be positive")
+			} else {
+				assert.Nil(t, err, "Blur(%f, %f) should not return error", tt.sigma, tt.minAmpl)
+			}
+		})
+	}
+}
+
+func TestWatermarkOpacityValidation(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		opacity float32
+		wantErr bool
+	}{
+		{"valid opacity 0", 0.0, false},
+		{"valid opacity 0.5", 0.5, false},
+		{"valid opacity 1.0", 1.0, false},
+		{"invalid opacity -0.1", -0.1, true},
+		{"invalid opacity 1.1", 1.1, true},
+		{"invalid opacity 2.0", 2.0, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			trans := New()
+			err := trans.Watermark("test.jpg", "top-left", tt.opacity)
+			if tt.wantErr {
+				assert.NotNil(t, err, "Watermark with opacity %f should return error", tt.opacity)
+				assert.Contains(t, err.Error(), "opacity must be between 0 and 1")
+			} else {
+				assert.Nil(t, err, "Watermark with opacity %f should not return error", tt.opacity)
+			}
+		})
+	}
+}
+
+func TestExtractValidation(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		top     int
+		left    int
+		width   int
+		height  int
+		wantErr bool
+	}{
+		{"valid extract", 0, 0, 100, 100, false},
+		{"valid extract with offset", 10, 20, 100, 100, false},
+		{"invalid negative top", -1, 0, 100, 100, true},
+		{"invalid negative left", 0, -1, 100, 100, true},
+		{"invalid negative width", 0, 0, -1, 100, true},
+		{"invalid negative height", 0, 0, 100, -1, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			trans := New()
+			err := trans.Extract(tt.top, tt.left, tt.width, tt.height)
+			if tt.wantErr {
+				assert.NotNil(t, err, "Extract(%d, %d, %d, %d) should return error", tt.top, tt.left, tt.width, tt.height)
+				assert.Contains(t, err.Error(), "extract coordinates cannot be negative")
+			} else {
+				assert.Nil(t, err, "Extract(%d, %d, %d, %d) should not return error", tt.top, tt.left, tt.width, tt.height)
+			}
+		})
+	}
+}
+
+func TestResizeValidation(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		width   int
+		height  int
+		wantErr bool
+	}{
+		{"valid resize both", 100, 200, false},
+		{"valid resize width only", 100, 0, false},
+		{"valid resize height only", 0, 200, false},
+		{"invalid negative width", -100, 200, true},
+		{"invalid negative height", 100, -200, true},
+		{"invalid both negative", -100, -200, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			trans := New()
+			err := trans.Resize(tt.width, tt.height, false, false, false)
+			if tt.wantErr {
+				assert.NotNil(t, err, "Resize(%d, %d) should return error", tt.width, tt.height)
+				assert.Contains(t, err.Error(), "width and height cannot be negative")
+			} else {
+				assert.Nil(t, err, "Resize(%d, %d) should not return error", tt.width, tt.height)
+			}
+		})
+	}
+}
+
+func TestCropValidation(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		width   int
+		height  int
+		wantErr bool
+	}{
+		{"valid crop", 100, 200, false},
+		{"invalid negative width", -100, 200, true},
+		{"invalid negative height", 100, -200, true},
+		{"invalid both negative", -100, -200, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			trans := New()
+			err := trans.Crop(tt.width, tt.height, "smart", false, false)
+			if tt.wantErr {
+				assert.NotNil(t, err, "Crop(%d, %d) should return error", tt.width, tt.height)
+				assert.Contains(t, err.Error(), "width and height cannot be negative")
+			} else {
+				assert.Nil(t, err, "Crop(%d, %d) should not return error", tt.width, tt.height)
+			}
+		})
+	}
+}
+
+func TestResizeCropAutoValidation(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		width   int
+		height  int
+		wantErr bool
+	}{
+		{"valid resize crop auto", 100, 200, false},
+		{"invalid negative width", -100, 200, true},
+		{"invalid negative height", 100, -200, true},
+		{"invalid both negative", -100, -200, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			trans := New()
+			err := trans.ResizeCropAuto(tt.width, tt.height)
+			if tt.wantErr {
+				assert.NotNil(t, err, "ResizeCropAuto(%d, %d) should return error", tt.width, tt.height)
+				assert.Contains(t, err.Error(), "width and height cannot be negative")
+			} else {
+				assert.Nil(t, err, "ResizeCropAuto(%d, %d) should not return error", tt.width, tt.height)
+			}
+		})
+	}
 }
