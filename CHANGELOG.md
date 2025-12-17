@@ -1,3 +1,10 @@
+# [0.32.0](https://github.com/aldor007/mort/compare/v0.31.0...v0.32.0) (2025-12-17)
+
+
+### Features
+
+* better base image in mort ([16b5481](https://github.com/aldor007/mort/commit/16b54810f9619d5e8d0436cebb5368f979279172))
+
 # [0.31.0](https://github.com/aldor007/mort/compare/v0.30.2...v0.31.0) (2025-12-17)
 
 
