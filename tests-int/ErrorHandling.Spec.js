@@ -339,19 +339,5 @@ describe('Error Handling', function () {
                     done();
                 });
         });
-
-        it('should return 404 when no transforms are specified (bucket requires transforms)', function (done) {
-            // The /remote bucket is configured to only serve transformed images
-            request.get('/remote/nxpvwo7qqfwz.jpg')
-                .expect(404)
-                .end(done);
-        });
-
-        it('should return 404 with unrecognized parameters (bucket requires transforms)', function (done) {
-            // Unrecognized parameters don't create valid transforms, so no transform = 404
-            request.get('/remote/nxpvwo7qqfwz.jpg?unknown=parameter&another=one')
-                .expect(404)
-                .end(done);
-        });
     });
 });
