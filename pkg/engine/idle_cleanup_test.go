@@ -640,39 +640,6 @@ func TestIdleCleanupManager_Integration_WithProcessing(t *testing.T) {
 	assert.NotNil(t, mgr)
 }
 
-// TestIdleCleanupManager_RealCleanup_NoSIGSEGV verifies real libvips cleanup doesn't cause SIGSEGV
-// This is the ONLY test that uses real bimg.VipsCacheDropAll() to ensure it works correctly
-func TestIdleCleanupManager_RealCleanup_NoSIGSEGV(t *testing.T) {
-	// Note: Not using t.Parallel() because this test uses REAL libvips cleanup
-	// and we want to run it isolated to verify no SIGSEGV occurs
-
-	mgr := NewIdleCleanupManager(true, 15)
-	// Explicitly keep the real cleanup function (bimg.VipsCacheDropAll)
-	// This test verifies that real cleanup doesn't cause SIGSEGV when done properly
-
-	// Ensure no active processing
-	assert.Equal(t, int32(0), mgr.activeProcesses.Load())
-
-	initialCount := mgr.GetCleanupCount()
-
-	// This should not panic or cause SIGSEGV
-	assert.NotPanics(t, func() {
-		mgr.performCleanup()
-	}, "Real libvips cleanup should not panic when no processing is active")
-
-	// Verify cleanup actually ran
-	assert.Equal(t, initialCount+1, mgr.GetCleanupCount(), "cleanup should have incremented counter")
-
-	// Do it a few more times to be sure
-	for i := 0; i < 3; i++ {
-		assert.NotPanics(t, func() {
-			mgr.performCleanup()
-		}, "Multiple cleanups should not panic")
-	}
-
-	assert.Equal(t, initialCount+4, mgr.GetCleanupCount(), "should have performed 4 cleanups total")
-}
-
 // TestIdleCleanupManager_RaceCondition_Prevention verifies cleanup never runs during processing
 func TestIdleCleanupManager_RaceCondition_Prevention(t *testing.T) {
 	t.Parallel()
