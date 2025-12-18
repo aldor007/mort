@@ -1,3 +1,10 @@
+# [0.33.0](https://github.com/aldor007/mort/compare/v0.32.0...v0.33.0) (2025-12-18)
+
+
+### Features
+
+* bg cleanup of vips buf ([7d72f9c](https://github.com/aldor007/mort/commit/7d72f9c95a50b0b683e22092731b1acd56415946))
+
 # [0.32.0](https://github.com/aldor007/mort/compare/v0.31.0...v0.32.0) (2025-12-17)
 
 
