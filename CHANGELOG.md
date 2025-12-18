@@ -1,3 +1,11 @@
+## [0.34.2](https://github.com/aldor007/mort/compare/v0.34.1...v0.34.2) (2025-12-18)
+
+
+### Bug Fixes
+
+* lock when doing clenaup ([d920a96](https://github.com/aldor007/mort/commit/d920a9688cc067d1876fda6a7e85330cdd750a24))
+* vips cleanup ([dcdee83](https://github.com/aldor007/mort/commit/dcdee838bde39fc42d4b8caf9eb5d734d9d73e1d))
+
 ## [0.34.1](https://github.com/aldor007/mort/compare/v0.34.0...v0.34.1) (2025-12-18)
 
 
