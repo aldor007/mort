@@ -94,7 +94,9 @@ func TestIdleCleanupManager_RecordActivity(t *testing.T) {
 }
 
 func TestIdleCleanupManager_RecordActivity_Concurrent(t *testing.T) {
-	t.Parallel()
+	// Note: Not using t.Parallel() here because this test is already internally
+	// concurrent with 20 goroutines. Running it in parallel with other tests
+	// can overwhelm CI test coordinators.
 
 	mgr := NewIdleCleanupManager(true, 15)
 
@@ -467,7 +469,9 @@ func TestIdleCleanupManager_BeginEndProcessing(t *testing.T) {
 
 // TestIdleCleanupManager_BeginEndProcessing_Concurrent tests concurrent processing tracking
 func TestIdleCleanupManager_BeginEndProcessing_Concurrent(t *testing.T) {
-	t.Parallel()
+	// Note: Not using t.Parallel() here because this test is already internally
+	// concurrent with 20 goroutines. Running it in parallel with other tests
+	// can overwhelm CI test coordinators.
 
 	mgr := NewIdleCleanupManager(true, 15)
 
@@ -532,7 +536,9 @@ func TestIdleCleanupManager_PerformCleanup_NoActiveProcesses(t *testing.T) {
 
 // TestIdleCleanupManager_PerformCleanup_Concurrent verifies cleanup is thread-safe
 func TestIdleCleanupManager_PerformCleanup_Concurrent(t *testing.T) {
-	t.Parallel()
+	// Note: Not using t.Parallel() here because this test is already internally
+	// concurrent with 10 goroutines. Running it in parallel with other tests
+	// can overwhelm CI test coordinators.
 
 	mgr := NewIdleCleanupManager(true, 15)
 
