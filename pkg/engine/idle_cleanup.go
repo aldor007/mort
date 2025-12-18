@@ -23,6 +23,7 @@ type IdleCleanupManager struct {
 	activeProcesses atomic.Int32 // Number of active image processing operations
 	cleanupMu       sync.Mutex   // Protects cleanup operations
 	wg              sync.WaitGroup // Tracks background goroutine to prevent leaks
+	cleanupFunc     func()        // Function to call for cleanup (defaults to bimg.VipsCacheDropAll, can be mocked in tests)
 }
 
 // NewIdleCleanupManager creates a new IdleCleanupManager
@@ -43,6 +44,7 @@ func NewIdleCleanupManager(enabled bool, timeoutMinutes int) *IdleCleanupManager
 		idleTimeout:   timeout,
 		checkInterval: checkInterval,
 		stopChan:      make(chan struct{}),
+		cleanupFunc:   bimg.VipsCacheDropAll, // Default to real libvips cleanup
 	}
 
 	// Initialize with current time
@@ -183,7 +185,10 @@ func (m *IdleCleanupManager) performCleanup() {
 		zap.Int64("memoryAllocations", memBefore.Allocations))
 
 	// Perform cleanup - safe because no active processing
-	bimg.VipsCacheDropAll()
+	// Use the injected cleanup function (defaults to bimg.VipsCacheDropAll)
+	if m.cleanupFunc != nil {
+		m.cleanupFunc()
+	}
 
 	// Get memory stats after cleanup
 	memAfter := bimg.VipsMemory()
