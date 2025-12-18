@@ -49,6 +49,13 @@ func NewRequestProcessor(serverConfig config.Server, l lock.Lock, throttler thro
 	rp.serverConfig = serverConfig
 	rp.plugins = plugins.NewPluginsManager(serverConfig.Plugins)
 	rp.responseCache = cache.Create(serverConfig.Cache)
+
+	// Initialize idle cleanup manager if configured
+	if serverConfig.IdleCleanup != nil && serverConfig.IdleCleanup.Enabled {
+		rp.idleCleanup = engine.NewIdleCleanupManager(true, serverConfig.IdleCleanup.IdleTimeoutMin)
+		rp.idleCleanup.Start()
+	}
+
 	return rp
 }
 
@@ -61,6 +68,7 @@ type RequestProcessor struct {
 	plugins        plugins.PluginsManager // plugins run plugins before some phases of requests processing
 	serverConfig   config.Server
 	responseCache  cache.ResponseCache
+	idleCleanup    *engine.IdleCleanupManager // manages memory cleanup during idle periods
 }
 
 type requestMessage struct {
@@ -495,6 +503,11 @@ func (r *RequestProcessor) processImage(obj *object.FileObject, parent *response
 	}
 	defer r.throttler.Release()
 
+	// Track activity for idle cleanup
+	if r.idleCleanup != nil {
+		r.idleCleanup.RecordActivity()
+	}
+
 	transformsLen := len(transformsTab)
 	mergedTrans := transforms.Merge(transformsTab)
 	mergedLen := len(mergedTrans)
@@ -575,4 +588,12 @@ func updateHeaders(obj *object.FileObject, res *response.Response) *response.Res
 	}
 
 	return res
+}
+
+// Shutdown gracefully shuts down the request processor
+// This should be called before server shutdown to cleanly stop background tasks
+func (r *RequestProcessor) Shutdown() {
+	if r.idleCleanup != nil {
+		r.idleCleanup.Stop()
+	}
 }
