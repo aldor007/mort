@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -13,12 +14,14 @@ import (
 // It tracks image processing activity and triggers libvips cache cleanup
 // when the system has been idle for a configured duration
 type IdleCleanupManager struct {
-	enabled       bool
-	idleTimeout   time.Duration
-	checkInterval time.Duration
-	lastActivity  atomic.Int64 // Unix timestamp in seconds
-	stopChan      chan struct{}
-	cleanupCount  atomic.Int64 // Counter for cleanup operations (useful for metrics)
+	enabled         bool
+	idleTimeout     time.Duration
+	checkInterval   time.Duration
+	lastActivity    atomic.Int64 // Unix timestamp in seconds
+	stopChan        chan struct{}
+	cleanupCount    atomic.Int64 // Counter for cleanup operations (useful for metrics)
+	activeProcesses atomic.Int32 // Number of active image processing operations
+	cleanupMu       sync.Mutex   // Protects cleanup operations
 }
 
 // NewIdleCleanupManager creates a new IdleCleanupManager
@@ -79,6 +82,27 @@ func (m *IdleCleanupManager) RecordActivity() {
 	m.lastActivity.Store(time.Now().Unix())
 }
 
+// BeginProcessing increments the active process counter
+// Call this before starting image processing to prevent cleanup during processing
+func (m *IdleCleanupManager) BeginProcessing() {
+	if !m.enabled {
+		return
+	}
+
+	m.activeProcesses.Add(1)
+	m.RecordActivity()
+}
+
+// EndProcessing decrements the active process counter
+// Call this after image processing completes (use defer for safety)
+func (m *IdleCleanupManager) EndProcessing() {
+	if !m.enabled {
+		return
+	}
+
+	m.activeProcesses.Add(-1)
+}
+
 // GetCleanupCount returns the number of cleanup operations performed
 // Useful for monitoring and metrics
 func (m *IdleCleanupManager) GetCleanupCount() int64 {
@@ -131,7 +155,20 @@ func (m *IdleCleanupManager) checkAndCleanup() {
 }
 
 // performCleanup actually performs the libvips cache cleanup
+// It is thread-safe and will only perform cleanup if no image processing is active
 func (m *IdleCleanupManager) performCleanup() {
+	// Lock to ensure only one cleanup at a time
+	m.cleanupMu.Lock()
+	defer m.cleanupMu.Unlock()
+
+	// Check if there are active image processing operations
+	activeCount := m.activeProcesses.Load()
+	if activeCount > 0 {
+		monitoring.Log().Debug("Skipping cleanup due to active processing",
+			zap.Int32("activeProcesses", activeCount))
+		return
+	}
+
 	// Get memory stats before cleanup
 	memBefore := bimg.VipsMemory()
 
@@ -139,7 +176,7 @@ func (m *IdleCleanupManager) performCleanup() {
 		zap.Int64("memoryBefore", memBefore.Memory),
 		zap.Int64("memoryAllocations", memBefore.Allocations))
 
-	// Perform cleanup
+	// Perform cleanup - safe because no active processing
 	bimg.VipsCacheDropAll()
 
 	// Get memory stats after cleanup

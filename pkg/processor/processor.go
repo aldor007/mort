@@ -503,9 +503,10 @@ func (r *RequestProcessor) processImage(obj *object.FileObject, parent *response
 	}
 	defer r.throttler.Release()
 
-	// Track activity for idle cleanup
+	// Track activity for idle cleanup and prevent cleanup during processing
 	if r.idleCleanup != nil {
-		r.idleCleanup.RecordActivity()
+		r.idleCleanup.BeginProcessing()
+		defer r.idleCleanup.EndProcessing()
 	}
 
 	transformsLen := len(transformsTab)

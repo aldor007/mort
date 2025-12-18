@@ -148,3 +148,150 @@ func TestPrometheusReporter_TimerVec(t *testing.T) {
 
 	assert.InEpsilon(t, *result.Histogram.SampleSum, 100, 5)
 }
+
+// TestPrometheusReporter_UnregisteredCounter verifies that using an unregistered counter doesn't panic
+func TestPrometheusReporter_UnregisteredCounter(t *testing.T) {
+	t.Parallel()
+	p := NewPrometheusReporter()
+
+	// This should not panic, just log a warning
+	assert.NotPanics(t, func() {
+		p.Inc("unregistered_counter")
+	}, "Inc on unregistered counter should not panic")
+
+	assert.NotPanics(t, func() {
+		p.Counter("unregistered_counter", 5.0)
+	}, "Counter on unregistered counter should not panic")
+}
+
+// TestPrometheusReporter_UnregisteredCounterVec verifies that using an unregistered counter vec doesn't panic
+func TestPrometheusReporter_UnregisteredCounterVec(t *testing.T) {
+	t.Parallel()
+	p := NewPrometheusReporter()
+
+	// This should not panic, just log a warning
+	assert.NotPanics(t, func() {
+		p.Inc("unregistered_counter_vec;label:value")
+	}, "Inc on unregistered counter vec should not panic")
+
+	assert.NotPanics(t, func() {
+		p.Counter("unregistered_counter_vec;label:value", 5.0)
+	}, "Counter on unregistered counter vec should not panic")
+}
+
+// TestPrometheusReporter_UnregisteredGauge verifies that using an unregistered gauge doesn't panic
+func TestPrometheusReporter_UnregisteredGauge(t *testing.T) {
+	t.Parallel()
+	p := NewPrometheusReporter()
+
+	// This should not panic, just log a warning
+	assert.NotPanics(t, func() {
+		p.Gauge("unregistered_gauge", 10.0)
+	}, "Gauge on unregistered gauge should not panic")
+}
+
+// TestPrometheusReporter_UnregisteredGaugeVec verifies that using an unregistered gauge vec doesn't panic
+func TestPrometheusReporter_UnregisteredGaugeVec(t *testing.T) {
+	t.Parallel()
+	p := NewPrometheusReporter()
+
+	// This should not panic, just log a warning
+	assert.NotPanics(t, func() {
+		p.Gauge("unregistered_gauge_vec;label:value", 10.0)
+	}, "Gauge on unregistered gauge vec should not panic")
+}
+
+// TestPrometheusReporter_UnregisteredHistogram verifies that using an unregistered histogram doesn't panic
+func TestPrometheusReporter_UnregisteredHistogram(t *testing.T) {
+	t.Parallel()
+	p := NewPrometheusReporter()
+
+	// This should not panic, just log a warning
+	assert.NotPanics(t, func() {
+		p.Histogram("unregistered_histogram", 100.0)
+	}, "Histogram on unregistered histogram should not panic")
+}
+
+// TestPrometheusReporter_UnregisteredHistogramVec verifies that using an unregistered histogram vec doesn't panic
+func TestPrometheusReporter_UnregisteredHistogramVec(t *testing.T) {
+	t.Parallel()
+	p := NewPrometheusReporter()
+
+	// This should not panic, just log a warning
+	assert.NotPanics(t, func() {
+		p.Histogram("unregistered_histogram_vec;label:value", 100.0)
+	}, "Histogram on unregistered histogram vec should not panic")
+}
+
+// TestPrometheusReporter_UnregisteredTimer verifies that using an unregistered timer doesn't panic
+func TestPrometheusReporter_UnregisteredTimer(t *testing.T) {
+	t.Parallel()
+	p := NewPrometheusReporter()
+
+	// This should not panic, just log a warning
+	assert.NotPanics(t, func() {
+		tr := p.Timer("unregistered_timer")
+		time.Sleep(time.Millisecond * 10)
+		tr.Done()
+	}, "Timer on unregistered histogram should not panic")
+}
+
+// TestPrometheusReporter_MixedRegisteredAndUnregistered verifies resilience with mixed scenarios
+func TestPrometheusReporter_MixedRegisteredAndUnregistered(t *testing.T) {
+	t.Parallel()
+	p := NewPrometheusReporter()
+
+	// Register one counter
+	p.RegisterCounter("registered_counter", prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "test_registered_counter",
+		Help: "test registered counter",
+	}))
+
+	// Use registered counter - should work
+	assert.NotPanics(t, func() {
+		p.Inc("registered_counter")
+		p.Counter("registered_counter", 5.0)
+	}, "Registered counter should work")
+
+	// Use unregistered counter - should not panic
+	assert.NotPanics(t, func() {
+		p.Inc("unregistered_counter")
+		p.Counter("unregistered_counter", 5.0)
+	}, "Unregistered counter should not panic")
+
+	// Verify registered counter has correct value
+	result := dto.Metric{}
+	p.counters["registered_counter"].Write(&result)
+	assert.Equal(t, 6.0, *result.Counter.Value, "Registered counter should have value 6")
+}
+
+// TestPrometheusReporter_RealWorldScenario simulates the vips_cleanup_count scenario
+func TestPrometheusReporter_RealWorldScenario(t *testing.T) {
+	t.Parallel()
+	p := NewPrometheusReporter()
+
+	// Simulate forgetting to register the metric (like the vips_cleanup_count bug)
+	// This should not panic
+	assert.NotPanics(t, func() {
+		for i := 0; i < 10; i++ {
+			p.Inc("vips_cleanup_count")
+		}
+	}, "Should handle unregistered metric gracefully")
+
+	// Now register it
+	p.RegisterCounter("vips_cleanup_count", prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "mort_vips_cleanup_count",
+		Help: "mort count of vips cache cleanups",
+	}))
+
+	// Now it should work and accumulate
+	assert.NotPanics(t, func() {
+		p.Inc("vips_cleanup_count")
+		p.Inc("vips_cleanup_count")
+	}, "Should work after registration")
+
+	// Verify the counter has the correct value (only the 2 after registration)
+	result := dto.Metric{}
+	p.counters["vips_cleanup_count"].Write(&result)
+	assert.Equal(t, 2.0, *result.Counter.Value, "Should only count increments after registration")
+}

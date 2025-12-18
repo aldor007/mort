@@ -37,13 +37,19 @@ func (p *PrometheusReporter) Inc(metric string) {
 	parts := strings.Split(metric, ";")
 	name := parts[0]
 	if len(parts) == 1 {
-		p.counters[name].Inc()
+		c, ok := p.counters[name]
+		if ok {
+			c.Inc()
+		} else {
+			Log().Warn("Attempted to increment unregistered counter: " + name)
+		}
 	} else {
 		c, ok := p.countersVec[name]
 		if ok {
 			c.With(getLabels(parts[1])).Inc()
+		} else {
+			Log().Warn("Attempted to increment unregistered counter vector: " + name)
 		}
-
 	}
 }
 
@@ -53,13 +59,19 @@ func (p *PrometheusReporter) Counter(metric string, val float64) {
 	parts := strings.Split(metric, ";")
 	name := parts[0]
 	if len(parts) == 1 {
-		p.counters[name].Add(val)
+		c, ok := p.counters[name]
+		if ok {
+			c.Add(val)
+		} else {
+			Log().Warn("Attempted to add to unregistered counter: " + name)
+		}
 	} else {
 		c, ok := p.countersVec[name]
 		if ok {
 			c.With(getLabels(parts[1])).Add(val)
+		} else {
+			Log().Warn("Attempted to add to unregistered counter vector: " + name)
 		}
-
 	}
 }
 
@@ -69,11 +81,18 @@ func (p *PrometheusReporter) Gauge(metric string, val float64) {
 	parts := strings.Split(metric, ";")
 	name := parts[0]
 	if len(parts) == 1 {
-		p.gauges[name].Add(val)
+		g, ok := p.gauges[name]
+		if ok {
+			g.Add(val)
+		} else {
+			Log().Warn("Attempted to add to unregistered gauge: " + name)
+		}
 	} else {
 		c, ok := p.gaugesVec[name]
 		if ok {
 			c.With(getLabels(parts[1])).Add(val)
+		} else {
+			Log().Warn("Attempted to add to unregistered gauge vector: " + name)
 		}
 	}
 }
@@ -84,11 +103,18 @@ func (p *PrometheusReporter) Histogram(metric string, val float64) {
 	parts := strings.Split(metric, ";")
 	name := parts[0]
 	if len(parts) == 1 {
-		p.histograms[name].Observe(val)
+		h, ok := p.histograms[name]
+		if ok {
+			h.Observe(val)
+		} else {
+			Log().Warn("Attempted to observe unregistered histogram: " + name)
+		}
 	} else {
 		c, ok := p.histogramsVec[name]
 		if ok {
 			c.With(getLabels(parts[1])).Observe(val)
+		} else {
+			Log().Warn("Attempted to observe unregistered histogram vector: " + name)
 		}
 	}
 }

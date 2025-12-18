@@ -166,6 +166,11 @@ func configureMonitoring(mortConfig *config.Config) {
 			Help: "mort count of collapsed requests",
 		}))
 
+		p.RegisterCounter("vips_cleanup_count", prometheus.NewCounter(prometheus.CounterOpts{
+			Name: "mort_vips_cleanup_count",
+			Help: "mort count of vips cache cleanups",
+		}))
+
 		p.RegisterHistogramVec("storage_time", prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Name:    "mort_storage_time",
 			Help:    "mort storage times",

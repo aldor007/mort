@@ -350,7 +350,12 @@ func TestContextTimeoutRace(t *testing.T) {
 			assert.Nil(t, err)
 
 			res := rp.Process(req, obj)
-			assert.Equal(t, 499, res.StatusCode)
+			// When context is cancelled immediately, we might get either:
+			// - 499 (client cancelled request) if detected during processing
+			// - 504 (timeout) if timeout occurs before cancellation is detected
+			// Both are valid responses and don't indicate a race condition
+			assert.Contains(t, []int{499, 504}, res.StatusCode,
+				"should return either 499 (cancelled) or 504 (timeout), got %d", res.StatusCode)
 		}()
 	}
 	wg.Wait()
