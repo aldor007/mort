@@ -527,6 +527,7 @@ func TestIdleCleanupManager_PerformCleanup_WithActiveProcesses(t *testing.T) {
 	t.Parallel()
 
 	mgr := NewIdleCleanupManager(true, 15)
+	mgr.cleanupFunc = mockCleanupFunc // Use mock to avoid interfering with libvips
 
 	// Mark as having active processes
 	mgr.BeginProcessing()
@@ -546,6 +547,7 @@ func TestIdleCleanupManager_PerformCleanup_NoActiveProcesses(t *testing.T) {
 	t.Parallel()
 
 	mgr := NewIdleCleanupManager(true, 15)
+	mgr.cleanupFunc = mockCleanupFunc // Use mock to avoid interfering with libvips
 
 	// Ensure no active processes
 	assert.Equal(t, int32(0), mgr.activeProcesses.Load())
@@ -566,6 +568,7 @@ func TestIdleCleanupManager_PerformCleanup_Concurrent(t *testing.T) {
 	// can overwhelm CI test coordinators.
 
 	mgr := NewIdleCleanupManager(true, 15)
+	mgr.cleanupFunc = mockCleanupFunc // Use mock to avoid interfering with libvips
 
 	// Launch multiple concurrent cleanup attempts
 	concurrency := 10
