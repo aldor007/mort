@@ -229,7 +229,14 @@ func main() {
 	fmt.Printf(BANNER, version, commit, date)
 	fmt.Printf("Config file %s listen addr %s montoring: and debug listen %s pid: %d \n", *configPath, imgConfig.Server.Listen, imgConfig.Server.InternalListen, os.Getpid())
 
-	rp := processor.NewRequestProcessor(imgConfig.Server, lock.Create(imgConfig.Server.Lock, imgConfig.Server.LockTimeout), throttler.NewBucketThrottler(10))
+	// Set default concurrent image processing limit if not configured
+	concurrentLimit := imgConfig.Server.ConcurrentImageProcessing
+	if concurrentLimit <= 0 {
+		concurrentLimit = 100
+	}
+	monitoring.Log().Info("Image processing concurrency", zap.Int("limit", concurrentLimit))
+
+	rp := processor.NewRequestProcessor(imgConfig.Server, lock.Create(imgConfig.Server.Lock, imgConfig.Server.LockTimeout), throttler.NewBucketThrottler(concurrentLimit))
 
 	if imgConfig.Server.AccessLog {
 		logger := httplog.NewLogger("mort", httplog.Options{

@@ -8,21 +8,26 @@ An S3-compatible image processing server written in Go. Still in active developm
 
 # Features
 
-* HTTP server
-* Resize, Rotate, SmartCrop
-* Convert (JPEG, PNG , BMP, Webp)
-* Multiple storage backends (disk, S3, http)
-* Fully modular
-* S3 API for listing and uploading files
-* Requests collapsing
-* Build in rate limiter
-* HTTP Range and Conditional requests
+* HTTP server with Unix socket support
+* Image operations: Resize, Rotate, SmartCrop, Blur, Watermark
+* Format conversion (JPEG, PNG, BMP, WebP)
+* Multiple storage backends (disk, S3, HTTP, Azure, Google Cloud, Oracle, B2, SFTP)
+* Fully modular architecture
+* S3-compatible API for listing and uploading files
+* **Request collapsing** - prevents duplicate processing of identical requests
+* **Configurable concurrency limit** - control max concurrent image transformations
+* **Automatic lock refresh** - prevents lock expiration during long operations
+* **Distributed locking** - Redis-based locking for multi-instance deployments
+* Response caching (memory or Redis)
+* HTTP Range and Conditional requests support
 * Compression (gzip, brotli)
-* Env variables driven configuration
-* Write you own transform parser using [tengo](https://github.com/d5/tengo)
-* cloudinary image transformation and upload
+* Environment variables driven configuration
+* Custom URL transform parsers using [Tengo](https://github.com/d5/tengo)
+* Cloudinary-compatible image transformation and upload API
+* Prometheus metrics and debug endpoints
+* Automatic memory cleanup during idle periods
 
-And more see [changelog](CHANGELOG.md) for more info
+See [changelog](CHANGELOG.md) and [documentation](doc/Configuration.md) for more info
 
 # Demo
 -------

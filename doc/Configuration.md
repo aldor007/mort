@@ -2,6 +2,11 @@
 
 - [Configuration](#configuration)
   * [Server](#server)
+    + [Server Configuration Details](#server-configuration-details)
+      - [Concurrent Image Processing](#concurrent-image-processing)
+      - [Request Collapsing & Locking](#request-collapsing--locking)
+      - [Cache Configuration](#cache-configuration)
+      - [Idle Cleanup](#idle-cleanup)
   * [Response Headers](#response-headers)
   * [Buckets](#buckets)
     + [Transform](#transform)
@@ -59,20 +64,143 @@ Server section describe configuration for the HTTP server and some runtime varia
 ```yaml
 server:
     listen: "0.0.0.0:8080" # default traffic listener
-    monitoring: "" # default no monitoring ( or prometheus)
+    listens: # alternative: multiple listeners (HTTP and Unix sockets)
+      - ":8084"
+      - "unix:/tmp/mort.sock"
+    monitoring: "prometheus" # default no monitoring, or "prometheus" for metrics
+    logLevel: "info" # log level: debug, info, warn, error (default: info)
+    accessLogs: true # enable HTTP access logs (default: false)
+
+    # Performance & Concurrency
+    concurrentImageProcessing: 100 # max concurrent image transformations (default: 100)
+                                    # Adjust based on CPU/memory capacity
+                                    # - Small servers: 20-50
+                                    # - Medium servers (4-8 cores): 100-200
+                                    # - Large servers (16+ cores): 200-500
+    requestTimeout: 70 # request processing timeout in seconds (default: 60)
+    lockTimeout: 30 # lock timeout for collapsed requests in seconds (default: 30)
+
+    # Cache Configuration
     cache:
-      type: "memory" # default or redis
-      cacheSize: 50000 # limit of bytes used by memory cache.
-      maxCacheItemSizeMB: 50 # max item size to cache default 5 MB
-      # config for redis
+      type: "memory" # cache type: "memory" (default), "redis", or "redis-cluster"
+      cacheSize: 50000 # memory cache size limit in bytes
+      maxCacheItemSizeMB: 50 # max item size to cache in MB (default: 5)
+      minUseCount: 2 # minimum access count before caching (prevents one-time requests)
+      # Redis cache config
       address:
         - "localhost:6379"
-      clientConfig: # change redis instance config
-    requestTimeout: 70 # default request timeout in seconds
-    internalListen: "0.0.0.0:8081" # default listener for debug /debug and metrics /metrics
+      clientConfig: # optional redis client configuration
+        maxRetries: "3"
+
+    # Request Collapsing / Lock Configuration
+    lock:
+      type: "memory" # lock type: "memory" (default), "redis", or "redis-cluster"
+      # Redis lock config (for distributed deployments)
+      address:
+        - "localhost:6379"
+      clientConfig: # optional redis client configuration
+
+    # Memory Management (optional)
+    idleCleanup:
+      enabled: true # enable automatic memory cleanup during idle periods
+      idleTimeoutMin: 5 # minutes of inactivity before cleanup
+
+    # Server Listeners
+    internalListen: "0.0.0.0:8081" # listener for /debug (pprof) and /metrics (prometheus)
+
+    # File Upload
+    maxFileSize: 104857600 # max file upload size in bytes (default: 100MB)
+
+    # Plugins
     plugins: # list of additional plugins
-        - "webp" # returns response based on accept header
+      webp: ~ # automatic WebP conversion based on Accept header
+      compress: # response compression
+        gzip:
+          types: # MIME types to compress
+            - text/plain
+            - application/json
+          level: 4 # compression level 1-9
+        brotli:
+          types:
+            - text/plain
+            - application/json
+          level: 4
 ```
+
+### Server Configuration Details
+
+#### Concurrent Image Processing
+
+The `concurrentImageProcessing` setting controls how many image transformations can run simultaneously. This is crucial for:
+
+- **Preventing server overload** during traffic spikes
+- **Memory management** - each transformation consumes memory
+- **CPU utilization** - balancing parallel processing with system resources
+
+**Recommended values:**
+- **Default (100)**: Good for most servers with 4-8 CPU cores and 8-16GB RAM
+- **Low (20-50)**: Suitable for:
+  - Small servers or shared environments
+  - Limited memory (< 4GB RAM)
+  - Low CPU count (1-2 cores)
+- **Medium (100-200)**: Suitable for:
+  - Dedicated servers with 8-16 cores
+  - 16-32GB RAM
+  - Moderate to high traffic
+- **High (200-500)**: Suitable for:
+  - Large servers with 16+ cores
+  - 32GB+ RAM
+  - Very high traffic applications
+- **Very High (1000+)**: Only for large distributed clusters with significant resources
+
+When the limit is reached, requests return HTTP 503 (Service Unavailable) and clients can retry.
+
+#### Request Collapsing & Locking
+
+Mort includes a **request collapsing** mechanism to prevent duplicate processing:
+
+- **Memory Lock** (default): Uses in-process locking, suitable for single-instance deployments
+- **Redis Lock**: Uses distributed locking via Redis, required for multi-instance deployments
+
+When multiple requests for the same image transformation arrive simultaneously:
+1. First request acquires the lock and processes the image
+2. Subsequent requests wait for the result
+3. Once processing completes, all waiting requests receive the same result
+4. This prevents the "thundering herd" problem
+
+**Redis Lock Features:**
+- Automatic lock refresh to prevent expiration during long operations
+- Configurable lock timeout (default: 30 seconds)
+- Pub/sub notification for efficient cross-instance communication
+- Proper resource cleanup to prevent goroutine leaks
+
+**Important:** Always call proper cleanup when shutting down to release Redis connections:
+```go
+if redisLock, ok := lock.(*lock.RedisLock); ok {
+    redisLock.Close()
+}
+```
+
+#### Cache Configuration
+
+Response caching significantly improves performance by storing transformed images:
+
+- **Memory Cache**: Fast, but limited to single instance
+- **Redis Cache**: Shared across instances, suitable for distributed deployments
+
+**Cache Strategy:**
+- Only successful responses (HTTP 200) with known content length are cached
+- Configurable maximum item size prevents memory exhaustion
+- `minUseCount` prevents caching of rarely-accessed images
+
+#### Idle Cleanup
+
+The `idleCleanup` feature automatically releases memory during periods of low activity:
+- Frees vips buffer caches
+- Runs garbage collection
+- Helps maintain stable memory usage over time
+
+Enabled by default with a 5-minute idle timeout.
 
 ## Response Headers
 

@@ -1,6 +1,9 @@
 server:
   logLevel: "debug"
   accessLogs: true
+  # Maximum number of concurrent image transformations (default: 100)
+  # Adjust based on your server's CPU/memory capacity
+  concurrentImageProcessing: 100
   cache:
       type: "redis"
       address:

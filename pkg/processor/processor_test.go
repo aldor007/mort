@@ -118,6 +118,194 @@ func TestReturn503WhenThrottled(t *testing.T) {
 	assert.Equal(t, res.StatusCode, 503)
 }
 
+func TestConcurrentImageProcessingLimit(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name              string
+		concurrentLimit   int
+		totalRequests     int
+		expectedSuccesses int
+		expectedThrottled int
+		description       string
+	}{
+		{
+			name:              "limit of 2 with 5 concurrent requests",
+			concurrentLimit:   2,
+			totalRequests:     5,
+			expectedSuccesses: 2,
+			expectedThrottled: 3,
+			description:       "only 2 should process, 3 should be throttled",
+		},
+		{
+			name:              "limit of 5 with 10 concurrent requests",
+			concurrentLimit:   5,
+			totalRequests:     10,
+			expectedSuccesses: 5,
+			expectedThrottled: 5,
+			description:       "only 5 should process, 5 should be throttled",
+		},
+		{
+			name:              "limit of 1 with 3 concurrent requests",
+			concurrentLimit:   1,
+			totalRequests:     3,
+			expectedSuccesses: 1,
+			expectedThrottled: 2,
+			description:       "only 1 should process, 2 should be throttled",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			mortConfig := config.Config{}
+			err := mortConfig.Load("./benchmark/small.yml")
+			assert.Nil(t, err)
+
+			rp := NewRequestProcessor(mortConfig.Server, lock.NewMemoryLock(), throttler.NewBucketThrottler(tt.concurrentLimit))
+
+			var wg sync.WaitGroup
+			results := make(chan int, tt.totalRequests)
+
+			// Start all requests concurrently
+			for i := 0; i < tt.totalRequests; i++ {
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+
+					req, _ := http.NewRequest("GET", "http://mort/local/small.jpg?width=5", nil)
+					obj, _ := object.NewFileObject(req.URL, &mortConfig)
+
+					res := rp.Process(req, obj)
+					results <- res.StatusCode
+				}()
+			}
+
+			wg.Wait()
+			close(results)
+
+			// Count successes and throttled
+			successCount := 0
+			throttledCount := 0
+			for statusCode := range results {
+				if statusCode == 200 {
+					successCount++
+				} else if statusCode == 503 {
+					throttledCount++
+				}
+			}
+
+			assert.Equal(t, tt.expectedSuccesses, successCount,
+				"%s - expected %d successes, got %d",
+				tt.description, tt.expectedSuccesses, successCount)
+
+			assert.Equal(t, tt.expectedThrottled, throttledCount,
+				"%s - expected %d throttled, got %d",
+				tt.description, tt.expectedThrottled, throttledCount)
+		})
+	}
+}
+
+func TestConcurrentImageProcessingWithRelease(t *testing.T) {
+	t.Parallel()
+
+	mortConfig := config.Config{}
+	err := mortConfig.Load("./benchmark/small.yml")
+	assert.Nil(t, err)
+
+	// Create throttler with limit of 2
+	limit := 2
+	rp := NewRequestProcessor(mortConfig.Server, lock.NewMemoryLock(), throttler.NewBucketThrottler(limit))
+
+	var wg sync.WaitGroup
+	successCount := 0
+	var mu sync.Mutex
+
+	// Start 10 requests that will run in batches due to limit of 2
+	totalRequests := 10
+	for i := 0; i < totalRequests; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			req, _ := http.NewRequest("GET", "http://mort/local/small.jpg?width=5", nil)
+			obj, _ := object.NewFileObject(req.URL, &mortConfig)
+
+			res := rp.Process(req, obj)
+			if res.StatusCode == 200 {
+				mu.Lock()
+				successCount++
+				mu.Unlock()
+			}
+		}()
+		// Small delay to ensure requests don't all hit at exact same time
+		time.Sleep(time.Millisecond * 10)
+	}
+
+	wg.Wait()
+
+	// With token release, all requests should eventually succeed
+	// (as tokens are released, new requests can acquire them)
+	assert.Greater(t, successCount, limit,
+		"With token release, more than %d requests should succeed", limit)
+}
+
+func TestConfigConcurrentImageProcessing(t *testing.T) {
+	t.Parallel()
+
+	t.Run("uses config value when set", func(t *testing.T) {
+		configYaml := `
+server:
+  concurrentImageProcessing: 50
+  listens:
+    - ":8080"
+buckets:
+  test:
+    storages:
+      basic:
+        kind: "local-meta"
+        rootPath: "/tmp"
+`
+		mortConfig := config.Config{}
+		err := mortConfig.LoadFromString(configYaml)
+		assert.Nil(t, err)
+
+		// In real usage, main.go would use this value to create the throttler
+		concurrentLimit := mortConfig.Server.ConcurrentImageProcessing
+		if concurrentLimit <= 0 {
+			concurrentLimit = 100
+		}
+
+		assert.Equal(t, 50, concurrentLimit, "Should use configured value")
+	})
+
+	t.Run("defaults to 100 when not set", func(t *testing.T) {
+		configYaml := `
+server:
+  listens:
+    - ":8080"
+buckets:
+  test:
+    storages:
+      basic:
+        kind: "local-meta"
+        rootPath: "/tmp"
+`
+		mortConfig := config.Config{}
+		err := mortConfig.LoadFromString(configYaml)
+		assert.Nil(t, err)
+
+		// In real usage, main.go would apply the default
+		concurrentLimit := mortConfig.Server.ConcurrentImageProcessing
+		if concurrentLimit <= 0 {
+			concurrentLimit = 100
+		}
+
+		assert.Equal(t, 100, concurrentLimit, "Should default to 100")
+	})
+}
+
 func TestContextTimeout(t *testing.T) {
 	t.Parallel()
 

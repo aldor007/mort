@@ -189,21 +189,22 @@ type IdleCleanupCfg struct {
 
 // Server configure HTTP server
 type Server struct {
-	LogLevel       string                 `yaml:"logLevel"`
-	AccessLog      bool                   `yaml:"accessLogs"`
-	InternalListen string                 `yaml:"internalListen"`
-	SingleListen   string                 `yaml:"listen"`
-	RequestTimeout int                    `yaml:"requestTimeout"`
-	LockTimeout    int                    `yaml:"lockTimeout"`
-	Lock           *LockCfg               `yaml:"lock"`
-	Listen         []string               `yaml:"listens"`
-	Monitoring     string                 `yaml:"monitoring"`
-	PlaceholderStr string                 `yaml:"placeholder"`
-	Plugins        map[string]interface{} `yaml:"plugins,omitempty"`
-	Cache          CacheCfg               `yaml:"cache"`
-	IdleCleanup    *IdleCleanupCfg        `yaml:"idleCleanup,omitempty"`
-	MaxFileSize    int64                  `yaml:"maxFileSize"`
-	Placeholder    struct {
+	LogLevel                  string                 `yaml:"logLevel"`
+	AccessLog                 bool                   `yaml:"accessLogs"`
+	InternalListen            string                 `yaml:"internalListen"`
+	SingleListen              string                 `yaml:"listen"`
+	RequestTimeout            int                    `yaml:"requestTimeout"`
+	LockTimeout               int                    `yaml:"lockTimeout"`
+	ConcurrentImageProcessing int                    `yaml:"concurrentImageProcessing"` // Maximum number of concurrent image transformations (default: 100)
+	Lock                      *LockCfg               `yaml:"lock"`
+	Listen                    []string               `yaml:"listens"`
+	Monitoring                string                 `yaml:"monitoring"`
+	PlaceholderStr            string                 `yaml:"placeholder"`
+	Plugins                   map[string]interface{} `yaml:"plugins,omitempty"`
+	Cache                     CacheCfg               `yaml:"cache"`
+	IdleCleanup               *IdleCleanupCfg        `yaml:"idleCleanup,omitempty"`
+	MaxFileSize               int64                  `yaml:"maxFileSize"`
+	Placeholder               struct {
 		Buf         []byte
 		ContentType string
 	} `yaml:"-"`

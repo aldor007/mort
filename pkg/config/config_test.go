@@ -91,3 +91,42 @@ func TestConfig_Transform_ForParser(t *testing.T) {
 	ten := c.Buckets["tengo"].Transform.ForParser()
 	assert.Nil(t, ten.TengoScript)
 }
+
+func TestConfig_ConcurrentImageProcessing(t *testing.T) {
+	t.Parallel()
+
+	t.Run("loads configured value", func(t *testing.T) {
+		c := Config{}
+		err := c.LoadFromString(`
+server:
+  concurrentImageProcessing: 50
+  listens:
+    - ":8080"
+buckets:
+  test:
+    storages:
+      basic:
+        kind: "local-meta"
+        rootPath: "/tmp"
+`)
+		assert.Nil(t, err)
+		assert.Equal(t, 50, c.Server.ConcurrentImageProcessing)
+	})
+
+	t.Run("defaults to 0 when not set", func(t *testing.T) {
+		c := Config{}
+		err := c.LoadFromString(`
+server:
+  listens:
+    - ":8080"
+buckets:
+  test:
+    storages:
+      basic:
+        kind: "local-meta"
+        rootPath: "/tmp"
+`)
+		assert.Nil(t, err)
+		assert.Equal(t, 0, c.Server.ConcurrentImageProcessing)
+	})
+}
