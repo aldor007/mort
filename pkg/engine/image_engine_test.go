@@ -53,8 +53,7 @@ func TestImageEngine_Process(t *testing.T) {
 }
 
 func TestImageEngine_Process_MultipleTransforms(t *testing.T) {
-	// Note: Parent test doesn't use t.Parallel() because subtests do.
-	// This avoids overwhelming the CI test coordinator.
+	t.Parallel()
 
 	tests := []struct {
 		name           string
@@ -122,8 +121,7 @@ func TestImageEngine_Process_MultipleTransforms(t *testing.T) {
 }
 
 func TestImageEngine_Process_FormatConversion(t *testing.T) {
-	// Note: Parent test doesn't use t.Parallel() because subtests do.
-	// This avoids overwhelming the CI test coordinator.
+	t.Parallel()
 
 	tests := []struct {
 		name         string
@@ -203,8 +201,7 @@ func TestImageEngine_Process_ETagGeneration(t *testing.T) {
 }
 
 func TestImageEngine_Process_CropOperations(t *testing.T) {
-	// Note: Parent test doesn't use t.Parallel() because subtests do.
-	// This avoids overwhelming the CI test coordinator.
+	t.Parallel()
 
 	tests := []struct{
 		name        string
@@ -329,8 +326,7 @@ func TestImageEngine_Process_Blur(t *testing.T) {
 }
 
 func TestImageEngine_Process_Rotate(t *testing.T) {
-	// Note: Parent test doesn't use t.Parallel() because subtests do.
-	// This avoids overwhelming the CI test coordinator.
+	t.Parallel()
 
 	tests := []struct {
 		name        string

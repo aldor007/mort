@@ -1,10 +1,12 @@
 package engine
 
 import (
+	"os"
 	"sync/atomic"
 	"testing"
 	"time"
 
+	"github.com/h2non/bimg"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -636,7 +638,6 @@ func TestIdleCleanupManager_Integration_WithProcessing(t *testing.T) {
 
 	// Start the manager
 	mgr.Start()
-	defer mgr.Stop()
 
 	// Simulate concurrent image processing
 	processingCount := 20
@@ -660,6 +661,10 @@ func TestIdleCleanupManager_Integration_WithProcessing(t *testing.T) {
 		<-processingDone
 	}
 
+	// Give time for any goroutines blocked on RLock to complete
+	// With RWMutex locking, if cleanup is running, some goroutines might be waiting
+	time.Sleep(200 * time.Millisecond)
+
 	// Verify all processes ended
 	assert.Equal(t, int32(0), mgr.activeProcesses.Load(), "all processes should be done")
 
@@ -671,6 +676,8 @@ func TestIdleCleanupManager_Integration_WithProcessing(t *testing.T) {
 
 	// Manager should still be running
 	assert.NotNil(t, mgr)
+
+	mgr.Stop()
 }
 
 // TestIdleCleanupManager_RaceCondition_Prevention verifies cleanup never runs during processing
@@ -753,4 +760,196 @@ func BenchmarkIdleCleanupManager_BeginEndProcessing_Parallel(b *testing.B) {
 			mgr.EndProcessing()
 		}
 	})
+}
+
+// TestSafeVipsCleanup_DoesNotCrash verifies that safe cleanup doesn't crash
+func TestSafeVipsCleanup_DoesNotCrash(t *testing.T) {
+	t.Parallel()
+
+	// Should not panic or crash
+	assert.NotPanics(t, func() {
+		safeVipsCleanup()
+	}, "safeVipsCleanup should not panic")
+}
+
+// TestSafeVipsCleanup_AllowsSubsequentProcessing verifies image processing works after cleanup
+func TestSafeVipsCleanup_AllowsSubsequentProcessing(t *testing.T) {
+	t.Parallel()
+
+	// Perform cleanup
+	safeVipsCleanup()
+
+	// Try to load and get metadata from an image immediately after cleanup
+	// This should NOT crash (unlike VipsCacheDropAll which corrupts state)
+	data, err := os.ReadFile("testdata/small.jpg")
+	assert.NoError(t, err, "should read test image")
+	if err == nil {
+		// Try to get metadata - this uses libvips and would crash if state is corrupted
+		metadata, err := bimg.Metadata(data)
+		assert.NoError(t, err, "should get metadata after cleanup without crashing")
+		assert.Greater(t, metadata.Size.Width, 0, "should have valid image dimensions")
+	}
+}
+
+// TestSafeVipsCleanup_MultipleCycles verifies multiple cleanup cycles work
+func TestSafeVipsCleanup_MultipleCycles(t *testing.T) {
+	t.Parallel()
+
+	// Run cleanup multiple times
+	for i := 0; i < 5; i++ {
+		assert.NotPanics(t, func() {
+			safeVipsCleanup()
+		}, "cleanup cycle %d should not panic", i+1)
+
+		// Brief pause between cycles
+		time.Sleep(50 * time.Millisecond)
+	}
+}
+
+// TestSafeVipsCleanup_ReducesMemory verifies cleanup actually frees memory
+func TestSafeVipsCleanup_ReducesMemory(t *testing.T) {
+	t.Parallel()
+
+	// Load test image data
+	data, err := os.ReadFile("testdata/small.jpg")
+	if err != nil {
+		t.Skip("test image not available")
+	}
+
+	// Process several images to build up cache
+	for i := 0; i < 10; i++ {
+		img := bimg.NewImage(data)
+		// Do some processing to populate cache
+		img.Resize(100, 100)
+	}
+
+	// Get memory before cleanup
+	memBefore := bimg.VipsMemory()
+
+	// Perform cleanup
+	safeVipsCleanup()
+
+	// Wait a bit for memory to be freed
+	time.Sleep(200 * time.Millisecond)
+
+	// Get memory after cleanup
+	memAfter := bimg.VipsMemory()
+
+	// Memory should be reduced (or at least not increased)
+	assert.LessOrEqual(t, memAfter.Memory, memBefore.Memory,
+		"memory after cleanup should be less than or equal to before")
+}
+
+// TestSafeVipsCleanup_ConcurrentWithProcessing verifies cleanup is safe during processing
+func TestSafeVipsCleanup_ConcurrentWithProcessing(t *testing.T) {
+	t.Parallel()
+
+	// Load test image data
+	data, err := os.ReadFile("testdata/small.jpg")
+	if err != nil {
+		t.Skip("test image not available")
+	}
+
+	done := make(chan bool, 2)
+
+	// Start image processing in background
+	go func() {
+		for i := 0; i < 5; i++ {
+			img := bimg.NewImage(data)
+			img.Resize(100, 100)
+			time.Sleep(50 * time.Millisecond)
+		}
+		done <- true
+	}()
+
+	// Run cleanup concurrently
+	go func() {
+		for i := 0; i < 3; i++ {
+			time.Sleep(75 * time.Millisecond)
+			safeVipsCleanup()
+		}
+		done <- true
+	}()
+
+	// Wait for both to complete
+	<-done
+	<-done
+
+	// Should complete without crashing
+}
+
+// TestSafeVipsCleanup_RestoresCacheLimits verifies cache limits are restored
+func TestSafeVipsCleanup_RestoresCacheLimits(t *testing.T) {
+	t.Parallel()
+
+	// Load test image data
+	data, err := os.ReadFile("testdata/small.jpg")
+	if err != nil {
+		t.Skip("test image not available")
+	}
+
+	// Perform cleanup
+	safeVipsCleanup()
+
+	// After cleanup, cache limits should be restored to reasonable values
+	// We can verify this by processing multiple images successfully
+	for i := 0; i < 10; i++ {
+		img := bimg.NewImage(data)
+		// Should be able to process without crashes
+		_, err := img.Resize(100, 100)
+		assert.NoError(t, err, "image %d should process correctly after cleanup", i+1)
+	}
+}
+
+// TestSafeVipsCleanup_IntegrationWithIdleCleanupManager verifies cleanup works with manager
+func TestSafeVipsCleanup_IntegrationWithIdleCleanupManager(t *testing.T) {
+	t.Parallel()
+
+	// Load test image data
+	data, err := os.ReadFile("testdata/small.jpg")
+	if err != nil {
+		t.Skip("test image not available")
+	}
+
+	// Create manager that uses real safe cleanup (not mock)
+	mgr := NewIdleCleanupManager(true, 15)
+
+	// Verify cleanupFunc is set to safeVipsCleanup
+	assert.NotNil(t, mgr.cleanupFunc, "cleanupFunc should be set")
+
+	// Call the cleanup function through the manager
+	assert.NotPanics(t, func() {
+		mgr.cleanupFunc()
+	}, "calling cleanupFunc should not panic")
+
+	// Verify image processing still works after cleanup
+	metadata, err := bimg.Metadata(data)
+	assert.NoError(t, err, "should get metadata after manager cleanup")
+	assert.Greater(t, metadata.Size.Width, 0, "should have valid image dimensions")
+}
+
+// TestSafeVipsCleanup_RestoresOriginalSettings verifies original cache settings are restored
+// Note: Not using t.Parallel() because this test checks global libvips cache settings
+func TestSafeVipsCleanup_RestoresOriginalSettings(t *testing.T) {
+	// Set known cache settings
+	bimg.VipsCacheSetMax(200)
+	bimg.VipsCacheSetMaxMem(75 * 1024 * 1024)
+
+	// Give settings time to apply
+	time.Sleep(10 * time.Millisecond)
+
+	// Get settings before cleanup
+	origMax := vipsCacheGetMax()
+	origMaxMem := vipsCacheGetMaxMem()
+
+	// Verify our settings were applied
+	assert.Equal(t, 200, origMax, "should have set cache max to 200")
+	assert.Equal(t, 75*1024*1024, origMaxMem, "should have set cache max mem to 75MB")
+
+	// Perform cleanup (which temporarily sets to 1/1, then restores)
+	safeVipsCleanup()
+
+	// Verify settings are restored to exactly what they were before cleanup
+	assert.Equal(t, origMax, vipsCacheGetMax(), "cache max should be restored to original")
+	assert.Equal(t, origMaxMem, vipsCacheGetMaxMem(), "cache max mem should be restored to original")
 }

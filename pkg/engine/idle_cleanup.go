@@ -1,5 +1,11 @@
 package engine
 
+/*
+#cgo pkg-config: vips
+#include <vips/vips.h>
+*/
+import "C"
+
 import (
 	"sync"
 	"sync/atomic"
@@ -9,6 +15,21 @@ import (
 	"github.com/h2non/bimg"
 	"go.uber.org/zap"
 )
+
+// vipsCacheGetMax returns the current maximum number of cached operations
+func vipsCacheGetMax() int {
+	return int(C.vips_cache_get_max())
+}
+
+// vipsCacheGetMaxMem returns the current maximum cache memory in bytes
+func vipsCacheGetMaxMem() int {
+	return int(C.vips_cache_get_max_mem())
+}
+
+// vipsCacheGetMaxFiles returns the current maximum number of cached files
+func vipsCacheGetMaxFiles() int {
+	return int(C.vips_cache_get_max_files())
+}
 
 // IdleCleanupManager manages memory cleanup during idle periods
 // It tracks image processing activity and triggers libvips cache cleanup
@@ -28,6 +49,30 @@ type IdleCleanupManager struct {
 
 // NewIdleCleanupManager creates a new IdleCleanupManager
 // timeoutMinutes specifies how many minutes of inactivity before cleanup
+// safeVipsCleanup performs a safe cache cleanup by temporarily reducing cache limits
+// This causes libvips to naturally evict old entries without corrupting internal state
+// Unlike VipsCacheDropAll(), this doesn't corrupt libvips internal hash tables
+func safeVipsCleanup() {
+	// Store original cache settings to restore them after cleanup
+	origMax := vipsCacheGetMax()
+	origMaxMem := vipsCacheGetMaxMem()
+	origMaxFiles := vipsCacheGetMaxFiles()
+
+	// Temporarily set very restrictive limits to force cache eviction
+	// This causes libvips to naturally remove old cached operations
+	bimg.VipsCacheSetMax(1)    // Allow only 1 cached operation
+	bimg.VipsCacheSetMaxMem(1) // Allow only 1 byte cache memory
+
+	// Brief pause to allow libvips to evict cache entries naturally
+	time.Sleep(100 * time.Millisecond)
+
+	// Restore original cache settings exactly as they were
+	bimg.VipsCacheSetMax(origMax)
+	bimg.VipsCacheSetMaxMem(origMaxMem)
+	// Note: bimg doesn't expose VipsCacheSetMaxFiles, so we rely on the default
+	_ = origMaxFiles // Keep for potential future use
+}
+
 func NewIdleCleanupManager(enabled bool, timeoutMinutes int) *IdleCleanupManager {
 	if !enabled {
 		return &IdleCleanupManager{enabled: false}
@@ -44,7 +89,7 @@ func NewIdleCleanupManager(enabled bool, timeoutMinutes int) *IdleCleanupManager
 		idleTimeout:   timeout,
 		checkInterval: checkInterval,
 		stopChan:      make(chan struct{}),
-		cleanupFunc:   bimg.VipsCacheDropAll, // Default to real libvips cleanup
+		cleanupFunc:   safeVipsCleanup, // Use safe cleanup instead of VipsCacheDropAll
 	}
 
 	// Initialize with current time
