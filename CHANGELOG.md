@@ -1,3 +1,17 @@
+## [0.34.1](https://github.com/aldor007/mort/compare/v0.34.0...v0.34.1) (2025-12-18)
+
+
+### Bug Fixes
+
+* fix sigsev when doing cleanup ([c6f8040](https://github.com/aldor007/mort/commit/c6f8040e126eddfca1345d3d3e11adc413fdf20e))
+* fix sigsev when doing cleanup ([a61995b](https://github.com/aldor007/mort/commit/a61995b8a86d8195e83d180091e36fbd186fa1d9))
+* fix sigsev when doing cleanup ([92d2586](https://github.com/aldor007/mort/commit/92d25867904acd5b36c7d4acaf9c0782afbb78ec))
+* fix sigsev when doing cleanup ([ad49019](https://github.com/aldor007/mort/commit/ad490199b0a3be192bfb40719bb319bb2bd8268c))
+* fix sigsev when doing cleanup ([afaa2a7](https://github.com/aldor007/mort/commit/afaa2a780a08f0b3634298f82f0e4d706e76600f))
+* fix sigsev when doing cleanup - mock ([d2dc3c9](https://github.com/aldor007/mort/commit/d2dc3c95b68a8397be5b1f801018aaf87564bbed))
+* fix sigsev when doing cleanup - mock ([534fd28](https://github.com/aldor007/mort/commit/534fd28023950bfdf3dd36a2968dd3dcb71227c0))
+* fix sigsev when doing cleanup - mock ([4c17065](https://github.com/aldor007/mort/commit/4c17065787b815bb7245725150cd236c4e3e1391))
+
 # [0.34.0](https://github.com/aldor007/mort/compare/v0.33.0...v0.34.0) (2025-12-18)
 
 
