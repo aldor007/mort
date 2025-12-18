@@ -319,6 +319,16 @@ func (c *Config) validateServer() error {
 		c.Server.Placeholder.ContentType = http.DetectContentType(buf)
 	}
 
+	// Validate idle cleanup configuration
+	if c.Server.IdleCleanup != nil && c.Server.IdleCleanup.Enabled {
+		if c.Server.IdleCleanup.IdleTimeoutMin == 0 {
+			c.Server.IdleCleanup.IdleTimeoutMin = 15 // Conservative default
+		}
+		if c.Server.IdleCleanup.IdleTimeoutMin < 5 {
+			return configInvalidError("idleCleanup.idleTimeoutMin must be at least 5 minutes")
+		}
+	}
+
 	return nil
 }
 

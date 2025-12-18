@@ -82,13 +82,18 @@ func debugListener(mortConfig *config.Config) (s *http.Server, ln net.Listener, 
 	return
 }
 
-func handleSignals(servers []*http.Server, socketPaths []string, wg *sync.WaitGroup) {
+func handleSignals(rp *processor.RequestProcessor, servers []*http.Server, socketPaths []string, wg *sync.WaitGroup) {
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, syscall.SIGUSR2, syscall.SIGKILL, syscall.SIGINT, syscall.SIGTERM, os.Kill)
 	for {
 		sig := <-signalChan
 		switch sig {
 		case os.Kill, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGINT:
+			// Gracefully shutdown request processor first
+			if rp != nil {
+				rp.Shutdown()
+			}
+
 			for _, s := range servers {
 				s.Close()
 				wg.Done()
@@ -321,7 +326,7 @@ func main() {
 
 	monitoring.Logs().Sync()
 	wg.Add(1)
-	go handleSignals(servers, socketPaths, &wg)
+	go handleSignals(&rp, servers, socketPaths, &wg)
 
 	for i, s := range servers {
 		wg.Add(1)

@@ -181,6 +181,12 @@ type LockCfg struct {
 	ClientConfig map[string]string `yaml:"clientConfig"`
 }
 
+// IdleCleanupCfg configures memory cleanup during idle periods
+type IdleCleanupCfg struct {
+	Enabled        bool `yaml:"enabled"`
+	IdleTimeoutMin int  `yaml:"idleTimeoutMin"` // Minutes of inactivity before cleanup
+}
+
 // Server configure HTTP server
 type Server struct {
 	LogLevel       string                 `yaml:"logLevel"`
@@ -195,6 +201,7 @@ type Server struct {
 	PlaceholderStr string                 `yaml:"placeholder"`
 	Plugins        map[string]interface{} `yaml:"plugins,omitempty"`
 	Cache          CacheCfg               `yaml:"cache"`
+	IdleCleanup    *IdleCleanupCfg        `yaml:"idleCleanup,omitempty"`
 	MaxFileSize    int64                  `yaml:"maxFileSize"`
 	Placeholder    struct {
 		Buf         []byte
