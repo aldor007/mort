@@ -1,3 +1,11 @@
+# [0.34.0](https://github.com/aldor007/mort/compare/v0.33.0...v0.34.0) (2025-12-18)
+
+
+### Features
+
+* limiter ([53fbb5c](https://github.com/aldor007/mort/commit/53fbb5c28bbe08fbe1f8eb38849fe586d460c34f))
+* limiter ([cc25152](https://github.com/aldor007/mort/commit/cc25152e3aca76e7324c33ce9c8a1ef01ba14e0f))
+
 # [0.33.0](https://github.com/aldor007/mort/compare/v0.32.0...v0.33.0) (2025-12-18)
 
 
