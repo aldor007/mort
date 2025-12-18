@@ -1,3 +1,10 @@
+# [0.35.0](https://github.com/aldor007/mort/compare/v0.34.2...v0.35.0) (2025-12-18)
+
+
+### Features
+
+* glacier restore ([65d8fb8](https://github.com/aldor007/mort/commit/65d8fb8a9c71567ff4a7184e4f7d8d78dbf1a30b))
+
 ## [0.34.2](https://github.com/aldor007/mort/compare/v0.34.1...v0.34.2) (2025-12-18)
 
 
