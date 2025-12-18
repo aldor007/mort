@@ -176,6 +176,12 @@ func (r *RequestProcessor) replyWithError(obj *object.FileObject, sc int, err er
 			parent := response.NewBuf(200, r.serverConfig.Placeholder.Buf)
 			transformsTab := []transforms.Transforms{obj.Transforms}
 
+			// Track activity for idle cleanup and prevent cleanup during processing
+			if r.idleCleanup != nil {
+				r.idleCleanup.BeginProcessing()
+				defer r.idleCleanup.EndProcessing()
+			}
+
 			eng := engine.NewImageEngine(parent)
 			res, err := eng.Process(obj, transformsTab)
 			if err == nil {
