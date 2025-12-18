@@ -4,7 +4,7 @@ go 1.25
 
 require (
 	github.com/aldor007/go-aws-auth v0.0.0-20180623204207-00898dfb9272
-	github.com/aldor007/stow v1.4.6
+	github.com/aldor007/stow v1.5.0
 	github.com/alicebob/miniredis/v2 v2.18.0
 	github.com/bsm/redislock v0.7.2
 	github.com/d5/tengo/v2 v2.10.1
@@ -16,6 +16,7 @@ require (
 	github.com/google/brotli/go/cbrotli v0.0.0-20210127140805-63be8a994019
 	github.com/h2non/bimg v1.1.6-0.20210807160419-b29a57356338
 	github.com/karlseguin/ccache/v3 v3.0.0
+	github.com/klauspost/compress v1.18.2
 	github.com/pkg/errors v0.9.1
 	github.com/pquerna/cachecontrol v0.0.0-20201205024021-ac21108117ac
 	github.com/prometheus/client_golang v1.9.0
@@ -81,7 +82,6 @@ require (
 	github.com/hashicorp/errwrap v1.0.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
-	github.com/klauspost/compress v1.18.2 // indirect
 	github.com/kr/fs v0.1.0 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
 	github.com/ncw/swift v1.0.53 // indirect

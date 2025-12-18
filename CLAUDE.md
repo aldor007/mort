@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Mort is an S3-compatible image processing server written in Go. It transforms images on-the-fly using URL-based parameters (presets or query strings) and supports multiple storage backends (S3, local, HTTP, Azure, Google Cloud, etc.). The server handles request collapsing, rate limiting, caching, and includes an S3-compatible API for listing and uploading files.
+Mort is an S3-compatible image processing server written in Go. It transforms images on-the-fly using URL-based parameters (presets or query strings) and supports multiple storage backends (S3, local, HTTP, Azure, Google Cloud, etc.). The server handles request collapsing, rate limiting, caching, S3 GLACIER object restoration, and includes an S3-compatible API for listing and uploading files.
+
+**New Feature:** Automatic S3 GLACIER/DEEP_ARCHIVE object restore - see [docs/GLACIER_RESTORE.md](docs/GLACIER_RESTORE.md)
 
 ## Build & Development Commands
 

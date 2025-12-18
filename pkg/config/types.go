@@ -148,12 +148,21 @@ type S3Key struct {
 	SecretAccessKey string `yaml:"secretAccessKey"`
 }
 
+// GlacierCfg configures S3 GLACIER restore behavior
+type GlacierCfg struct {
+	Enabled           bool   `yaml:"enabled"`           // Enable auto-restore (default: false - must be explicitly enabled)
+	RestoreTier       string `yaml:"restoreTier"`       // Expedited, Standard, Bulk (default: Standard)
+	RestoreDays       int    `yaml:"restoreDays"`       // 1-30 days (default: 3)
+	RetryAfterSeconds int    `yaml:"retryAfterSeconds"` // Optional, auto-calculated based on tier
+}
+
 // Bucket describe single bucket entry in config
 type Bucket struct {
 	Transform *Transform        `yaml:"transform,omitempty"`
 	Storages  StorageTypes      `yaml:"storages"`
 	Keys      []S3Key           `yaml:"keys"`
 	Headers   map[string]string `yaml:"headers"`
+	Glacier   *GlacierCfg       `yaml:"glacier,omitempty"` // GLACIER restore configuration
 	Name      string
 }
 

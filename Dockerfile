@@ -27,7 +27,7 @@ COPY pkg/ ${WORKDIR}/pkg
 # Build binary with optimizations and build cache
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg/mod \
-    CGO_ENABLED=1 GOOS=linux GOARCH=${TARGETARCH} \
+    CGO_ENABLED=1 GOOS=linux GOARCH=${TARGETARCH} GOEXPERIMENT=greenteagc \
     go build -ldflags="-s -w -X 'main.version=${TAG}' -X 'main.commit=${COMMIT}' -X 'main.date=${DATE}'" \
     -trimpath \
     -o /go/mort ./cmd/mort/mort.go

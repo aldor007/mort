@@ -1,0 +1,118 @@
+# Mort Configuration Example with GLACIER Restore
+#
+# This example shows how to configure automatic S3 GLACIER object restoration
+# See docs/GLACIER_RESTORE.md for detailed documentation
+
+server:
+  logLevel: "info"
+  listens:
+    - ":8080"      # HTTP port
+    - ":8081"      # Metrics port
+
+  # Cache configuration (used for both response caching and GLACIER restore tracking)
+  cache:
+    type: "redis"              # Use Redis for distributed cache across instances
+    address:
+      - "localhost:6379"
+    maxCacheItemSizeMB: 5
+    cacheSize: 100
+
+  # Request processing
+  requestTimeout: 70           # Seconds
+  internalListen: ":8081"
+
+buckets:
+  # Example bucket with GLACIER restore enabled
+  production-images:
+    glacier:
+      enabled: true              # REQUIRED: Must be true to enable auto-restore
+      restoreTier: "Standard"    # Expedited (1-5min, $$$) | Standard (3-5hrs, $$) | Bulk (5-12hrs, $)
+      restoreDays: 7             # Keep restored copy for 7 days
+      retryAfterSeconds: 14400   # Optional: Auto-calculated (4 hours for Standard)
+
+    storages:
+      basic:
+        kind: "s3"
+        accessKey: "${S3_ACCESS_KEY}"
+        secretAccessKey: "${S3_SECRET_KEY}"
+        region: "us-east-1"
+        bucket: "my-production-bucket"
+
+      transform:
+        kind: "s3"
+        accessKey: "${S3_ACCESS_KEY}"
+        secretAccessKey: "${S3_SECRET_KEY}"
+        region: "us-east-1"
+        bucket: "my-transforms-bucket"
+        pathPrefix: "transforms"
+
+    transform:
+      kind: "presets-query"
+      path: "/{presets}/{parent}.{ext}"
+      parentStorage: "basic"
+
+      presets:
+        thumbnail:
+          quality: 75
+          filters:
+            thumbnail:
+              width: 150
+              height: 150
+
+        large:
+          quality: 85
+          filters:
+            thumbnail:
+              width: 1200
+              height: 1200
+
+  # Example bucket WITHOUT GLACIER restore (default behavior)
+  # Objects in GLACIER will return 503 without attempting restore
+  legacy-images:
+    storages:
+      basic:
+        kind: "s3"
+        accessKey: "${S3_ACCESS_KEY}"
+        secretAccessKey: "${S3_SECRET_KEY}"
+        region: "us-west-2"
+        bucket: "legacy-bucket"
+
+  # Example with Expedited tier for low-latency serving
+  critical-assets:
+    glacier:
+      enabled: true
+      restoreTier: "Expedited"   # Fast but expensive - use sparingly
+      restoreDays: 1             # Minimal storage cost
+      retryAfterSeconds: 300     # 5 minutes
+
+    storages:
+      basic:
+        kind: "s3"
+        region: "eu-west-1"
+        accessKey: "${S3_ACCESS_KEY}"
+        secretAccessKey: "${S3_SECRET_KEY}"
+        bucket: "critical-bucket"
+
+  # Example with Bulk tier for cost optimization
+  archive-images:
+    glacier:
+      enabled: true
+      restoreTier: "Bulk"        # Slow but cheap
+      restoreDays: 30            # Long availability
+      retryAfterSeconds: 43200   # 12 hours
+
+    storages:
+      basic:
+        kind: "s3"
+        region: "ap-southeast-1"
+        accessKey: "${S3_ACCESS_KEY}"
+        secretAccessKey: "${S3_SECRET_KEY}"
+        bucket: "archive-bucket"
+
+# Headers to include in responses
+headers:
+  - statusCodes: [200]
+    override: false
+    values:
+      Cache-Control: "public, max-age=3600"
+      X-Mort-Server: "v1"

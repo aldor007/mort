@@ -332,6 +332,33 @@ func (c *Config) validateServer() error {
 	return nil
 }
 
+func (c *Config) validateGlacier(bucketName string, glacier *GlacierCfg) error {
+	if glacier == nil {
+		return nil
+	}
+
+	validTiers := []string{"Expedited", "Standard", "Bulk"}
+	tierValid := false
+	for _, tier := range validTiers {
+		if glacier.RestoreTier == tier {
+			tierValid = true
+			break
+		}
+	}
+
+	if glacier.RestoreTier != "" && !tierValid {
+		return configInvalidError(fmt.Sprintf("%s has invalid glacier restoreTier '%s', valid: %v",
+			bucketName, glacier.RestoreTier, validTiers))
+	}
+
+	if glacier.RestoreDays != 0 && (glacier.RestoreDays < 1 || glacier.RestoreDays > 30) {
+		return configInvalidError(fmt.Sprintf("%s has invalid glacier restoreDays %d, must be 1-30",
+			bucketName, glacier.RestoreDays))
+	}
+
+	return nil
+}
+
 func (c *Config) validate() error {
 	for name, bucket := range c.Buckets {
 		err := c.validateStorage(name, bucket.Storages)
@@ -344,6 +371,35 @@ func (c *Config) validate() error {
 			if err != nil {
 				return err
 			}
+		}
+
+		// Validate and set GLACIER defaults
+		if bucket.Glacier != nil {
+			err = c.validateGlacier(name, bucket.Glacier)
+			if err != nil {
+				return err
+			}
+
+			// Set defaults
+			if bucket.Glacier.RestoreTier == "" {
+				bucket.Glacier.RestoreTier = "Standard"
+			}
+			if bucket.Glacier.RestoreDays == 0 {
+				bucket.Glacier.RestoreDays = 3
+			}
+			if bucket.Glacier.RetryAfterSeconds == 0 {
+				// Auto-calculate Retry-After based on tier
+				switch bucket.Glacier.RestoreTier {
+				case "Expedited":
+					bucket.Glacier.RetryAfterSeconds = 300 // 5 minutes
+				case "Bulk":
+					bucket.Glacier.RetryAfterSeconds = 43200 // 12 hours
+				default: // Standard
+					bucket.Glacier.RetryAfterSeconds = 14400 // 4 hours
+				}
+			}
+
+			c.Buckets[name] = bucket // Update bucket with defaults
 		}
 	}
 	return c.validateServer()

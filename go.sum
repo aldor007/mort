@@ -96,8 +96,8 @@ github.com/VividCortex/gohistogram v1.0.0/go.mod h1:Pf5mBqqDxYaXu3hDrrU+w6nw50o/
 github.com/afex/hystrix-go v0.0.0-20180502004556-fa1af6a1f4f5/go.mod h1:SkGFH1ia65gfNATL8TAiHDNxPzPdmEL5uirI2Uyuz6c=
 github.com/aldor007/go-aws-auth v0.0.0-20180623204207-00898dfb9272 h1:TuxcUGZxsHKCW50twhDbGdRtuMXmMDCmOssevV0ZoOA=
 github.com/aldor007/go-aws-auth v0.0.0-20180623204207-00898dfb9272/go.mod h1:gm7JFOl7Sp8r+lJqHXOkL0HyUFR05QXueqxVufqfkTg=
-github.com/aldor007/stow v1.4.6 h1:nQgZvMBIEJ4wlPFyKqIAz2z+DiVsP6qLeuE8f+ocSRU=
-github.com/aldor007/stow v1.4.6/go.mod h1:a13WIntCP+uRi262S0Ah2y3l9RonG3mL0B07/zXeAyo=
+github.com/aldor007/stow v1.5.0 h1:6ni+y9ANu2sQoDVcIM+/MHM8iAJCA0S/XdTJmNzu3YA=
+github.com/aldor007/stow v1.5.0/go.mod h1:a13WIntCP+uRi262S0Ah2y3l9RonG3mL0B07/zXeAyo=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
 github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
 github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf/go.mod h1:ybxpYRFXyAe+OPACYpWeL0wqObRcbAqCMya13uyzqw0=
@@ -415,7 +415,6 @@ github.com/karlseguin/ccache/v3 v3.0.0 h1:o61wYcig/e9ZbfblVRDU0SaZAUy95Hs7DbJRay
 github.com/karlseguin/ccache/v3 v3.0.0/go.mod h1:qxC372+Qn+IBj8Pe3KvGjHPj0sWwEF7AeZVhsNPZ6uY=
 github.com/kisielk/errcheck v1.1.0/go.mod h1:EZBBE59ingxPouuu3KfxchcWSUPOHkagtvWXihfKN4Q=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
-github.com/klauspost/compress v1.11.7 h1:0hzRabrMN4tSTvMfnL3SCv1ZGeAP23ynzodBgaHeMeg=
 github.com/klauspost/compress v1.11.7/go.mod h1:aoV0uJVorq1K+umq18yTdKaF57EivdYsUV+/s2qKfXs=
 github.com/klauspost/compress v1.18.2 h1:iiPHWW0YrcFgpBYhsA6D1+fqHssJscY/Tm/y2Uqnapk=
 github.com/klauspost/compress v1.18.2/go.mod h1:R0h/fSBs8DE4ENlcrlib3PsXS61voFxhIs2DeRhCvJ4=

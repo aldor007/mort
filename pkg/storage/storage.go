@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
@@ -22,6 +23,7 @@ import (
 	sftpStorage "github.com/aldor007/stow/sftp"
 
 	"github.com/aldor007/mort/pkg/config"
+	"github.com/aldor007/mort/pkg/glacier"
 	"github.com/aldor007/mort/pkg/monitoring"
 	"github.com/aldor007/mort/pkg/object"
 	"github.com/aldor007/mort/pkg/response"
@@ -61,6 +63,77 @@ type storageClientEntry struct {
 	once   sync.Once
 	client storageClient
 	err    error
+}
+
+// handleGlacierError detects and handles GLACIER/archive storage class errors
+// Returns 503 with Retry-After header and initiates restore if configured
+func handleGlacierError(obj *object.FileObject, err error, item stow.Item) *response.Response {
+	// Check if this is a GLACIER error
+	if !strings.Contains(err.Error(), "InvalidObjectState") {
+		return nil // Not a GLACIER error
+	}
+
+	monitoring.Report().Inc("glacier_error_detected")
+
+	// Get bucket configuration
+	mortConfig := config.GetInstance()
+	bucket, ok := mortConfig.Buckets[obj.Bucket]
+	if !ok || bucket.Glacier == nil || !bucket.Glacier.Enabled {
+		// No GLACIER config or disabled - return generic error
+		return response.NewError(503, fmt.Errorf("object in GLACIER storage class"))
+	}
+
+	glacierCfg := bucket.Glacier
+
+	// Check if restore already in progress via cache
+	cache := glacier.GetRestoreCache(mortConfig.Server.Cache)
+	status, _ := cache.GetRestoreStatus(obj.Ctx, obj.Key)
+
+	if status == nil || !status.InProgress {
+		// Initiate restore using stow Restorable interface
+		if restorable, ok := item.(stow.Restorable); ok {
+			go func() {
+				// Use background context with timeout for restore request
+				restoreCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+				defer cancel()
+
+				monitoring.Log().Info("Initiating GLACIER restore",
+					obj.LogData(
+						zap.String("tier", glacierCfg.RestoreTier),
+						zap.Int("days", glacierCfg.RestoreDays),
+					)...)
+
+				if err := restorable.Restore(restoreCtx, glacierCfg.RestoreDays, glacierCfg.RestoreTier); err != nil {
+					monitoring.Log().Error("GLACIER restore failed", obj.LogData(zap.Error(err))...)
+					return
+				}
+
+				// Mark restore as requested in cache
+				expiration := time.Duration(glacierCfg.RetryAfterSeconds) * time.Second
+				if err := cache.MarkRestoreRequested(restoreCtx, obj.Key, expiration); err != nil {
+					monitoring.Log().Warn("Failed to cache restore status", obj.LogData(zap.Error(err))...)
+				}
+
+				monitoring.Report().Inc("glacier_restore_initiated")
+			}()
+		} else {
+			monitoring.Log().Warn("Item does not implement Restorable interface", obj.LogData()...)
+		}
+	} else {
+		monitoring.Log().Info("GLACIER restore already in progress (cached)",
+			obj.LogData(
+				zap.Time("requestedAt", status.RequestedAt),
+				zap.Time("expiresAt", status.ExpiresAt),
+			)...)
+	}
+
+	// Return 503 with Retry-After header
+	res := response.NewError(503, fmt.Errorf("object in GLACIER storage class, restore in progress"))
+	res.Set("Retry-After", fmt.Sprintf("%d", glacierCfg.RetryAfterSeconds))
+	res.Set("X-Mort-Glacier-Status", "restoring")
+	res.Set("X-Mort-Glacier-Tier", glacierCfg.RestoreTier)
+
+	return res
 }
 
 // Get retrieve obj from given storage and returns its wrapped in response
@@ -110,6 +183,14 @@ func Get(obj *object.FileObject) *response.Response {
 		if responseStream != nil {
 			responseStream.Close()
 		}
+
+		// Check if this is a GLACIER error and handle if configured
+		if obj.Storage.Kind == "s3" {
+			if glacierRes := handleGlacierError(obj, err, item); glacierRes != nil {
+				return glacierRes
+			}
+		}
+
 		monitoring.Log().Warn("Storage/Get open item", obj.LogData(zap.Int("statusCode", 500), zap.Error(err))...)
 		return response.NewError(500, fmt.Errorf("unable to open item %s err: %v", obj.Key, err))
 	}
