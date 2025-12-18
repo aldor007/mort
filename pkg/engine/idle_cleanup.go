@@ -19,11 +19,11 @@ type IdleCleanupManager struct {
 	checkInterval   time.Duration
 	lastActivity    atomic.Int64 // Unix timestamp in seconds
 	stopChan        chan struct{}
-	cleanupCount    atomic.Int64 // Counter for cleanup operations (useful for metrics)
-	activeProcesses atomic.Int32 // Number of active image processing operations
-	cleanupMu       sync.Mutex   // Protects cleanup operations
+	cleanupCount    atomic.Int64   // Counter for cleanup operations (useful for metrics)
+	activeProcesses atomic.Int32   // Number of active image processing operations
+	processingMu    sync.RWMutex   // RWMutex: RLock for image processing, Lock for cleanup (blocks all processing)
 	wg              sync.WaitGroup // Tracks background goroutine to prevent leaks
-	cleanupFunc     func()        // Function to call for cleanup (defaults to bimg.VipsCacheDropAll, can be mocked in tests)
+	cleanupFunc     func()         // Function to call for cleanup (defaults to bimg.VipsCacheDropAll, can be mocked in tests)
 }
 
 // NewIdleCleanupManager creates a new IdleCleanupManager
@@ -88,18 +88,20 @@ func (m *IdleCleanupManager) RecordActivity() {
 	m.lastActivity.Store(time.Now().Unix())
 }
 
-// BeginProcessing increments the active process counter
+// BeginProcessing acquires a read lock and increments the active process counter
 // Call this before starting image processing to prevent cleanup during processing
+// This will BLOCK if cleanup is currently running
 func (m *IdleCleanupManager) BeginProcessing() {
 	if !m.enabled {
 		return
 	}
 
+	m.processingMu.RLock() // Acquire read lock - blocks if cleanup is running
 	m.activeProcesses.Add(1)
 	m.RecordActivity()
 }
 
-// EndProcessing decrements the active process counter
+// EndProcessing decrements the active process counter and releases the read lock
 // Call this after image processing completes (use defer for safety)
 func (m *IdleCleanupManager) EndProcessing() {
 	if !m.enabled {
@@ -107,6 +109,7 @@ func (m *IdleCleanupManager) EndProcessing() {
 	}
 
 	m.activeProcesses.Add(-1)
+	m.processingMu.RUnlock() // Release read lock
 }
 
 // GetCleanupCount returns the number of cleanup operations performed
@@ -163,19 +166,25 @@ func (m *IdleCleanupManager) checkAndCleanup() {
 }
 
 // performCleanup actually performs the libvips cache cleanup
-// It is thread-safe and will only perform cleanup if no image processing is active
+// It acquires an exclusive write lock, blocking all image processing until cleanup completes
+// This ensures no images are being processed during cleanup
 func (m *IdleCleanupManager) performCleanup() {
-	// Lock to ensure only one cleanup at a time
-	m.cleanupMu.Lock()
-	defer m.cleanupMu.Unlock()
+	// Acquire write lock - this will:
+	// 1. Wait for all current image processing (RLock holders) to complete
+	// 2. Block any new image processing from starting
+	m.processingMu.Lock()
+	defer m.processingMu.Unlock()
 
-	// Check if there are active image processing operations
+	// Safety check: verify no active processes (should always be 0 due to lock)
 	activeCount := m.activeProcesses.Load()
-	if activeCount > 0 {
-		monitoring.Log().Debug("Skipping cleanup due to active processing",
+	if activeCount != 0 {
+		monitoring.Log().Error("CRITICAL: Active processes detected despite holding cleanup lock!",
 			zap.Int32("activeProcesses", activeCount))
 		return
 	}
+
+	monitoring.Log().Info("Acquired cleanup lock, all image processing blocked",
+		zap.Int32("activeProcesses", activeCount))
 
 	// Get memory stats before cleanup
 	memBefore := bimg.VipsMemory()
@@ -184,7 +193,7 @@ func (m *IdleCleanupManager) performCleanup() {
 		zap.Int64("memoryBefore", memBefore.Memory),
 		zap.Int64("memoryAllocations", memBefore.Allocations))
 
-	// Perform cleanup - safe because no active processing
+	// Perform cleanup - safe because we have exclusive lock
 	// Use the injected cleanup function (defaults to bimg.VipsCacheDropAll)
 	if m.cleanupFunc != nil {
 		m.cleanupFunc()

@@ -522,24 +522,54 @@ func TestIdleCleanupManager_BeginEndProcessing_Concurrent(t *testing.T) {
 	assert.Equal(t, int32(0), mgr.activeProcesses.Load())
 }
 
-// TestIdleCleanupManager_PerformCleanup_WithActiveProcesses verifies cleanup is skipped when processing
+// TestIdleCleanupManager_PerformCleanup_WithActiveProcesses verifies cleanup blocks until processing completes
 func TestIdleCleanupManager_PerformCleanup_WithActiveProcesses(t *testing.T) {
 	t.Parallel()
 
 	mgr := NewIdleCleanupManager(true, 15)
 	mgr.cleanupFunc = mockCleanupFunc // Use mock to avoid interfering with libvips
 
-	// Mark as having active processes
-	mgr.BeginProcessing()
-	defer mgr.EndProcessing()
+	// Start processing in a goroutine
+	processingDone := make(chan bool)
+	go func() {
+		mgr.BeginProcessing()
+		time.Sleep(100 * time.Millisecond) // Hold the lock for 100ms
+		mgr.EndProcessing()
+		processingDone <- true
+	}()
 
+	// Give processing time to start
+	time.Sleep(20 * time.Millisecond)
+
+	// Try to perform cleanup - this should BLOCK until processing completes
+	cleanupDone := make(chan bool)
 	initialCount := mgr.GetCleanupCount()
+	go func() {
+		mgr.performCleanup()
+		cleanupDone <- true
+	}()
 
-	// Try to perform cleanup
-	mgr.performCleanup()
+	// Verify cleanup hasn't completed yet (still blocked)
+	select {
+	case <-cleanupDone:
+		t.Fatal("cleanup should be blocked while processing is active")
+	case <-time.After(50 * time.Millisecond):
+		// Good - cleanup is blocked as expected
+	}
 
-	// Cleanup should be skipped, count should not increase
-	assert.Equal(t, initialCount, mgr.GetCleanupCount(), "cleanup should be skipped when processes are active")
+	// Wait for processing to complete
+	<-processingDone
+
+	// Now cleanup should complete
+	select {
+	case <-cleanupDone:
+		// Good - cleanup completed after processing finished
+	case <-time.After(200 * time.Millisecond):
+		t.Fatal("cleanup should complete after processing ends")
+	}
+
+	// Cleanup should have run, count should increase
+	assert.Equal(t, initialCount+1, mgr.GetCleanupCount(), "cleanup should run after processes complete")
 }
 
 // TestIdleCleanupManager_PerformCleanup_NoActiveProcesses verifies cleanup runs when no processing
