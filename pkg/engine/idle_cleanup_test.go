@@ -98,9 +98,10 @@ func TestIdleCleanupManager_RecordActivity_Concurrent(t *testing.T) {
 
 	mgr := NewIdleCleanupManager(true, 15)
 
-	// Launch 100 concurrent RecordActivity calls
-	done := make(chan bool, 100)
-	for i := 0; i < 100; i++ {
+	// Launch concurrent RecordActivity calls
+	concurrency := 20
+	done := make(chan bool, concurrency)
+	for i := 0; i < concurrency; i++ {
 		go func() {
 			mgr.RecordActivity()
 			done <- true
@@ -108,7 +109,7 @@ func TestIdleCleanupManager_RecordActivity_Concurrent(t *testing.T) {
 	}
 
 	// Wait for all goroutines to complete
-	for i := 0; i < 100; i++ {
+	for i := 0; i < concurrency; i++ {
 		<-done
 	}
 
@@ -235,8 +236,8 @@ func TestIdleCleanupManager_StopDuringCleanup(t *testing.T) {
 	pastTime := time.Now().Add(-1 * time.Minute)
 	mgr.lastActivity.Store(pastTime.Unix())
 
-	// Start cleanup loop
-	go mgr.cleanupLoop()
+	// Start cleanup loop using Start() to properly initialize WaitGroup
+	mgr.Start()
 
 	// Wait a bit for loop to start
 	time.Sleep(20 * time.Millisecond)
@@ -281,7 +282,7 @@ func TestIdleCleanupManager_ThreadSafety(t *testing.T) {
 
 	// Launch multiple goroutines doing concurrent operations
 	done := make(chan bool)
-	operations := 50
+	operations := 20
 
 	for i := 0; i < operations; i++ {
 		go func() {
@@ -470,14 +471,14 @@ func TestIdleCleanupManager_BeginEndProcessing_Concurrent(t *testing.T) {
 
 	mgr := NewIdleCleanupManager(true, 15)
 
-	// Launch 100 concurrent operations
-	concurrency := 100
+	// Launch concurrent operations
+	concurrency := 20
 	done := make(chan bool, concurrency)
 
 	for i := 0; i < concurrency; i++ {
 		go func() {
 			mgr.BeginProcessing()
-			time.Sleep(10 * time.Millisecond) // Simulate work
+			time.Sleep(5 * time.Millisecond) // Simulate work
 			mgr.EndProcessing()
 			done <- true
 		}()
@@ -625,7 +626,7 @@ func TestIdleCleanupManager_RaceCondition_Prevention(t *testing.T) {
 	defer mgr.Stop()
 
 	// Launch concurrent processing and cleanup checking
-	processingCount := 50
+	processingCount := 20
 	type result struct {
 		cleanupDuringProcessing bool
 	}

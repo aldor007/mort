@@ -22,6 +22,7 @@ type IdleCleanupManager struct {
 	cleanupCount    atomic.Int64 // Counter for cleanup operations (useful for metrics)
 	activeProcesses atomic.Int32 // Number of active image processing operations
 	cleanupMu       sync.Mutex   // Protects cleanup operations
+	wg              sync.WaitGroup // Tracks background goroutine to prevent leaks
 }
 
 // NewIdleCleanupManager creates a new IdleCleanupManager
@@ -56,6 +57,7 @@ func (m *IdleCleanupManager) Start() {
 		return
 	}
 
+	m.wg.Add(1)
 	go m.cleanupLoop()
 	monitoring.Log().Info("IdleCleanupManager started",
 		zap.Duration("idleTimeout", m.idleTimeout),
@@ -63,12 +65,14 @@ func (m *IdleCleanupManager) Start() {
 }
 
 // Stop gracefully shuts down the cleanup goroutine
+// Waits for the background goroutine to finish to prevent goroutine leaks
 func (m *IdleCleanupManager) Stop() {
 	if !m.enabled {
 		return
 	}
 
 	close(m.stopChan)
+	m.wg.Wait() // Wait for cleanup goroutine to finish
 	monitoring.Log().Info("IdleCleanupManager stopped")
 }
 
@@ -111,6 +115,8 @@ func (m *IdleCleanupManager) GetCleanupCount() int64 {
 
 // cleanupLoop is the background goroutine that periodically checks for idle state
 func (m *IdleCleanupManager) cleanupLoop() {
+	defer m.wg.Done() // Signal completion when goroutine exits
+
 	ticker := time.NewTicker(m.checkInterval)
 	defer ticker.Stop()
 
