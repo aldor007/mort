@@ -260,11 +260,13 @@ func main() {
 	monitoring.Log().Info("Archive restore cache initialized")
 
 	if imgConfig.Server.AccessLog {
-		logger := httplog.NewLogger("mort", httplog.Options{
+		logger := httplog.NewLogger("mort-access", httplog.Options{
 			JSON: true,
 			Tags: map[string]string{
 				"version": version,
+				"logType": "access", // For filtering access logs vs application logs
 			},
+			LogLevel: "info",
 		})
 		router.Use(httplog.RequestLogger(logger))
 

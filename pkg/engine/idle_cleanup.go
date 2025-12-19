@@ -8,6 +8,7 @@ import "C"
 
 import (
 	"runtime"
+	"runtime/debug"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -62,11 +63,16 @@ func safeVipsCleanup() {
 
 	// Temporarily set very restrictive limits to force cache eviction
 	// This causes libvips to naturally remove old cached operations
-	bimg.VipsCacheSetMax(1)    // Allow only 1 cached operation
-	bimg.VipsCacheSetMaxMem(1) // Allow only 1 byte cache memory
+	bimg.VipsCacheSetMax(0)    // Disable cache completely
+	bimg.VipsCacheSetMaxMem(0) // No memory for cache
 
 	// Brief pause to allow libvips to evict cache entries naturally
 	time.Sleep(100 * time.Millisecond)
+
+	// Force additional eviction with minimal limits
+	bimg.VipsCacheSetMax(1)
+	bimg.VipsCacheSetMaxMem(1024) // 1KB
+	time.Sleep(50 * time.Millisecond)
 
 	// Restore original cache settings exactly as they were
 	bimg.VipsCacheSetMax(origMax)
@@ -250,9 +256,28 @@ func (m *IdleCleanupManager) performCleanup() {
 	// Run aggressive GC if enabled
 	if m.aggressiveGC {
 		monitoring.Log().Info("Running aggressive garbage collection")
+
+		// Get memory stats before GC
+		var memStatsBefore runtime.MemStats
+		runtime.ReadMemStats(&memStatsBefore)
+
+		// Multiple GC passes for thorough cleanup
 		runtime.GC()
-		runtime.GC() // Run twice for more thorough cleanup
-		monitoring.Log().Info("Aggressive garbage collection completed")
+		debug.FreeOSMemory() // Return memory to OS
+		runtime.GC()         // Second pass
+		debug.FreeOSMemory() // Return more memory to OS
+
+		// Get memory stats after GC
+		var memStatsAfter runtime.MemStats
+		runtime.ReadMemStats(&memStatsAfter)
+
+		heapFreed := memStatsBefore.HeapAlloc - memStatsAfter.HeapAlloc
+		monitoring.Log().Info("Aggressive garbage collection completed",
+			zap.Uint64("heapBefore", memStatsBefore.HeapAlloc),
+			zap.Uint64("heapAfter", memStatsAfter.HeapAlloc),
+			zap.Uint64("heapFreed", heapFreed),
+			zap.Uint64("heapSysBefore", memStatsBefore.HeapSys),
+			zap.Uint64("heapSysAfter", memStatsAfter.HeapSys))
 	}
 
 	// Get memory stats after cleanup
