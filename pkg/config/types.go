@@ -194,6 +194,7 @@ type LockCfg struct {
 type IdleCleanupCfg struct {
 	Enabled        bool `yaml:"enabled"`
 	IdleTimeoutMin int  `yaml:"idleTimeoutMin"` // Minutes of inactivity before cleanup
+	AggressiveGC   bool `yaml:"aggressiveGC"`   // Run runtime.GC() during cleanup for additional memory recovery
 }
 
 // Server configure HTTP server

@@ -15,20 +15,20 @@ type ResponseCache interface {
 	Delete(obj *object.FileObject) error
 }
 
-// Create returns instance of Response cache
+// Create returns instance of Response cache for caching HTTP responses
 func Create(cacheCfg config.CacheCfg) ResponseCache {
 	switch cacheCfg.Type {
 	case "redis":
-		monitoring.Log().Info("Creating redis cache", zap.Strings("addr", cacheCfg.Address))
+		monitoring.Log().Info("Creating redis response cache", zap.Strings("addr", cacheCfg.Address))
 		return NewRedis(cacheCfg.Address, cacheCfg.ClientConfig, CacheCfg{MaxItemSize: cacheCfg.MaxCacheItemSize, MinUseCount: cacheCfg.MinUseCount})
 	case "redis-cluster":
-		monitoring.Log().Info("Creating redis-cluster cache", zap.Strings("addr", cacheCfg.Address))
+		monitoring.Log().Info("Creating redis-cluster response cache", zap.Strings("addr", cacheCfg.Address))
 		return NewRedisCluster(cacheCfg.Address, cacheCfg.ClientConfig, CacheCfg{
 			MaxItemSize: cacheCfg.MaxCacheItemSize,
 			MinUseCount: cacheCfg.MinUseCount,
 		})
 	default:
-		monitoring.Log().Info("Creating memory cache")
+		monitoring.Log().Info("Creating memory response cache")
 		return NewMemoryCache(cacheCfg.CacheSize)
 	}
 }

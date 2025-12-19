@@ -26,6 +26,7 @@ import (
 	"github.com/aldor007/mort/pkg/object"
 	"github.com/aldor007/mort/pkg/processor"
 	"github.com/aldor007/mort/pkg/response"
+	"github.com/aldor007/mort/pkg/storage"
 	"github.com/aldor007/mort/pkg/throttler"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -171,6 +172,16 @@ func configureMonitoring(mortConfig *config.Config) {
 			Help: "mort count of vips cache cleanups",
 		}))
 
+		p.RegisterCounter("glacier_error_detected", prometheus.NewCounter(prometheus.CounterOpts{
+			Name: "mort_glacier_error_detected",
+			Help: "mort count of GLACIER/DEEP_ARCHIVE errors detected",
+		}))
+
+		p.RegisterCounter("glacier_restore_initiated", prometheus.NewCounter(prometheus.CounterOpts{
+			Name: "mort_glacier_restore_initiated",
+			Help: "mort count of GLACIER restore requests initiated",
+		}))
+
 		p.RegisterHistogramVec("storage_time", prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Name:    "mort_storage_time",
 			Help:    "mort storage times",
@@ -242,6 +253,11 @@ func main() {
 	monitoring.Log().Info("Image processing concurrency", zap.Int("limit", concurrentLimit))
 
 	rp := processor.NewRequestProcessor(imgConfig.Server, lock.Create(imgConfig.Server.Lock, imgConfig.Server.LockTimeout), throttler.NewBucketThrottler(concurrentLimit))
+
+	// Initialize archive restore cache at startup to prevent lazy initialization panics
+	// This ensures the cache is ready before any requests arrive
+	_ = storage.GetRestoreCache(imgConfig.Server.Cache)
+	monitoring.Log().Info("Archive restore cache initialized")
 
 	if imgConfig.Server.AccessLog {
 		logger := httplog.NewLogger("mort", httplog.Options{

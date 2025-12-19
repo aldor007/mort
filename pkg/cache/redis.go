@@ -44,41 +44,29 @@ type RedisCache struct {
 }
 
 // NewRedis create connection to redis and update it config from clientConfig map
+// Uses shared connection pool to avoid duplicate Redis connections
 func NewRedis(redisAddress []string, clientConfig map[string]string, cfg CacheCfg) *RedisCache {
-	ring := goRedis.NewRing(&goRedis.RingOptions{
-		Addrs: parseAddress(redisAddress),
-	})
+	// Use shared Redis client from pool
+	sharedClient := getRedisClient(redisAddress, clientConfig, false)
 
 	cache := redisCache.New(&redisCache.Options{
-		Redis:      ring,
+		Redis:      sharedClient,
 		LocalCache: redisCache.NewTinyLFU(10, time.Minute),
 	})
 
-	if clientConfig != nil {
-		for key, value := range clientConfig {
-			ring.ConfigSet(context.Background(), key, value)
-		}
-	}
-
-	return &RedisCache{cache, ring, cfg}
+	return &RedisCache{cache, sharedClient, cfg}
 }
 
 func NewRedisCluster(redisAddress []string, clientConfig map[string]string, cfg CacheCfg) *RedisCache {
-	ring := goRedis.NewClusterClient(&goRedis.ClusterOptions{
-		Addrs: redisAddress,
-	})
+	// Use shared Redis client from pool
+	sharedClient := getRedisClient(redisAddress, clientConfig, true)
+
 	cache := redisCache.New(&redisCache.Options{
-		Redis:      ring,
+		Redis:      sharedClient,
 		LocalCache: redisCache.NewTinyLFU(10, time.Minute),
 	})
 
-	if clientConfig != nil {
-		for key, value := range clientConfig {
-			ring.ConfigSet(context.Background(), key, value)
-		}
-	}
-
-	return &RedisCache{cache, ring, cfg}
+	return &RedisCache{cache, sharedClient, cfg}
 }
 
 func (c *RedisCache) getKey(obj *object.FileObject) string {

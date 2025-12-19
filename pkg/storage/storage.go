@@ -23,7 +23,6 @@ import (
 	sftpStorage "github.com/aldor007/stow/sftp"
 
 	"github.com/aldor007/mort/pkg/config"
-	"github.com/aldor007/mort/pkg/glacier"
 	"github.com/aldor007/mort/pkg/monitoring"
 	"github.com/aldor007/mort/pkg/object"
 	"github.com/aldor007/mort/pkg/response"
@@ -65,28 +64,61 @@ type storageClientEntry struct {
 	err    error
 }
 
-// handleGlacierError detects and handles GLACIER/archive storage class errors
-// Returns 503 with Retry-After header and initiates restore if configured
-func handleGlacierError(obj *object.FileObject, err error, item stow.Item) *response.Response {
-	// Check if this is a GLACIER error
-	if !strings.Contains(err.Error(), "InvalidObjectState") {
-		return nil // Not a GLACIER error
+// isGlacierError checks if the error is an S3 InvalidObjectState error for archive storage classes
+// Returns true and the storage class (GLACIER or DEEP_ARCHIVE) if it's a restorable archive error
+// Returns false for other error types (AccessDenied, NoSuchKey, etc.)
+func isGlacierError(err error) (bool, string) {
+	if err == nil {
+		return false, ""
 	}
 
+	errStr := err.Error()
+
+	// Must contain InvalidObjectState error code
+	if !strings.Contains(errStr, "InvalidObjectState") {
+		return false, ""
+	}
+
+	// Extract storage class from error message
+	// AWS S3 errors include storage class in the message, e.g.:
+	// "InvalidObjectState: The operation is not valid for the object's storage class"
+	// or in XML: "<StorageClass>GLACIER</StorageClass>"
+
+	// Check for archive storage classes
+	// Check DEEP_ARCHIVE first (more specific than GLACIER)
+	if strings.Contains(errStr, "DEEP_ARCHIVE") {
+		return true, "DEEP_ARCHIVE"
+	}
+	if strings.Contains(errStr, "GLACIER") {
+		return true, "GLACIER"
+	}
+
+	// Not a restorable archive error
+	return false, ""
+}
+
+// handleArchiveRestore handles confirmed archive storage class errors (GLACIER, DEEP_ARCHIVE)
+// Should only be called after isGlacierError confirms it's an archive error
+// Returns 503 with Retry-After header and initiates restore if configured
+func handleArchiveRestore(obj *object.FileObject, err error, item stow.Item, storageClass string) *response.Response {
 	monitoring.Report().Inc("glacier_error_detected")
+	monitoring.Log().Info("Archive storage error detected",
+		obj.LogData(zap.String("storageClass", storageClass))...)
 
 	// Get bucket configuration
 	mortConfig := config.GetInstance()
 	bucket, ok := mortConfig.Buckets[obj.Bucket]
 	if !ok || bucket.Glacier == nil || !bucket.Glacier.Enabled {
-		// No GLACIER config or disabled - return generic error
-		return response.NewError(503, fmt.Errorf("object in GLACIER storage class"))
+		// No GLACIER config or disabled - return generic error without restore
+		monitoring.Log().Warn("GLACIER object but auto-restore disabled",
+			obj.LogData(zap.String("storageClass", storageClass))...)
+		return response.NewError(503, fmt.Errorf("object in %s storage class (restore disabled)", storageClass))
 	}
 
 	glacierCfg := bucket.Glacier
 
 	// Check if restore already in progress via cache
-	cache := glacier.GetRestoreCache(mortConfig.Server.Cache)
+	cache := GetRestoreCache(mortConfig.Server.Cache)
 	status, _ := cache.GetRestoreStatus(obj.Ctx, obj.Key)
 
 	if status == nil || !status.InProgress {
@@ -128,10 +160,11 @@ func handleGlacierError(obj *object.FileObject, err error, item stow.Item) *resp
 	}
 
 	// Return 503 with Retry-After header
-	res := response.NewError(503, fmt.Errorf("object in GLACIER storage class, restore in progress"))
+	res := response.NewError(503, fmt.Errorf("object in %s storage class, restore in progress", storageClass))
 	res.Set("Retry-After", fmt.Sprintf("%d", glacierCfg.RetryAfterSeconds))
 	res.Set("X-Mort-Glacier-Status", "restoring")
 	res.Set("X-Mort-Glacier-Tier", glacierCfg.RestoreTier)
+	res.Set("X-Mort-Storage-Class", storageClass)
 
 	return res
 }
@@ -184,13 +217,15 @@ func Get(obj *object.FileObject) *response.Response {
 			responseStream.Close()
 		}
 
-		// Check if this is a GLACIER error and handle if configured
+		// Check if this is an archive storage error (GLACIER/DEEP_ARCHIVE)
 		if obj.Storage.Kind == "s3" {
-			if glacierRes := handleGlacierError(obj, err, item); glacierRes != nil {
-				return glacierRes
+			if isGlacier, storageClass := isGlacierError(err); isGlacier {
+				// Confirmed GLACIER/DEEP_ARCHIVE error - handle restore
+				return handleArchiveRestore(obj, err, item, storageClass)
 			}
 		}
 
+		// Not a GLACIER error - return original error with full details
 		monitoring.Log().Warn("Storage/Get open item", obj.LogData(zap.Int("statusCode", 500), zap.Error(err))...)
 		return response.NewError(500, fmt.Errorf("unable to open item %s err: %v", obj.Key, err))
 	}

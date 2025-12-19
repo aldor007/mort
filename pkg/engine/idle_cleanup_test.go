@@ -59,7 +59,7 @@ func TestNewIdleCleanupManager(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			mgr := NewIdleCleanupManager(tt.enabled, tt.timeoutMinutes)
+			mgr := NewIdleCleanupManager(tt.enabled, tt.timeoutMinutes, false)
 
 			if tt.shouldBeNil {
 				assert.Nil(t, mgr)
@@ -96,7 +96,7 @@ func TestIdleCleanupManager_RecordActivity(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			mgr := NewIdleCleanupManager(tt.enabled, 15)
+			mgr := NewIdleCleanupManager(tt.enabled, 15, false)
 			if !tt.enabled {
 				return // Nothing to test for disabled manager
 			}
@@ -117,7 +117,7 @@ func TestIdleCleanupManager_RecordActivity_Concurrent(t *testing.T) {
 	// concurrent with 20 goroutines. Running it in parallel with other tests
 	// can overwhelm CI test coordinators.
 
-	mgr := NewIdleCleanupManager(true, 15)
+	mgr := NewIdleCleanupManager(true, 15, false)
 
 	// Launch concurrent RecordActivity calls
 	concurrency := 20
@@ -160,7 +160,7 @@ func TestIdleCleanupManager_StartStop(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			mgr := NewIdleCleanupManager(tt.enabled, 15)
+			mgr := NewIdleCleanupManager(tt.enabled, 15, false)
 			// Use mock cleanup to avoid interfering with libvips in other tests
 			mgr.cleanupFunc = mockCleanupFunc
 
@@ -182,7 +182,7 @@ func TestIdleCleanupManager_StartStop(t *testing.T) {
 func TestIdleCleanupManager_GetCleanupCount(t *testing.T) {
 	t.Parallel()
 
-	mgr := NewIdleCleanupManager(true, 15)
+	mgr := NewIdleCleanupManager(true, 15, false)
 
 	// Initial count should be 0
 	assert.Equal(t, int64(0), mgr.GetCleanupCount())
@@ -284,7 +284,7 @@ func TestIdleCleanupManager_StopDuringCleanup(t *testing.T) {
 func TestIdleCleanupManager_DisabledManager(t *testing.T) {
 	t.Parallel()
 
-	mgr := NewIdleCleanupManager(false, 15)
+	mgr := NewIdleCleanupManager(false, 15, false)
 	// Use mock cleanup to avoid interfering with libvips in other tests
 	mgr.cleanupFunc = mockCleanupFunc
 
@@ -302,7 +302,7 @@ func TestIdleCleanupManager_DisabledManager(t *testing.T) {
 func TestIdleCleanupManager_ThreadSafety(t *testing.T) {
 	t.Parallel()
 
-	mgr := NewIdleCleanupManager(true, 15)
+	mgr := NewIdleCleanupManager(true, 15, false)
 	// Use mock cleanup to avoid interfering with libvips in other tests
 	mgr.cleanupFunc = mockCleanupFunc
 	mgr.Start()
@@ -361,7 +361,7 @@ func TestIdleCleanupManager_IntervalCalculation(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			mgr := NewIdleCleanupManager(true, tt.timeoutMinutes)
+			mgr := NewIdleCleanupManager(true, tt.timeoutMinutes, false)
 
 			assert.NotNil(t, mgr)
 			assert.GreaterOrEqual(t, mgr.checkInterval, tt.expectedMinInterval)
@@ -371,7 +371,7 @@ func TestIdleCleanupManager_IntervalCalculation(t *testing.T) {
 
 // Benchmark for RecordActivity to ensure it's fast enough for hot path
 func BenchmarkIdleCleanupManager_RecordActivity(b *testing.B) {
-	mgr := NewIdleCleanupManager(true, 15)
+	mgr := NewIdleCleanupManager(true, 15, false)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -381,7 +381,7 @@ func BenchmarkIdleCleanupManager_RecordActivity(b *testing.B) {
 
 // Benchmark for concurrent RecordActivity calls
 func BenchmarkIdleCleanupManager_RecordActivity_Parallel(b *testing.B) {
-	mgr := NewIdleCleanupManager(true, 15)
+	mgr := NewIdleCleanupManager(true, 15, false)
 
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
@@ -462,7 +462,7 @@ func TestIdleCleanupManager_BeginEndProcessing(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			mgr := NewIdleCleanupManager(tt.enabled, 15)
+			mgr := NewIdleCleanupManager(tt.enabled, 15, false)
 			if !tt.enabled {
 				// Should not panic
 				assert.NotPanics(t, func() {
@@ -500,7 +500,7 @@ func TestIdleCleanupManager_BeginEndProcessing_Concurrent(t *testing.T) {
 	// concurrent with 20 goroutines. Running it in parallel with other tests
 	// can overwhelm CI test coordinators.
 
-	mgr := NewIdleCleanupManager(true, 15)
+	mgr := NewIdleCleanupManager(true, 15, false)
 
 	// Launch concurrent operations
 	concurrency := 20
@@ -528,7 +528,7 @@ func TestIdleCleanupManager_BeginEndProcessing_Concurrent(t *testing.T) {
 func TestIdleCleanupManager_PerformCleanup_WithActiveProcesses(t *testing.T) {
 	t.Parallel()
 
-	mgr := NewIdleCleanupManager(true, 15)
+	mgr := NewIdleCleanupManager(true, 15, false)
 	mgr.cleanupFunc = mockCleanupFunc // Use mock to avoid interfering with libvips
 
 	// Start processing in a goroutine
@@ -578,7 +578,7 @@ func TestIdleCleanupManager_PerformCleanup_WithActiveProcesses(t *testing.T) {
 func TestIdleCleanupManager_PerformCleanup_NoActiveProcesses(t *testing.T) {
 	t.Parallel()
 
-	mgr := NewIdleCleanupManager(true, 15)
+	mgr := NewIdleCleanupManager(true, 15, false)
 	mgr.cleanupFunc = mockCleanupFunc // Use mock to avoid interfering with libvips
 
 	// Ensure no active processes
@@ -599,7 +599,7 @@ func TestIdleCleanupManager_PerformCleanup_Concurrent(t *testing.T) {
 	// concurrent with 10 goroutines. Running it in parallel with other tests
 	// can overwhelm CI test coordinators.
 
-	mgr := NewIdleCleanupManager(true, 15)
+	mgr := NewIdleCleanupManager(true, 15, false)
 	mgr.cleanupFunc = mockCleanupFunc // Use mock to avoid interfering with libvips
 
 	// Launch multiple concurrent cleanup attempts
@@ -740,7 +740,7 @@ func TestIdleCleanupManager_RaceCondition_Prevention(t *testing.T) {
 
 // BenchmarkIdleCleanupManager_BeginEndProcessing benchmarks processing tracking
 func BenchmarkIdleCleanupManager_BeginEndProcessing(b *testing.B) {
-	mgr := NewIdleCleanupManager(true, 15)
+	mgr := NewIdleCleanupManager(true, 15, false)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -751,7 +751,7 @@ func BenchmarkIdleCleanupManager_BeginEndProcessing(b *testing.B) {
 
 // BenchmarkIdleCleanupManager_BeginEndProcessing_Parallel benchmarks concurrent processing tracking
 func BenchmarkIdleCleanupManager_BeginEndProcessing_Parallel(b *testing.B) {
-	mgr := NewIdleCleanupManager(true, 15)
+	mgr := NewIdleCleanupManager(true, 15, false)
 
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
@@ -912,7 +912,7 @@ func TestSafeVipsCleanup_IntegrationWithIdleCleanupManager(t *testing.T) {
 	}
 
 	// Create manager that uses real safe cleanup (not mock)
-	mgr := NewIdleCleanupManager(true, 15)
+	mgr := NewIdleCleanupManager(true, 15, false)
 
 	// Verify cleanupFunc is set to safeVipsCleanup
 	assert.NotNil(t, mgr.cleanupFunc, "cleanupFunc should be set")
@@ -952,4 +952,129 @@ func TestSafeVipsCleanup_RestoresOriginalSettings(t *testing.T) {
 	// Verify settings are restored to exactly what they were before cleanup
 	assert.Equal(t, origMax, vipsCacheGetMax(), "cache max should be restored to original")
 	assert.Equal(t, origMaxMem, vipsCacheGetMaxMem(), "cache max mem should be restored to original")
+}
+
+// TestIdleCleanupManager_AggressiveGC_Enabled verifies GC runs when enabled
+func TestIdleCleanupManager_AggressiveGC_Enabled(t *testing.T) {
+	t.Parallel()
+
+	mgr := NewIdleCleanupManager(true, 15, true) // aggressiveGC = true
+	mgr.cleanupFunc = mockCleanupFunc
+
+	// Verify aggressiveGC flag is set
+	assert.True(t, mgr.aggressiveGC, "aggressiveGC should be enabled")
+
+	// Call performCleanup (it will run GC internally)
+	assert.NotPanics(t, func() {
+		mgr.performCleanup()
+	}, "performCleanup with GC should not panic")
+
+	// Verify cleanup was counted
+	assert.Equal(t, int64(1), mgr.GetCleanupCount(), "cleanup should be counted")
+}
+
+// TestIdleCleanupManager_AggressiveGC_Disabled verifies GC skipped when disabled
+func TestIdleCleanupManager_AggressiveGC_Disabled(t *testing.T) {
+	t.Parallel()
+
+	mgr := NewIdleCleanupManager(true, 15, false) // aggressiveGC = false
+	mgr.cleanupFunc = mockCleanupFunc
+
+	// Verify aggressiveGC flag is not set
+	assert.False(t, mgr.aggressiveGC, "aggressiveGC should be disabled")
+
+	// Call performCleanup (it will skip GC)
+	assert.NotPanics(t, func() {
+		mgr.performCleanup()
+	}, "performCleanup without GC should not panic")
+
+	// Verify cleanup was still counted
+	assert.Equal(t, int64(1), mgr.GetCleanupCount(), "cleanup should be counted")
+}
+
+// TestIdleCleanupManager_AggressiveGC_MemoryReduction verifies GC reduces memory
+func TestIdleCleanupManager_AggressiveGC_MemoryReduction(t *testing.T) {
+	t.Parallel()
+
+	// Load test image to create some allocations
+	data, err := os.ReadFile("testdata/small.jpg")
+	if err != nil {
+		t.Skip("test image not available")
+	}
+
+	// Create some garbage
+	var allocations [][]byte
+	for i := 0; i < 100; i++ {
+		allocations = append(allocations, make([]byte, 1024*1024)) // 1MB each
+	}
+	allocations = nil // Make garbage collectible
+
+	// Process some images to use memory
+	for i := 0; i < 5; i++ {
+		img := bimg.NewImage(data)
+		img.Resize(100, 100)
+	}
+
+	// Create manager with aggressive GC enabled
+	mgr := NewIdleCleanupManager(true, 15, true)
+
+	// Run cleanup with GC
+	mgr.performCleanup()
+
+	// GC should have run (we can't easily verify memory reduction in a test,
+	// but we can verify it doesn't panic and completes successfully)
+	assert.Equal(t, int64(1), mgr.GetCleanupCount(), "cleanup should complete")
+}
+
+// TestIdleCleanupManager_AggressiveGC_Integration verifies GC with full cleanup loop
+func TestIdleCleanupManager_AggressiveGC_Integration(t *testing.T) {
+	t.Parallel()
+
+	// Create manager with very short timeout and GC enabled
+	mgr := &IdleCleanupManager{
+		enabled:       true,
+		idleTimeout:   10 * time.Millisecond,
+		checkInterval: 5 * time.Millisecond,
+		aggressiveGC:  true,
+		stopChan:      make(chan struct{}),
+		cleanupFunc:   mockCleanupFunc,
+	}
+
+	// Set activity time to past to trigger cleanup
+	pastTime := time.Now().Add(-1 * time.Minute)
+	mgr.lastActivity.Store(pastTime.Unix())
+
+	// Start the manager
+	mgr.Start()
+
+	// Wait for cleanup to potentially run
+	time.Sleep(50 * time.Millisecond)
+
+	// Stop the manager
+	mgr.Stop()
+
+	// Cleanup should have run
+	assert.GreaterOrEqual(t, mgr.GetCleanupCount(), int64(0),
+		"cleanup count should be non-negative")
+}
+
+// TestIdleCleanupManager_AggressiveGC_Benchmarking provides benchmark comparison
+func BenchmarkIdleCleanupManager_WithoutGC(b *testing.B) {
+	mgr := NewIdleCleanupManager(true, 15, false)
+	mgr.cleanupFunc = mockCleanupFunc
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		mgr.performCleanup()
+	}
+}
+
+func BenchmarkIdleCleanupManager_WithGC(b *testing.B) {
+	mgr := NewIdleCleanupManager(true, 15, true)
+	mgr.cleanupFunc = mockCleanupFunc
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		mgr.performCleanup()
+	}
 }

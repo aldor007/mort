@@ -7,6 +7,7 @@ package engine
 import "C"
 
 import (
+	"runtime"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -38,13 +39,14 @@ type IdleCleanupManager struct {
 	enabled         bool
 	idleTimeout     time.Duration
 	checkInterval   time.Duration
+	aggressiveGC    bool         // Run runtime.GC() during cleanup for additional memory recovery
 	lastActivity    atomic.Int64 // Unix timestamp in seconds
 	stopChan        chan struct{}
 	cleanupCount    atomic.Int64   // Counter for cleanup operations (useful for metrics)
 	activeProcesses atomic.Int32   // Number of active image processing operations
 	processingMu    sync.RWMutex   // RWMutex: RLock for image processing, Lock for cleanup (blocks all processing)
 	wg              sync.WaitGroup // Tracks background goroutine to prevent leaks
-	cleanupFunc     func()         // Function to call for cleanup (defaults to bimg.VipsCacheDropAll, can be mocked in tests)
+	cleanupFunc     func()         // Function to call for cleanup (defaults to safeVipsCleanup, can be mocked in tests)
 }
 
 // NewIdleCleanupManager creates a new IdleCleanupManager
@@ -73,7 +75,7 @@ func safeVipsCleanup() {
 	_ = origMaxFiles // Keep for potential future use
 }
 
-func NewIdleCleanupManager(enabled bool, timeoutMinutes int) *IdleCleanupManager {
+func NewIdleCleanupManager(enabled bool, timeoutMinutes int, aggressiveGC bool) *IdleCleanupManager {
 	if !enabled {
 		return &IdleCleanupManager{enabled: false}
 	}
@@ -88,6 +90,7 @@ func NewIdleCleanupManager(enabled bool, timeoutMinutes int) *IdleCleanupManager
 		enabled:       true,
 		idleTimeout:   timeout,
 		checkInterval: checkInterval,
+		aggressiveGC:  aggressiveGC,
 		stopChan:      make(chan struct{}),
 		cleanupFunc:   safeVipsCleanup, // Use safe cleanup instead of VipsCacheDropAll
 	}
@@ -239,9 +242,17 @@ func (m *IdleCleanupManager) performCleanup() {
 		zap.Int64("memoryAllocations", memBefore.Allocations))
 
 	// Perform cleanup - safe because we have exclusive lock
-	// Use the injected cleanup function (defaults to bimg.VipsCacheDropAll)
+	// Use the injected cleanup function (defaults to safeVipsCleanup)
 	if m.cleanupFunc != nil {
 		m.cleanupFunc()
+	}
+
+	// Run aggressive GC if enabled
+	if m.aggressiveGC {
+		monitoring.Log().Info("Running aggressive garbage collection")
+		runtime.GC()
+		runtime.GC() // Run twice for more thorough cleanup
+		monitoring.Log().Info("Aggressive garbage collection completed")
 	}
 
 	// Get memory stats after cleanup
@@ -255,7 +266,8 @@ func (m *IdleCleanupManager) performCleanup() {
 	monitoring.Log().Info("Libvips cache cleanup completed",
 		zap.Int64("memoryAfter", memAfter.Memory),
 		zap.Int64("memoryFreed", memFreed),
-		zap.Int64("totalCleanups", m.cleanupCount.Load()))
+		zap.Int64("totalCleanups", m.cleanupCount.Load()),
+		zap.Bool("aggressiveGC", m.aggressiveGC))
 
 	// Report to monitoring if available
 	if memFreed > 0 {

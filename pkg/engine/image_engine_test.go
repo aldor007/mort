@@ -203,7 +203,7 @@ func TestImageEngine_Process_ETagGeneration(t *testing.T) {
 func TestImageEngine_Process_CropOperations(t *testing.T) {
 	t.Parallel()
 
-	tests := []struct{
+	tests := []struct {
 		name        string
 		width       int
 		height      int

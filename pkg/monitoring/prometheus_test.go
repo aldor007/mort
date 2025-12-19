@@ -295,3 +295,38 @@ func TestPrometheusReporter_RealWorldScenario(t *testing.T) {
 	p.counters["vips_cleanup_count"].Write(&result)
 	assert.Equal(t, 2.0, *result.Counter.Value, "Should only count increments after registration")
 }
+
+// TestPrometheusReporter_GlacierMetrics verifies GLACIER metrics registration and usage
+func TestPrometheusReporter_GlacierMetrics(t *testing.T) {
+	t.Parallel()
+	p := NewPrometheusReporter()
+
+	// Register GLACIER error detected counter
+	p.RegisterCounter("glacier_error_detected", prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "mort_glacier_error_detected",
+		Help: "mort count of GLACIER/DEEP_ARCHIVE errors detected",
+	}))
+
+	// Register GLACIER restore initiated counter
+	p.RegisterCounter("glacier_restore_initiated", prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "mort_glacier_restore_initiated",
+		Help: "mort count of GLACIER restore requests initiated",
+	}))
+
+	// Increment glacier_error_detected
+	p.Inc("glacier_error_detected")
+	p.Inc("glacier_error_detected")
+
+	// Increment glacier_restore_initiated
+	p.Inc("glacier_restore_initiated")
+
+	// Verify glacier_error_detected value
+	result1 := dto.Metric{}
+	p.counters["glacier_error_detected"].Write(&result1)
+	assert.Equal(t, 2.0, *result1.Counter.Value, "glacier_error_detected should be 2")
+
+	// Verify glacier_restore_initiated value
+	result2 := dto.Metric{}
+	p.counters["glacier_restore_initiated"].Write(&result2)
+	assert.Equal(t, 1.0, *result2.Counter.Value, "glacier_restore_initiated should be 1")
+}

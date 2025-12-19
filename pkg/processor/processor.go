@@ -52,7 +52,7 @@ func NewRequestProcessor(serverConfig config.Server, l lock.Lock, throttler thro
 
 	// Initialize idle cleanup manager if configured
 	if serverConfig.IdleCleanup != nil && serverConfig.IdleCleanup.Enabled {
-		rp.idleCleanup = engine.NewIdleCleanupManager(true, serverConfig.IdleCleanup.IdleTimeoutMin)
+		rp.idleCleanup = engine.NewIdleCleanupManager(true, serverConfig.IdleCleanup.IdleTimeoutMin, serverConfig.IdleCleanup.AggressiveGC)
 		rp.idleCleanup.Start()
 	}
 
