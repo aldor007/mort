@@ -1,3 +1,10 @@
+# [0.36.0](https://github.com/aldor007/mort/compare/v0.35.0...v0.36.0) (2025-12-19)
+
+
+### Features
+
+* glacier restore fixed, agressive gc on idle cleanup ([077e5dc](https://github.com/aldor007/mort/commit/077e5dc098e6b63d75959afd60894ca04721f98c))
+
 # [0.35.0](https://github.com/aldor007/mort/compare/v0.34.2...v0.35.0) (2025-12-18)
 
 
