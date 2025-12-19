@@ -1,3 +1,10 @@
+# [0.37.0](https://github.com/aldor007/mort/compare/v0.36.0...v0.37.0) (2025-12-19)
+
+
+### Features
+
+* more aggressive gc ([da2472e](https://github.com/aldor007/mort/commit/da2472e7454ae4816aa6d8f2477c15f185a48533))
+
 # [0.36.0](https://github.com/aldor007/mort/compare/v0.35.0...v0.36.0) (2025-12-19)
 
 
